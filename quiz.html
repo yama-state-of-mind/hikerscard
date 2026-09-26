@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>登山タイプ診断｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<style>
+/* ---------- 診断まわりの専用スタイル ---------- */
+.progress {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--birch); padding: 12px 0 10px;
+}
+.progress-bar {
+  height: 5px; background: var(--line); border-radius: 999px; overflow: hidden;
+}
+.progress-bar i {
+  display: block; height: 100%; background: var(--sun);
+  border-radius: 999px; width: 0; transition: width .3s;
+}
+.progress-txt {
+  font-size: 11px; color: var(--stone); text-align: center; margin-top: 6px;
+  font-family: var(--mono); letter-spacing: .5px;
+}
+
+.q-card {
+  background: var(--paper); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card); padding: 16px 18px 14px; margin-top: 14px;
+}
+.q-num {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--sun); letter-spacing: 1px;
+}
+.q-text { font-size: 14px; font-weight: 700; line-height: 1.7; margin: 4px 0 12px; }
+
+.opt {
+  font-size: 12.5px; line-height: 1.7; padding: 7px 11px;
+  border-radius: 10px; margin-bottom: 6px; color: #45564e;
+}
+.opt b { font-family: var(--mono); font-weight: 700; margin-right: 5px; }
+.opt-a { background: #EDF3EF; }
+.opt-a b { color: var(--pine); }
+.opt-b { background: #EAF1F6; }
+.opt-b b { color: var(--fjord); }
+
+.dots {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 4px; margin-top: 12px;
+}
+.dot {
+  flex: 1; height: 38px; border: none; background: transparent;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.dot::before {
+  content: ""; border-radius: 50%;
+  border: 2px solid var(--line); background: var(--paper);
+  transition: all .15s;
+}
+.dot[data-v="0"]::before, .dot[data-v="5"]::before { width: 26px; height: 26px; }
+.dot[data-v="1"]::before, .dot[data-v="4"]::before { width: 21px; height: 21px; }
+.dot[data-v="2"]::before, .dot[data-v="3"]::before { width: 16px; height: 16px; }
+
+.dot[data-v="0"].on::before, .dot[data-v="1"].on::before, .dot[data-v="2"].on::before {
+  background: var(--pine); border-color: var(--pine);
+}
+.dot[data-v="3"].on::before, .dot[data-v="4"].on::before, .dot[data-v="5"].on::before {
+  background: var(--fjord); border-color: var(--fjord);
+}
+
+.scale-notes {
+  display: flex; justify-content: space-between;
+  font-size: 10.5px; color: var(--stone); margin-top: 2px;
+}
+
+.q-card.unanswered { box-shadow: 0 0 0 2px #E8D6D6, var(--shadow-card); }
+
+.nav { display: flex; gap: 10px; margin-top: 20px; }
+.nav .btn { margin-top: 0; }
+
+/* ---------- 結果 ---------- */
+.result-char {
+  width: 150px; height: 150px; margin: 0 auto 6px;
+}
+.result-char svg { width: 100%; height: 100%; display: block; }
+.result-animal { font-size: 24px; font-weight: 900; text-align: center; }
+.result-type { font-size: 14px; font-weight: 700; color: var(--fjord); text-align: center; margin-top: 2px; }
+.result-code {
+  display: block; width: fit-content; margin: 10px auto 0;
+  font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 2px;
+  background: var(--pine); color: #fff; border-radius: 999px; padding: 4px 16px;
+}
+.result-copy {
+  font-size: 13.5px; text-align: center; margin-top: 14px;
+  color: #45564e; line-height: 1.9;
+}
+
+.ax + .ax { margin-top: 12px; }
+.ax-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; }
+.ax-head .w { font-weight: 900; color: var(--pine); }
+.ax-head .l { color: #AFBDB6; }
+.ax-head b { font-family: var(--mono); font-size: 11.5px; }
+.ax-head .w b { color: var(--sun); }
+.ax-head .l b { color: #C6D0CA; }
+.ax-title {
+  font-size: 10px; font-weight: 700; color: var(--stone);
+  letter-spacing: 1px; margin-bottom: 3px;
+}
+.ax-track {
+  margin-top: 4px; height: 7px; border-radius: 999px;
+  background: #EDF3EF; position: relative; overflow: hidden;
+}
+.ax-bar { position: absolute; top: 0; height: 100%; border-radius: 999px; }
+.ax-bar.a { left: 0; background: var(--pine); }
+.ax-bar.b { right: 0; background: var(--fjord); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <!-- ========== はじめる ========== -->
+  <div id="screen-start" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>登山タイプ診断</h1>
+    <p class="sub">
+      12の質問で、あなたの登り方を4つの軸から診断します。<br>
+      所要時間は3分ほど。結果はカードに反映されます。
+    </p>
+
+    <div class="card">
+      <h2>4つの軸</h2>
+      <div class="row"><span class="k">目的</span><span class="v">ピークハント ⇔ エンジョイ</span></div>
+      <div class="row"><span class="k">仲間</span><span class="v">ソロ ⇔ グループ</span></div>
+      <div class="row"><span class="k">計画</span><span class="v">計画的 ⇔ フィーリング</span></div>
+      <div class="row"><span class="k">リスク</span><span class="v">慎重 ⇔ 挑戦的</span></div>
+    </div>
+
+    <p class="hint">
+      正解はありません。<b>ふだんの自分に近い方</b>を、直感で選んでください。<br>
+      どちらとも言えないときは、真ん中寄りを選べば大丈夫です。
+    </p>
+
+    <button class="btn sun" id="btn-start">はじめる</button>
+    <button class="btn flat" id="btn-cancel">あとにする</button>
+  </div>
+
+  <!-- ========== 設問 ========== -->
+  <div id="screen-quiz" hidden>
+    <div class="progress">
+      <div class="progress-bar"><i id="bar"></i></div>
+      <p class="progress-txt" id="progress-txt"></p>
+    </div>
+
+    <div id="quiz-page"></div>
+
+    <div id="quiz-msg" class="msg"></div>
+
+    <div class="nav">
+      <button class="btn ghost" id="btn-back" style="flex:0 0 40%">もどる</button>
+      <button class="btn dark"  id="btn-next" style="flex:1">つぎへ</button>
+    </div>
+  </div>
+
+  <!-- ========== 結果 ========== -->
+  <div id="screen-result" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+
+    <div class="result-char" id="r-char"></div>
+    <p class="result-animal" id="r-animal"></p>
+    <p class="result-type" id="r-type"></p>
+    <span class="result-code" id="r-code"></span>
+    <p class="result-copy" id="r-copy"></p>
+
+    <div class="card">
+      <h2>4つの軸</h2>
+      <div id="r-axes"></div>
+    </div>
+
+    <div class="card">
+      <h2>特徴</h2>
+      <p style="font-size:12.5px;line-height:1.95;color:#45564e" id="r-features"></p>
+    </div>
+
+    <div class="card">
+      <h2>気をつけたいこと</h2>
+      <p style="font-size:12.5px;line-height:1.95;color:#45564e" id="r-caution"></p>
+    </div>
+
+    <div id="save-msg" class="msg"></div>
+    <button class="btn sun"  id="btn-save"></button>
+    <button class="btn flat" id="btn-retry">もう一度診断する</button>
+  </div>
+</div>
+
+<!-- 診断データ。筑波山版からそのまま移植したもの（変更しない） -->
+<script src="./data.js"></script>
+<script src="./characters.js"></script>
+
+<script type="module">
+import { supabase, getUser } from "./supabase.js";
+
+const $ = (s) => document.querySelector(s);
+const loading = $("#loading");
+
+// ---------------------------------------------
+// 状態
+// ---------------------------------------------
+const PER_PAGE = 6;
+let quiz = shuffle(QUESTIONS.slice());      // シークレット問題はMVPでは使わない
+let answers = new Array(quiz.length).fill(null);
+let page = 0;
+const totalPages = Math.ceil(quiz.length / PER_PAGE);
+
+let user = await getUser();                 // 未ログインでも診断は受けられる
+
+loading.hidden = true;
+show("start");
+
+// ---------------------------------------------
+// 画面の切り替え
+// ---------------------------------------------
+function show(name) {
+  ["start", "quiz", "result"].forEach((n) => {
+    $("#screen-" + n).hidden = n !== name;
+  });
+  window.scrollTo(0, 0);
+}
+
+// ---------------------------------------------
+// 開始・中断
+// ---------------------------------------------
+$("#btn-start").onclick = () => { page = 0; renderPage(); show("quiz"); };
+$("#btn-cancel").onclick = () => { location.href = "./index.html"; };
+
+// ---------------------------------------------
+// 設問の描画
+// ---------------------------------------------
+function renderPage() {
+  const start = page * PER_PAGE;
+  const end = Math.min(start + PER_PAGE, quiz.length);
+  const box = $("#quiz-page");
+  box.innerHTML = "";
+
+  for (let i = start; i < end; i++) {
+    const q = quiz[i];
+    const card = document.createElement("div");
+    card.className = "q-card";
+    card.dataset.index = i;
+
+    const dots = [0, 1, 2, 3, 4, 5].map((v) => {
+      const on = answers[i] === v ? " on" : "";
+      return `<button type="button" class="dot${on}" data-v="${v}"
+                aria-label="${["とてもAに近い","Aに近い","ややA","ややB","Bに近い","とてもBに近い"][v]}"></button>`;
+    }).join("");
+
+    card.innerHTML = `
+      <span class="q-num">Q${i + 1}</span>
+      <p class="q-text">${q.text}</p>
+      <div class="opt opt-a"><b>A</b>${q.a}</div>
+      <div class="opt opt-b"><b>B</b>${q.b}</div>
+      <div class="dots">${dots}</div>
+      <div class="scale-notes"><span>Aに近い</span><span>Bに近い</span></div>
+    `;
+    box.appendChild(card);
+  }
+
+  $("#btn-back").style.visibility = page === 0 ? "hidden" : "visible";
+  $("#btn-next").textContent = page === totalPages - 1 ? "結果を見る" : "つぎへ";
+  $("#quiz-msg").textContent = "";
+  updateProgress();
+  window.scrollTo(0, 0);
+}
+
+function updateProgress() {
+  const done = answers.filter((v) => v !== null).length;
+  $("#bar").style.width = (done / quiz.length) * 100 + "%";
+  $("#progress-txt").textContent = `${done} / ${quiz.length}`;
+}
+
+// ---------------------------------------------
+// 回答の選択
+// ---------------------------------------------
+$("#quiz-page").addEventListener("click", (e) => {
+  const dot = e.target.closest(".dot");
+  if (!dot) return;
+
+  const card = dot.closest(".q-card");
+  const i = Number(card.dataset.index);
+  answers[i] = Number(dot.dataset.v);
+
+  card.querySelectorAll(".dot").forEach((d) => d.classList.remove("on"));
+  dot.classList.add("on");
+  card.classList.remove("unanswered");
+  updateProgress();
+});
+
+// ---------------------------------------------
+// ページ移動
+// ---------------------------------------------
+$("#btn-back").onclick = () => { if (page > 0) { page--; renderPage(); } };
+
+$("#btn-next").onclick = () => {
+  const start = page * PER_PAGE;
+  const end = Math.min(start + PER_PAGE, quiz.length);
+
+  // 未回答があれば、その場で知らせる
+  let firstUnanswered = null;
+  for (let i = start; i < end; i++) {
+    if (answers[i] === null) {
+      const card = $(`.q-card[data-index="${i}"]`);
+      card.classList.add("unanswered");
+      if (firstUnanswered === null) firstUnanswered = card;
+    }
+  }
+  if (firstUnanswered) {
+    $("#quiz-msg").className = "msg error";
+    $("#quiz-msg").textContent = "未回答の質問があります。";
+    firstUnanswered.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  if (page < totalPages - 1) { page++; renderPage(); }
+  else { showResult(); }
+};
+
+// ---------------------------------------------
+// 判定
+// 筑波山版の calcResult と同じ計算。ロジックは変えない
+// ---------------------------------------------
+function calcResult() {
+  const share = {};
+  AXES.forEach((ax) => (share[ax.id] = []));
+
+  quiz.forEach((q, i) => {
+    if (!q.axis) return;
+    const v = answers[i];
+    const towardOptionA = ((5 - v) / 5) * 100;             // 選択肢Aへの寄り
+    const towardFirstLetter = q.rev ? 100 - towardOptionA : towardOptionA;
+    share[q.axis].push(towardFirstLetter);
+  });
+
+  let code = "";
+  const detail = [];
+  AXES.forEach((ax) => {
+    const list = share[ax.id];
+    const aPct = list.length
+      ? Math.round(list.reduce((s, x) => s + x, 0) / list.length)
+      : 50;
+    const aWins = aPct >= 50;                              // 同点は1文字目側
+    code += aWins ? ax.a : ax.b;
+    detail.push({ ...ax, aPct, bPct: 100 - aPct, aWins });
+  });
+  return { code, detail };
+}
+
+// ---------------------------------------------
+// 結果の表示
+// ---------------------------------------------
+let result = null;
+
+function showResult() {
+  result = calcResult();
+  const { code, detail } = result;
+  const char = CHARACTERS[code];
+  const type = TYPES[code];
+
+  $("#r-char").innerHTML = characterSVG(code);
+  $("#r-animal").textContent = char.animal;
+  $("#r-type").textContent = type.name;
+  $("#r-code").textContent = code;
+  $("#r-copy").textContent = type.copy;
+  $("#r-features").textContent = type.features;
+  $("#r-caution").textContent = type.caution;
+
+  $("#r-axes").innerHTML = detail.map((d) => `
+    <div class="ax">
+      <p class="ax-title">${d.title}</p>
+      <div class="ax-head">
+        <span class="${d.aWins ? "w" : "l"}">${d.a} ${d.aName} <b>${d.aPct}</b></span>
+        <span class="${d.aWins ? "l" : "w"}"><b>${d.bPct}</b> ${d.bName} ${d.b}</span>
+      </div>
+      <div class="ax-track">
+        <div class="ax-bar ${d.aWins ? "a" : "b"}"
+             style="width:${d.aWins ? d.aPct : d.bPct}%"></div>
+      </div>
+    </div>
+  `).join("");
+
+  $("#btn-save").textContent = user
+    ? "この結果をカードに保存する"
+    : "この結果を保存する（登録が必要）";
+
+  show("result");
+}
+
+// ---------------------------------------------
+// 保存
+//   ログイン済み → そのままDBへ
+//   未ログイン   → ブラウザに一時保存してログインへ。
+//                  ログイン完了後にindex.htmlが書き込む
+// ---------------------------------------------
+$("#btn-save").onclick = async () => {
+  const payload = buildPayload(result);
+  const btn = $("#btn-save");
+  const msg = $("#save-msg");
+  msg.className = "msg";
+  msg.textContent = "";
+
+  if (!user) {
+    localStorage.setItem("pendingDiagnosis", JSON.stringify(payload));
+    location.href = "./login.html";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "保存しています…";
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(payload)
+    .eq("id", user.id);
+
+  btn.disabled = false;
+  btn.textContent = "この結果をカードに保存する";
+
+  if (error) {
+    msg.className = "msg error";
+    msg.textContent = "保存できませんでした：" + error.message;
+    return;
+  }
+
+  location.href = "./index.html";
+};
+
+function buildPayload({ code, detail }) {
+  const by = {};
+  detail.forEach((d) => (by[d.id] = d.aPct));    // 1文字目側への寄りを保存する
+  return {
+    type_code: code,
+    axis_pe: by.PE,
+    axis_sg: by.SG,
+    axis_lf: by.LF,
+    axis_ca: by.CA,
+  };
+}
+
+// ---------------------------------------------
+// やり直し（制限なし）
+// ---------------------------------------------
+$("#btn-retry").onclick = () => {
+  quiz = shuffle(QUESTIONS.slice());
+  answers = new Array(quiz.length).fill(null);
+  page = 0;
+  renderPage();
+  show("quiz");
+};
+
+// ---------------------------------------------
+// 質問の並べ替え
+// ---------------------------------------------
+function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+</script>
+</body>
+</html>

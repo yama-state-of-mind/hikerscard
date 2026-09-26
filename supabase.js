@@ -86,6 +86,48 @@ export async function resolveDestination() {
 }
 
 // ---------------------------------------------
+// 未ログインのまま受けた診断結果を、ログイン後にDBへ書き込む
+//
+// quiz.html が localStorage に置いた値を拾う。
+// すでに診断済みの場合は書き込まない
+// （過去の結果が復活する事故を防ぐため）
+// ---------------------------------------------
+export async function applyPendingDiagnosis(profile) {
+  const raw = localStorage.getItem("pendingDiagnosis");
+  if (!raw) return profile;
+
+  // すでに診断済みなら、保留分は捨てる
+  if (profile?.type_code) {
+    localStorage.removeItem("pendingDiagnosis");
+    return profile;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    localStorage.removeItem("pendingDiagnosis");
+    return profile;
+  }
+
+  const user = await getUser();
+  if (!user) return profile;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(payload)
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("診断結果の保存に失敗:", error);
+    return profile;   // 次回の読み込みで再挑戦できるよう、保留分は残す
+  }
+
+  localStorage.removeItem("pendingDiagnosis");
+  return await getMyProfile();
+}
+
+// ---------------------------------------------
 // ログアウト
 // ---------------------------------------------
 export async function signOut() {

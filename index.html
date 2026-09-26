@@ -8,12 +8,31 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<style>
+  .avatar {
+    width: 96px; height: 96px; margin: 18px auto 0;
+    border-radius: 50%; overflow: hidden;
+    background: var(--paper); border: 4px solid var(--paper);
+    box-shadow: 0 4px 14px rgba(30,58,49,.16);
+  }
+  .avatar svg { width: 100%; height: 100%; display: block; }
+  .me-name { font-size: 20px; font-weight: 900; text-align: center; margin-top: 10px; }
+  .me-type { font-size: 12.5px; font-weight: 700; color: var(--fjord); text-align: center; margin-top: 2px; }
+  .me-no {
+    display: block; width: fit-content; margin: 8px auto 0;
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: var(--stone);
+  }
+  .undiag {
+    text-align: center; background: var(--paper); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card); padding: 18px; margin-top: 18px;
+  }
+  .undiag p { font-size: 12.5px; color: #45564e; line-height: 1.9; }
+</style>
 </head>
 <body>
 
 <div class="wrap">
-  <!-- セッションの判定が終わるまで、この表示を出しておく。
-       いきなり中身を出すと、一瞬ログアウト状態に見える事故が起きる -->
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
@@ -22,82 +41,117 @@
   <div id="content" hidden></div>
 </div>
 
+<!-- 診断キャラの表示に使う -->
+<script src="./data.js"></script>
+<script src="./characters.js"></script>
+
 <script type="module">
-import { resolveDestination, signOut } from "./supabase.js";
+import { resolveDestination, applyPendingDiagnosis, signOut } from "./supabase.js";
 
 const loading = document.getElementById("loading");
 const content = document.getElementById("content");
 
-const { to, user, profile } = await resolveDestination();
+const dest = await resolveDestination();
 
-// 行き先が login / setup なら、そのページへ送る
-if (to === "login") {
+if (dest.to === "login") {
   location.replace("./login.html");
-} else if (to === "setup") {
+} else if (dest.to === "setup") {
   location.replace("./setup.html");
 } else {
-  // ログイン済み・設定済み。
-  // 本来は自分のカードを表示する画面だが、
-  // 今は接続確認のためプロフィールの中身をそのまま並べる。
+  // 未ログインのまま受けた診断結果があれば、ここで書き込む
+  const profile = await applyPendingDiagnosis(dest.profile);
+  const user = dest.user;
+
+  const diagnosed = !!profile.type_code;
+  const char = diagnosed ? CHARACTERS[profile.type_code] : null;
+  const type = diagnosed ? TYPES[profile.type_code] : null;
+
   content.innerHTML = `
     <p class="brand">ハイカーズ<span>カード</span></p>
-    <h1>ようこそ、${escapeHtml(profile.display_name)}さん</h1>
-    <p class="sub">Supabaseとの接続が正しく動いています。</p>
+
+    <div class="avatar">${diagnosed ? characterSVG(profile.type_code) : SILHOUETTE}</div>
+    <p class="me-name">${esc(profile.display_name)}</p>
+    ${diagnosed
+      ? `<p class="me-type">${esc(char.animal)}・${esc(type.name)}</p>`
+      : `<p class="me-type" style="color:var(--stone)">未診断</p>`}
+    <span class="me-no">No.${String(profile.card_no).padStart(4, "0")}</span>
+
+    ${profile.comment ? `<p class="sub" style="text-align:center">「${esc(profile.comment)}」</p>` : ""}
+
+    ${diagnosed ? axesCard(profile) : `
+      <div class="undiag">
+        <p>まだ診断を受けていません。<br>12の質問で、あなたの登り方が分かります。</p>
+        <button class="btn sun" id="go-quiz" style="margin-top:12px">診断を受ける（約3分）</button>
+      </div>`}
 
     <div class="card">
-      <h2>プロフィール（DBから取得）</h2>
-      ${row("カード番号", `No.${String(profile.card_no).padStart(4, "0")}`, "mono")}
-      ${row("表示名", profile.display_name)}
-      ${row("ひとこと", profile.comment)}
-      ${row("診断タイプ", profile.type_code)}
-      ${row("公開URL", `/u/${profile.public_id}`, "mono")}
-    </div>
-
-    <div class="card">
-      <h2>診断の4軸</h2>
-      ${row("目的（P側）", fmtAxis(profile.axis_pe))}
-      ${row("仲間（S側）", fmtAxis(profile.axis_sg))}
-      ${row("計画（L側）", fmtAxis(profile.axis_lf))}
-      ${row("リスク（C側）", fmtAxis(profile.axis_ca))}
-    </div>
-
-    <div class="card">
-      <h2>ログイン情報</h2>
+      <h2>アカウント</h2>
+      ${row("公開URL", "/u/" + profile.public_id, "mono")}
       ${row("メール", user.email)}
-      ${row("方法", user.app_metadata?.provider ?? "-")}
+      ${row("ログイン方法", user.app_metadata?.provider ?? "-")}
     </div>
 
     <button class="btn ghost" id="edit">プロフィールを編集</button>
+    ${diagnosed ? `<button class="btn flat" id="requiz">診断をやり直す</button>` : ""}
     <button class="btn flat" id="logout">ログアウト</button>
   `;
 
-  document.getElementById("edit").onclick = () => {
-    location.href = "./setup.html";
-  };
+  document.getElementById("edit").onclick = () => location.href = "./setup.html";
   document.getElementById("logout").onclick = signOut;
+  const goQuiz = document.getElementById("go-quiz");
+  if (goQuiz) goQuiz.onclick = () => location.href = "./quiz.html";
+  const requiz = document.getElementById("requiz");
+  if (requiz) requiz.onclick = () => location.href = "./quiz.html";
 
   loading.hidden = true;
   content.hidden = false;
 }
 
-// ---------- 小さなヘルパー ----------
-function row(key, value, cls = "") {
-  const empty = value === null || value === undefined || value === "";
-  return `<div class="row">
-    <span class="k">${key}</span>
-    <span class="v ${cls} ${empty ? "empty" : ""}">${empty ? "未設定" : escapeHtml(String(value))}</span>
-  </div>`;
+// ---------- 4軸のカード ----------
+function axesCard(p) {
+  const vals = { PE: p.axis_pe, SG: p.axis_sg, LF: p.axis_lf, CA: p.axis_ca };
+  const bars = AXES.map((ax) => {
+    const aPct = vals[ax.id] ?? 50;
+    const bPct = 100 - aPct;
+    const aWins = aPct >= 50;
+    return `
+      <div style="margin-top:12px">
+        <p style="font-size:10px;font-weight:700;color:var(--stone);letter-spacing:1px">${ax.title}</p>
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-top:2px">
+          <span style="${aWins ? "font-weight:900" : "color:#AFBDB6"}">${ax.a} ${ax.aName}
+            <b style="font-family:var(--mono);color:${aWins ? "var(--sun)" : "#C6D0CA"}">${aPct}</b></span>
+          <span style="${aWins ? "color:#AFBDB6" : "font-weight:900"}">
+            <b style="font-family:var(--mono);color:${aWins ? "#C6D0CA" : "var(--sun)"}">${bPct}</b> ${ax.bName} ${ax.b}</span>
+        </div>
+        <div style="margin-top:4px;height:7px;border-radius:999px;background:#EDF3EF;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;height:100%;border-radius:999px;
+                      ${aWins ? "left:0;background:var(--pine)" : "right:0;background:var(--fjord)"};
+                      width:${aWins ? aPct : bPct}%"></div>
+        </div>
+      </div>`;
+  }).join("");
+  return `<div class="card"><h2>診断の4軸</h2>${bars}</div>`;
 }
 
-function fmtAxis(v) {
-  return v === null || v === undefined ? "" : `${v} / 100`;
+function row(k, v, cls = "") {
+  const empty = v === null || v === undefined || v === "";
+  return `<div class="row"><span class="k">${k}</span>
+    <span class="v ${cls} ${empty ? "empty" : ""}">${empty ? "未設定" : esc(String(v))}</span></div>`;
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+const SILHOUETTE = `
+<svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="80" cy="80" r="78" fill="#EDF3EF"/>
+  <circle cx="80" cy="64" r="26" fill="#C3D0C8"/>
+  <path d="M80 96 C52 96 34 116 32 146 L128 146 C126 116 108 96 80 96 Z" fill="#C3D0C8"/>
+  <path d="M104 40 L116 22 L128 40 Z" fill="#DCE4DF"/>
+  <path d="M120 40 L132 26 L142 40 Z" fill="#DCE4DF"/>
+</svg>`;
 </script>
 </body>
 </html>
