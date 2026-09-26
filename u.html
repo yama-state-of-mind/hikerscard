@@ -129,15 +129,42 @@ if (!publicId) {
 
     below += `
       <div class="report">
-        <button id="report">このカードを通報する</button>
+        <button data-act="report">このカードを通報する</button>
+        ${me ? `<span style="color:var(--line);margin:0 8px">|</span>
+        <button data-act="block">ブロックする</button>` : ""}
       </div>`;
 
     $("#below").innerHTML = below;
 
-    $("#report").onclick = () => {
-      // 通報画面はこのあとのステップで作る
-      alert("通報機能はこのあと実装します。");
-    };
+    $("#below").addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+
+      if (b.dataset.act === "report") {
+        location.href = `/report.html?id=${encodeURIComponent(publicId)}`;
+        return;
+      }
+
+      if (b.dataset.act === "block") {
+        const ok = confirm(
+          `${data.display_name}さんをブロックします。\n\n` +
+          "・お互いのコレクションからカードが消えます\n" +
+          "・今後このカードは見られなくなります\n" +
+          "・相手に通知は行きません\n\n" +
+          "よろしいですか？"
+        );
+        if (!ok) return;
+
+        b.disabled = true;
+        const res = await supabase.rpc("block_user", { p_public_id: publicId });
+        if (res.error || !res.data?.ok) {
+          b.disabled = false;
+          alert("ブロックできませんでした：" + (res.error?.message ?? res.data?.reason ?? ""));
+          return;
+        }
+        location.href = "/card.html";
+      }
+    });
 
     $("#loading").hidden = true;
     $("#main").hidden = false;

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>通報する｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .target {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card); padding: 14px 16px; margin-top: 18px;
+  }
+  .target .av {
+    width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex: none;
+    background: #EDF3EF;
+  }
+  .target .av svg { width: 100%; height: 100%; display: block; }
+  .target .nm { font-size: 14px; font-weight: 700; }
+  .target .ty { font-size: 11px; color: var(--stone); margin-top: 1px; }
+
+  .reasons { margin-top: 18px; }
+  .reason {
+    display: flex; align-items: flex-start; gap: 11px;
+    background: var(--paper); border-radius: 14px;
+    box-shadow: var(--shadow-card); padding: 13px 15px; margin-bottom: 8px;
+    cursor: pointer; border: 1.6px solid transparent;
+  }
+  .reason.on { border-color: var(--fjord); }
+  .reason .dot {
+    width: 19px; height: 19px; border-radius: 50%; flex: none; margin-top: 1px;
+    border: 2px solid var(--line); background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .reason.on .dot { border-color: var(--fjord); }
+  .reason.on .dot::after {
+    content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--fjord);
+  }
+  .reason .t { font-size: 13px; font-weight: 700; }
+  .reason .d { font-size: 11px; color: var(--stone); margin-top: 2px; line-height: 1.7; }
+
+  textarea {
+    width: 100%; font-family: var(--font); font-size: 15px; color: var(--pine);
+    background: var(--paper); border: 1.6px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; outline: none; resize: vertical; min-height: 96px;
+    line-height: 1.8;
+  }
+  textarea:focus {
+    border-color: var(--fjord); box-shadow: 0 0 0 3px rgba(70,112,143,.12);
+  }
+
+  .also {
+    display: flex; align-items: flex-start; gap: 11px;
+    background: #F6EDDC; border-radius: 14px; padding: 13px 15px; margin-top: 16px;
+    cursor: pointer;
+  }
+  .also .box {
+    width: 20px; height: 20px; border-radius: 6px; flex: none; margin-top: 1px;
+    border: 2px solid #D9C398; background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .also.on .box { background: var(--sun); border-color: var(--sun); }
+  .also .box svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 3; opacity: 0; }
+  .also.on .box svg { opacity: 1; }
+  .also .t { font-size: 12.5px; font-weight: 700; color: #6B5218; }
+  .also .d { font-size: 11px; color: #8A7340; margin-top: 2px; line-height: 1.7; }
+
+  .done-box { text-align: center; padding: 40px 10px; }
+  .done-box h1 { font-size: 18px; }
+  .done-box p { font-size: 12.5px; color: #45564e; margin-top: 14px; line-height: 2; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <div id="main" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>このカードを通報する</h1>
+    <p class="sub">
+      いただいた内容は運営が確認します。<br>
+      個別の対応結果はお知らせしていません。
+    </p>
+
+    <div class="target" id="target"></div>
+
+    <div class="reasons" id="reasons"></div>
+
+    <div class="field">
+      <label>詳しい状況（任意）</label>
+      <textarea id="detail" maxlength="1000"
+                placeholder="いつ・どのような内容だったかを書いていただけると、確認がしやすくなります。"></textarea>
+      <p class="count"><span id="count">0</span> / 1000</p>
+    </div>
+
+    <div class="also" id="also">
+      <div class="box">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12l6 6L20 6"/>
+        </svg>
+      </div>
+      <div>
+        <p class="t">あわせてブロックする</p>
+        <p class="d">相手からカードが見えなくなり、交換もできなくなります。相手に通知は行きません。</p>
+      </div>
+    </div>
+
+    <div id="msg" class="msg"></div>
+    <button class="btn dark" id="send">通報する</button>
+    <button class="btn flat" id="cancel">やめる</button>
+  </div>
+
+  <div id="done" hidden class="done-box">
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>受け付けました</h1>
+    <p>
+      ご報告ありがとうございます。<br>
+      運営で内容を確認します。<br>
+      個別の対応結果はお知らせしていません。
+    </p>
+    <button class="btn ghost" style="margin-top:20px"
+            onclick="location.href='/card.html'">マイカードへ</button>
+  </div>
+</div>
+
+<script src="/data.js"></script>
+<script src="/characters.js"></script>
+
+<script>
+window.__showFatal = function (label, detail) {
+  var el = document.getElementById("loading");
+  if (!el) return;
+  el.innerHTML = '<p class="msg error" style="text-align:left"><b>' + label + '</b><br>' +
+                 String(detail).replace(/[<>&]/g, "") + '</p>';
+  el.hidden = false;
+};
+window.addEventListener("error", (e) =>
+  window.__showFatal("読み込みに失敗しました", (e.message || "") + " " + (e.filename || "")));
+window.addEventListener("unhandledrejection", (e) =>
+  window.__showFatal("エラーが発生しました", (e.reason && (e.reason.message || e.reason)) || ""));
+</script>
+
+<script type="module">
+import { supabase, getUser } from "/supabase.js";
+
+const $ = (s) => document.querySelector(s);
+
+const REASONS = [
+  { id: "solicitation", t: "出会い・勧誘が目的と思われる",
+    d: "このサービスは出会いを目的としたものではありません" },
+  { id: "inappropriate", t: "不適切な表現が含まれる",
+    d: "表示名やコメントに、他の人が不快に感じる内容がある" },
+  { id: "impersonation", t: "なりすましの疑いがある",
+    d: "実在する別の人になりすましている" },
+  { id: "harassment", t: "迷惑な行為を受けた",
+    d: "交換後にしつこく連絡が来るなど" },
+  { id: "other", t: "その他", d: "" },
+];
+
+const targetId = new URLSearchParams(location.search).get("id");
+
+if (!targetId) {
+  window.__showFatal("通報先が指定されていません", "URLをご確認ください。");
+  throw new Error("no target");
+}
+
+// 通報先のカードを取得（誰が見ても公開されている範囲だけ）
+const { data: card } = await supabase.rpc("get_public_card", {
+  p_public_id: targetId,
+});
+
+if (!card) {
+  window.__showFatal("カードが見つかりません", "すでに削除されている可能性があります。");
+  throw new Error("not found");
+}
+
+const me = await getUser();
+const diagnosed = !!card.type_code;
+
+$("#target").innerHTML = `
+  <div class="av">${diagnosed ? characterSVG(card.type_code) : SILHOUETTE}</div>
+  <div>
+    <p class="nm">${esc(card.display_name)}</p>
+    <p class="ty">${diagnosed ? esc(CHARACTERS[card.type_code].animal) : "未診断"}
+      ・No.${String(card.card_no).padStart(4, "0")}</p>
+  </div>`;
+
+$("#reasons").innerHTML = REASONS.map((r) => `
+  <div class="reason" data-id="${r.id}">
+    <div class="dot"></div>
+    <div>
+      <p class="t">${r.t}</p>
+      ${r.d ? `<p class="d">${r.d}</p>` : ""}
+    </div>
+  </div>`).join("");
+
+// ブロックはログインしている人だけ
+if (!me) $("#also").hidden = true;
+
+$("#loading").hidden = true;
+$("#main").hidden = false;
+
+// ---------------------------------------------
+// 選択
+// ---------------------------------------------
+let reason = null;
+
+$("#reasons").addEventListener("click", (e) => {
+  const el = e.target.closest(".reason");
+  if (!el) return;
+  reason = el.dataset.id;
+  document.querySelectorAll(".reason").forEach((r) => r.classList.toggle("on", r === el));
+});
+
+let alsoBlock = false;
+$("#also").onclick = () => {
+  alsoBlock = !alsoBlock;
+  $("#also").classList.toggle("on", alsoBlock);
+};
+
+$("#detail").addEventListener("input", (e) => {
+  $("#count").textContent = e.target.value.length;
+});
+
+// ---------------------------------------------
+// 送信
+// ---------------------------------------------
+$("#send").onclick = async () => {
+  const msg = $("#msg");
+  msg.className = "msg";
+  msg.textContent = "";
+
+  if (!reason) {
+    msg.className = "msg error";
+    msg.textContent = "理由を選んでください。";
+    return;
+  }
+
+  const btn = $("#send");
+  btn.disabled = true;
+  btn.textContent = "送信しています…";
+
+  // 通報先のユーザーIDは公開されていないので、専用の関数に任せる
+  const { data, error } = await supabase.rpc("submit_report", {
+    p_public_id: targetId,
+    p_reason: reason,
+    p_detail: $("#detail").value.trim() || null,
+    p_block: alsoBlock && !!me,
+  });
+
+  btn.disabled = false;
+  btn.textContent = "通報する";
+
+  if (error || !data?.ok) {
+    msg.className = "msg error";
+    msg.textContent = "送信できませんでした：" + (error?.message ?? data?.reason ?? "");
+    return;
+  }
+
+  $("#main").hidden = true;
+  $("#done").hidden = false;
+  window.scrollTo(0, 0);
+};
+
+$("#cancel").onclick = () => history.back();
+
+// ---------------------------------------------
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+const SILHOUETTE = `
+<svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="80" cy="80" r="78" fill="#EDF3EF"/>
+  <circle cx="80" cy="64" r="26" fill="#C3D0C8"/>
+  <path d="M80 96 C52 96 34 116 32 146 L128 146 C126 116 108 96 80 96 Z" fill="#C3D0C8"/>
+  <path d="M104 40 L116 22 L128 40 Z" fill="#DCE4DF"/>
+  <path d="M120 40 L132 26 L142 40 Z" fill="#DCE4DF"/>
+</svg>`;
+</script>
+</body>
+</html>
