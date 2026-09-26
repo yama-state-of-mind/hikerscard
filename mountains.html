@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>登った山｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<style>
+/* ---------- 上部の進捗 ---------- */
+.head-bar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--birch); padding: 14px 0 10px;
+}
+.count-row { display: flex; align-items: center; gap: 14px; }
+.ring { position: relative; width: 62px; height: 62px; flex: none; }
+.ring svg { width: 100%; height: 100%; }
+.ring-num {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.ring-num b { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1; }
+.ring-num span { font-size: 8px; color: var(--stone); margin-top: 1px; }
+.count-txt { font-size: 12.5px; line-height: 1.7; }
+.count-txt b { font-weight: 900; }
+.count-txt span { color: var(--stone); font-size: 11.5px; }
+
+/* ---------- 検索 ---------- */
+.search-wrap { position: relative; margin-top: 12px; }
+.search-wrap input {
+  width: 100%; font-family: var(--font); font-size: 15px;
+  background: var(--paper); border: 1.6px solid var(--line);
+  border-radius: 999px; padding: 11px 40px 11px 42px; outline: none;
+}
+.search-wrap input:focus {
+  border-color: var(--fjord); box-shadow: 0 0 0 3px rgba(70,112,143,.12);
+}
+.search-wrap .icon {
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; stroke: var(--stone); fill: none; stroke-width: 2;
+}
+.search-wrap .clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border: none; background: #EDF3EF;
+  border-radius: 50%; color: var(--stone); cursor: pointer; font-size: 14px;
+  line-height: 1; font-family: var(--font);
+}
+
+/* ---------- エリアの絞り込み ---------- */
+.areas { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 2px; }
+.areas::-webkit-scrollbar { display: none; }
+.area-chip {
+  flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700;
+  border: none; border-radius: 999px; padding: 5px 13px; cursor: pointer;
+  background: var(--paper); color: #45564e; border: 1.4px solid var(--line);
+}
+.area-chip.on { background: var(--pine); color: #fff; border-color: var(--pine); }
+
+/* ---------- 山のリスト ---------- */
+.mt-list { margin-top: 10px; }
+.mt-item {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--paper); border-radius: 14px;
+  box-shadow: var(--shadow-card); padding: 11px 14px; margin-bottom: 7px;
+  cursor: pointer; transition: box-shadow .15s;
+  border: 1.6px solid transparent;
+}
+.mt-item.on { border-color: var(--sun); }
+.mt-item:active { box-shadow: 0 0 0 2px var(--line), var(--shadow-card); }
+
+.mt-check {
+  width: 22px; height: 22px; border-radius: 7px; flex: none;
+  border: 2px solid var(--line); background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+}
+.mt-item.on .mt-check { background: var(--sun); border-color: var(--sun); }
+.mt-check svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; opacity: 0; }
+.mt-item.on .mt-check svg { opacity: 1; }
+
+.mt-body { flex: 1; min-width: 0; }
+.mt-name { font-size: 13.5px; font-weight: 700; }
+.mt-meta { font-size: 10.5px; color: var(--stone); margin-top: 1px; }
+.mt-meta .el { font-family: var(--mono); }
+
+.mt-empty {
+  text-align: center; font-size: 12.5px; color: var(--stone);
+  padding: 40px 20px; line-height: 2;
+}
+
+/* ---------- 保存バー ---------- */
+.save-bar {
+  position: sticky; bottom: 0; z-index: 20;
+  background: linear-gradient(to top, var(--birch) 70%, transparent);
+  padding: 14px 0 16px; margin-top: 8px;
+}
+.save-bar .btn { margin-top: 0; }
+.save-note {
+  font-size: 11px; color: var(--stone); text-align: center; margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <div id="main" hidden>
+    <div class="head-bar">
+      <div class="count-row">
+        <div class="ring">
+          <svg viewBox="0 0 62 62">
+            <circle cx="31" cy="31" r="26" fill="none" stroke="#E7EEE9" stroke-width="6"/>
+            <circle id="ring-bar" cx="31" cy="31" r="26" fill="none" stroke="#E0A33B"
+                    stroke-width="6" stroke-linecap="round"
+                    stroke-dasharray="163.4" stroke-dashoffset="163.4"
+                    transform="rotate(-90 31 31)"/>
+          </svg>
+          <div class="ring-num"><b id="ring-n">0</b><span>/100</span></div>
+        </div>
+        <p class="count-txt">
+          <b>日本百名山</b><br>
+          <span id="count-note">登った山を選んでください</span>
+        </p>
+      </div>
+
+      <div class="search-wrap">
+        <svg class="icon" viewBox="0 0 24 24" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
+        </svg>
+        <input type="text" id="q" placeholder="山名・よみで探す（例：やり）"
+               autocomplete="off" inputmode="search">
+        <button class="clear" id="clear" hidden>×</button>
+      </div>
+
+      <div class="areas" id="areas"></div>
+    </div>
+
+    <div class="mt-list" id="list"></div>
+
+    <div class="save-bar">
+      <p class="save-note" id="save-note"></p>
+      <button class="btn sun" id="save">保存する</button>
+      <button class="btn flat" id="back">もどる</button>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getUser } from "./supabase.js";
+
+const $ = (s) => document.querySelector(s);
+const loading = $("#loading");
+
+const user = await getUser();
+if (!user) location.replace("./login.html");
+
+// ---------------------------------------------
+// 山マスタと、自分がすでに登録している山を取ってくる
+// ---------------------------------------------
+const [mtRes, myRes] = await Promise.all([
+  supabase.from("mountains")
+          .select("id, name, kana, elevation, area, is_hyakumeizan")
+          .order("elevation", { ascending: false }),
+  supabase.from("climbed_mountains")
+          .select("mountain_id")
+          .eq("user_id", user.id),
+]);
+
+if (mtRes.error) {
+  loading.innerHTML = `<p class="msg error">山のデータを読み込めませんでした：${mtRes.error.message}</p>`;
+  throw mtRes.error;
+}
+
+const MOUNTAINS = mtRes.data ?? [];
+
+// 元々登録していたもの（保存時の差分計算に使う）
+const original = new Set((myRes.data ?? []).map((r) => r.mountain_id));
+// 画面上の選択状態
+const selected = new Set(original);
+
+// エリアの一覧（出現順を保つ）
+const AREAS = [...new Set(MOUNTAINS.map((m) => m.area).filter(Boolean))];
+let activeArea = null;
+let keyword = "";
+
+loading.hidden = true;
+$("#main").hidden = false;
+
+renderAreas();
+render();
+
+// ---------------------------------------------
+// エリアのチップ
+// ---------------------------------------------
+function renderAreas() {
+  $("#areas").innerHTML =
+    `<button class="area-chip on" data-area="">すべて</button>` +
+    AREAS.map((a) => `<button class="area-chip" data-area="${a}">${a}</button>`).join("");
+}
+
+$("#areas").addEventListener("click", (e) => {
+  const chip = e.target.closest(".area-chip");
+  if (!chip) return;
+  activeArea = chip.dataset.area || null;
+  $("#areas").querySelectorAll(".area-chip").forEach((c) => c.classList.remove("on"));
+  chip.classList.add("on");
+  render();
+});
+
+// ---------------------------------------------
+// 検索
+// かな・漢字のどちらでも引けるようにする
+// ---------------------------------------------
+$("#q").addEventListener("input", (e) => {
+  keyword = e.target.value.trim();
+  $("#clear").hidden = !keyword;
+  render();
+});
+
+$("#clear").onclick = () => {
+  keyword = "";
+  $("#q").value = "";
+  $("#clear").hidden = true;
+  render();
+  $("#q").focus();
+};
+
+// ---------------------------------------------
+// リストの描画
+// ---------------------------------------------
+function render() {
+  const kw = normalize(keyword);
+
+  const list = MOUNTAINS.filter((m) => {
+    if (activeArea && m.area !== activeArea) return false;
+    if (!kw) return true;
+    return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw);
+  });
+
+  $("#list").innerHTML = list.length
+    ? list.map(itemHtml).join("")
+    : `<p class="mt-empty">見つかりませんでした。<br>ひらがなでも探せます（例：やり）</p>`;
+
+  updateCount();
+}
+
+function itemHtml(m) {
+  const on = selected.has(m.id) ? " on" : "";
+  return `
+    <div class="mt-item${on}" data-id="${m.id}">
+      <div class="mt-check">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12l6 6L20 6"/>
+        </svg>
+      </div>
+      <div class="mt-body">
+        <p class="mt-name">${m.name}</p>
+        <p class="mt-meta">${m.kana}
+          ${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}
+          ${m.area ? ` ・ ${m.area}` : ""}</p>
+      </div>
+    </div>`;
+}
+
+// 全角英数と大文字の差を吸収する
+function normalize(s) {
+  return (s ?? "")
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .toLowerCase();
+}
+
+// ---------------------------------------------
+// 選択の切り替え
+// ---------------------------------------------
+$("#list").addEventListener("click", (e) => {
+  const item = e.target.closest(".mt-item");
+  if (!item) return;
+  const id = Number(item.dataset.id);
+
+  if (selected.has(id)) { selected.delete(id); item.classList.remove("on"); }
+  else                  { selected.add(id);    item.classList.add("on"); }
+
+  updateCount();
+});
+
+// ---------------------------------------------
+// 踏破数の表示
+// ---------------------------------------------
+function updateCount() {
+  const hyaku = MOUNTAINS.filter((m) => m.is_hyakumeizan && selected.has(m.id)).length;
+  const C = 2 * Math.PI * 26;
+
+  $("#ring-n").textContent = hyaku;
+  $("#ring-bar").style.strokeDashoffset = C * (1 - hyaku / 100);
+  $("#count-note").textContent =
+    hyaku === 0 ? "登った山を選んでください" : `残り ${100 - hyaku}座`;
+
+  const added = [...selected].filter((id) => !original.has(id)).length;
+  const removed = [...original].filter((id) => !selected.has(id)).length;
+
+  $("#save-note").textContent =
+    added || removed
+      ? `${added ? `+${added}座` : ""}${added && removed ? " / " : ""}${removed ? `−${removed}座` : ""} の変更`
+      : "変更はありません";
+}
+
+// ---------------------------------------------
+// 保存（差分だけを書き込む）
+// ---------------------------------------------
+$("#save").onclick = async () => {
+  const toAdd    = [...selected].filter((id) => !original.has(id));
+  const toRemove = [...original].filter((id) => !selected.has(id));
+
+  const msg = $("#msg");
+  msg.className = "msg";
+  msg.textContent = "";
+
+  if (!toAdd.length && !toRemove.length) {
+    location.href = "./index.html";
+    return;
+  }
+
+  const btn = $("#save");
+  btn.disabled = true;
+  btn.textContent = "保存しています…";
+
+  try {
+    if (toRemove.length) {
+      const { error } = await supabase
+        .from("climbed_mountains")
+        .delete()
+        .eq("user_id", user.id)
+        .in("mountain_id", toRemove);
+      if (error) throw error;
+    }
+
+    if (toAdd.length) {
+      const { error } = await supabase
+        .from("climbed_mountains")
+        .insert(toAdd.map((mountain_id) => ({ user_id: user.id, mountain_id })));
+      if (error) throw error;
+    }
+
+    location.href = "./index.html";
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "保存する";
+    msg.className = "msg error";
+    msg.textContent = "保存できませんでした：" + err.message;
+  }
+};
+
+$("#back").onclick = () => location.href = "./index.html";
+</script>
+</body>
+</html>

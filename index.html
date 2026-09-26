@@ -46,7 +46,7 @@
 <script src="./characters.js"></script>
 
 <script type="module">
-import { resolveDestination, applyPendingDiagnosis, signOut } from "./supabase.js";
+import { resolveDestination, applyPendingDiagnosis, signOut, supabase } from "./supabase.js";
 
 const loading = document.getElementById("loading");
 const content = document.getElementById("content");
@@ -61,6 +61,16 @@ if (dest.to === "login") {
   // 未ログインのまま受けた診断結果があれば、ここで書き込む
   const profile = await applyPendingDiagnosis(dest.profile);
   const user = dest.user;
+
+  // 登った山（百名山の踏破数と、山名の一覧）
+  const { data: climbed } = await supabase
+    .from("climbed_mountains")
+    .select("mountains(name, is_hyakumeizan, elevation)")
+    .eq("user_id", user.id);
+
+  const climbedList = (climbed ?? []).map((r) => r.mountains).filter(Boolean)
+    .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0));
+  const hyakuDone = climbedList.filter((m) => m.is_hyakumeizan).length;
 
   const diagnosed = !!profile.type_code;
   const char = diagnosed ? CHARACTERS[profile.type_code] : null;
@@ -84,6 +94,9 @@ if (dest.to === "login") {
         <button class="btn sun" id="go-quiz" style="margin-top:12px">診断を受ける（約3分）</button>
       </div>`}
 
+    ${hyakuCard(hyakuDone)}
+    ${climbedCard(climbedList)}
+
     <div class="card">
       <h2>アカウント</h2>
       ${row("公開URL", "/u/" + profile.public_id, "mono")}
@@ -91,12 +104,14 @@ if (dest.to === "login") {
       ${row("ログイン方法", user.app_metadata?.provider ?? "-")}
     </div>
 
+    <button class="btn ghost" id="go-mt">登った山を登録する</button>
     <button class="btn ghost" id="edit">プロフィールを編集</button>
     ${diagnosed ? `<button class="btn flat" id="requiz">診断をやり直す</button>` : ""}
     <button class="btn flat" id="logout">ログアウト</button>
   `;
 
   document.getElementById("edit").onclick = () => location.href = "./setup.html";
+  document.getElementById("go-mt").onclick = () => location.href = "./mountains.html";
   document.getElementById("logout").onclick = signOut;
   const goQuiz = document.getElementById("go-quiz");
   if (goQuiz) goQuiz.onclick = () => location.href = "./quiz.html";
@@ -131,6 +146,54 @@ function axesCard(p) {
       </div>`;
   }).join("");
   return `<div class="card"><h2>診断の4軸</h2>${bars}</div>`;
+}
+
+// ---------- 百名山 踏破リング ----------
+function hyakuCard(done) {
+  const C = 2 * Math.PI * 26;
+  return `<div class="card">
+    <h2>日本百名山 踏破</h2>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="position:relative;width:62px;height:62px;flex:none">
+        <svg viewBox="0 0 62 62" style="width:100%;height:100%">
+          <circle cx="31" cy="31" r="26" fill="none" stroke="#E7EEE9" stroke-width="6"/>
+          <circle cx="31" cy="31" r="26" fill="none" stroke="#E0A33B" stroke-width="6"
+                  stroke-linecap="round" stroke-dasharray="${C}"
+                  stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 31 31)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+                    align-items:center;justify-content:center">
+          <b style="font-family:var(--mono);font-size:18px;font-weight:700;line-height:1">${done}</b>
+          <span style="font-size:8px;color:var(--stone);margin-top:1px">/100</span>
+        </div>
+      </div>
+      <p style="font-size:12.5px;line-height:1.7">
+        ${done === 0
+          ? '<span style="color:var(--stone)">まだ登録がありません</span>'
+          : `<b>${done}座</b> 踏破<br><span style="color:var(--stone);font-size:11.5px">残り ${100 - done}座</span>`}
+      </p>
+    </div>
+  </div>`;
+}
+
+// ---------- 行った山 ----------
+function climbedCard(list) {
+  if (!list.length) return "";
+  return `<div class="card">
+    <h2>行った山（${list.length}）</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${list.map((m) => `
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;
+                     font-weight:700;background:#EDF3EF;border-radius:999px;
+                     padding:5px 11px 5px 7px">
+          ${m.is_hyakumeizan ? `<span style="width:15px;height:15px;border-radius:50%;
+            background:var(--sun);color:#fff;font-size:8px;font-weight:900;
+            font-family:var(--mono);display:inline-flex;align-items:center;
+            justify-content:center">百</span>` : ""}
+          ${esc(m.name)}
+        </span>`).join("")}
+    </div>
+  </div>`;
 }
 
 function row(k, v, cls = "") {
