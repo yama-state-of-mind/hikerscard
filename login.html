@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ログイン｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <!-- 入口 -->
+  <div id="form" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+
+    <h1>あなたの<br>登山カードを作る</h1>
+    <p class="sub">
+      登った山、登山のタイプ。<br>
+      1枚のカードで伝わるプロフィールができます。
+    </p>
+
+    <button class="btn google" id="google">
+      <svg viewBox="0 0 48 48">
+        <path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-4H24v8h12c-.2 2-1.5 5-4.4 7l6.7 5.2C42.2 36.6 45 30.9 45 24z"/>
+        <path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4c-1.9 1.3-4.4 2.2-7.6 2.2-5.8 0-10.7-3.9-12.5-9.2l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/>
+        <path fill="#FBBC05" d="M11.5 28.3c-.5-1.4-.7-2.8-.7-4.3s.3-3 .7-4.3l-7.1-5.5C2.9 17.1 2 20.4 2 24s.9 6.9 2.4 9.8l7.1-5.5z"/>
+        <path fill="#EA4335" d="M24 10.2c3.2 0 5.4 1.4 6.7 2.6l6.1-6C33.1 3.4 28.5 1 24 1 15.4 1 8.1 5.9 4.4 14.2l7.1 5.5c1.8-5.3 6.7-9.5 12.5-9.5z"/>
+      </svg>
+      Googleで続ける
+    </button>
+
+    <div class="divider"><span>または</span></div>
+
+    <div class="field">
+      <input type="email" id="email" placeholder="メールアドレス"
+             autocomplete="email" inputmode="email">
+    </div>
+    <button class="btn dark" id="magic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2.5" y="5" width="19" height="14" rx="2.5"/>
+        <path d="M3 7l9 6 9-6"/>
+      </svg>
+      確認メールを送る
+    </button>
+
+    <div id="msg" class="msg"></div>
+
+    <p class="terms">
+      続けると<a href="#">利用規約</a>・<a href="#">プライバシーポリシー</a>に<br>
+      同意したものとみなします。
+    </p>
+    <p class="terms">
+      以前ご利用の方も、同じ入口からお入りください。<br>
+      <b style="color:var(--pine)">前回と同じメールアドレス</b>でログインできます。
+    </p>
+  </div>
+
+  <!-- メール送信後 -->
+  <div id="sent" hidden style="text-align:center">
+    <p class="brand">ハイカーズ<span>カード</span></p>
+
+    <div style="width:76px;height:76px;margin:10px auto 18px;border-radius:50%;
+                background:#EDF3EF;display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" style="width:34px;height:34px" fill="none"
+           stroke="#1E3A31" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5l9-5.5 9 5.5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+        <path d="M3 10l9 6 9-6"/>
+        <path d="M8 4.5V2.5h8v2"/>
+      </svg>
+    </div>
+
+    <h1>メールを送りました</h1>
+    <p style="font-family:var(--mono);font-size:13px;font-weight:700;
+              background:var(--paper);border-radius:10px;padding:9px 14px;
+              display:inline-block;margin:12px 0 4px" id="sent-addr"></p>
+    <p class="sub">メールに記載のリンクから、<br>ログインを完了してください。</p>
+
+    <div class="hint" style="text-align:left">
+      <b>メールが届かないときは</b><br>
+      ・迷惑メールフォルダをご確認ください<br>
+      ・リンクの有効期限は<b>1時間</b>です<br>
+      ・この画面は開いたままで大丈夫です
+    </div>
+
+    <button class="btn ghost" id="resend">メールを再送する</button>
+    <button class="btn flat" id="back">別のメールアドレスを使う</button>
+    <div id="msg2" class="msg"></div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getUser, baseUrl } from "./supabase.js";
+
+const loading = document.getElementById("loading");
+const form    = document.getElementById("form");
+const sent    = document.getElementById("sent");
+const msg     = document.getElementById("msg");
+const msg2    = document.getElementById("msg2");
+
+// すでにログイン済みならトップへ戻す
+const user = await getUser();
+if (user) {
+  location.replace("./index.html");
+} else {
+  loading.hidden = true;
+  form.hidden = false;
+}
+
+// ---------- Googleでログイン ----------
+document.getElementById("google").onclick = async () => {
+  msg.className = "msg";
+  msg.textContent = "";
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      // 認証後に戻ってくる先。
+      // SupabaseのRedirect URLsに登録しておく必要がある
+      redirectTo: baseUrl() + "index.html",
+    },
+  });
+
+  if (error) {
+    msg.className = "msg error";
+    msg.textContent = "ログインを開始できませんでした：" + error.message;
+  }
+};
+
+// ---------- マジックリンクを送る ----------
+let lastEmail = "";
+
+document.getElementById("magic").onclick = async () => {
+  const email = document.getElementById("email").value.trim();
+  msg.className = "msg";
+  msg.textContent = "";
+
+  if (!email || !email.includes("@")) {
+    msg.className = "msg error";
+    msg.textContent = "メールアドレスを入力してください。";
+    return;
+  }
+
+  const btn = document.getElementById("magic");
+  btn.disabled = true;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: baseUrl() + "index.html" },
+  });
+
+  btn.disabled = false;
+
+  if (error) {
+    msg.className = "msg error";
+    msg.textContent = "送信できませんでした：" + error.message;
+    return;
+  }
+
+  lastEmail = email;
+  document.getElementById("sent-addr").textContent = email;
+  form.hidden = true;
+  sent.hidden = false;
+};
+
+// ---------- 再送 ----------
+document.getElementById("resend").onclick = async () => {
+  msg2.className = "msg";
+  msg2.textContent = "";
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: lastEmail,
+    options: { emailRedirectTo: baseUrl() + "index.html" },
+  });
+
+  if (error) {
+    msg2.className = "msg error";
+    // 送信数の上限に当たるとここに来る
+    msg2.textContent = "再送できませんでした：" + error.message;
+  } else {
+    msg2.className = "msg success";
+    msg2.textContent = "もう一度送りました。";
+  }
+};
+
+// ---------- 入口に戻る ----------
+document.getElementById("back").onclick = () => {
+  sent.hidden = true;
+  form.hidden = false;
+  msg.textContent = "";
+  msg2.textContent = "";
+};
+</script>
+</body>
+</html>
