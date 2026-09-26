@@ -1,0 +1,46 @@
+{
+  "name": "ハイカーズカード",
+  "short_name": "ハイカーズカード",
+  "description": "登山者の人となりを1枚のカードにして、実際に会った人と交換するサービス。",
+  "lang": "ja",
+  "start_url": "/card.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F6F4",
+  "theme_color": "#1E3A31",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "カードを交換する",
+      "short_name": "交換",
+      "url": "/exchange.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "コレクション",
+      "short_name": "コレクション",
+      "url": "/collection.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

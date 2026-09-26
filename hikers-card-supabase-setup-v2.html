@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>確認用｜ハイカーズカード Supabaseセットアップ手順 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --birch: #F3F6F4; --paper: #FFFFFF; --pine: #1E3A31; --fjord: #46708F;
+  --sun: #E0A33B; --stone: #7C8A83; --line: #DCE4DF;
+  --radius-card: 18px; --shadow-card: 0 2px 10px rgba(30,58,49,.07);
+  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
+  --mono: "Outfit", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: #E7ECE8; color: var(--pine); line-height: 1.8; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+
+header.doc-head { text-align: center; padding: 8px 0 20px; }
+.doc-head h1 { font-size: 19px; font-weight: 900; }
+.doc-head p { font-size: 12px; color: var(--stone); margin-top: 6px; line-height: 1.9; }
+
+.toc { background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 14px 18px; font-size: 13px; margin-bottom: 24px; }
+.toc b { display: block; font-size: 12px; margin-bottom: 6px; }
+.toc ol { padding-left: 22px; }
+.toc li { padding: 2px 0; }
+.toc a { color: var(--fjord); text-decoration: none; font-weight: 700; }
+.toc .time { font-size: 10.5px; color: var(--stone); font-weight: 400; }
+
+section.blk { margin-top: 34px; }
+.blk > h2 { font-size: 16px; font-weight: 900; padding-bottom: 8px; margin-bottom: 14px; border-bottom: 2px solid var(--line); }
+.blk > h2 .no {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; background: var(--pine); color: #fff;
+  font-family: var(--mono); font-size: 12px; margin-right: 8px; vertical-align: -3px;
+}
+.blk p.lead { font-size: 13.5px; color: #45564e; margin-bottom: 14px; }
+.blk p.lead b { color: var(--pine); }
+
+.card { background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 16px 18px 18px; margin-top: 14px; }
+.card h3 { font-size: 14px; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card .role { font-size: 12px; color: var(--stone); margin: 6px 0 10px; }
+
+ol.steps { list-style: none; counter-reset: st; }
+ol.steps li { counter-increment: st; position: relative; padding-left: 34px; padding-bottom: 15px; font-size: 12.5px; color: #45564e; }
+ol.steps li::before {
+  content: counter(st); position: absolute; left: 0; top: 1px;
+  width: 23px; height: 23px; border-radius: 50%; background: var(--fjord); color: #fff;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+ol.steps li:not(:last-child)::after { content: ""; position: absolute; left: 11px; top: 26px; bottom: 2px; width: 1.6px; background: var(--line); }
+ol.steps li b { color: var(--pine); }
+ol.steps li:last-child { padding-bottom: 0; }
+
+ul.plain { padding-left: 20px; font-size: 12.5px; color: #45564e; }
+ul.plain li { padding: 3px 0; }
+ul.plain b { color: var(--pine); }
+
+.ui-path { display: inline-block; font-size: 11.5px; font-weight: 700; background: #EDF3EF; border-radius: 7px; padding: 1px 8px; color: var(--pine); margin: 0 1px; }
+code.inline { font-family: var(--mono); font-size: 11.5px; font-weight: 700; background: #23332C; color: #DCE9E1; border-radius: 6px; padding: 1.5px 7px; word-break: break-all; }
+
+.note { margin-top: 12px; font-size: 12px; color: #45564e; background: #EDF3EF; border-radius: 12px; padding: 10px 14px; line-height: 1.9; }
+.note b { color: var(--pine); }
+.note.warn { background: #F6EDDC; }
+.note.danger { background: #F6EAEA; }
+
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; border-radius: 999px; padding: 2px 9px; vertical-align: 1px; }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.pub { background: #EAF3EC; color: #2E6B4A; }
+.pill.pri { background: #F1EAEA; color: #8A4A4A; }
+.pill.sun { background: #F6EDDC; color: #96701E; }
+
+pre.sql { margin-top: 12px; background: #23332C; color: #DCE9E1; border-radius: 14px; padding: 14px 16px; font-size: 11px; line-height: 1.8; overflow-x: auto; font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+pre.sql .cm { color: #8FA89B; }
+
+table.st { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+table.st th { text-align: left; font-size: 10.5px; color: var(--stone); font-weight: 700; padding: 4px 8px 4px 0; border-bottom: 1.4px solid var(--line); }
+table.st td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: #45564e; }
+table.st tr:last-child td { border-bottom: none; }
+table.st td.s { font-weight: 900; color: var(--pine); white-space: nowrap; }
+table.st td b { color: var(--pine); }
+
+.check { list-style: none; }
+.check li { position: relative; padding-left: 26px; font-size: 12.5px; color: #45564e; padding-bottom: 7px; }
+.check li::before { content: ""; position: absolute; left: 0; top: 7px; width: 15px; height: 15px; border-radius: 4px; border: 1.8px solid var(--line); background: var(--paper); }
+.check li b { color: var(--pine); }
+
+.screen { border: 1.6px solid var(--line); border-radius: 14px; padding: 13px 15px; margin-top: 12px; background: var(--birch); font-size: 12px; }
+.screen .t { font-size: 11.5px; font-weight: 900; margin-bottom: 7px; }
+.screen .fld { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.screen .fld:last-child { border-bottom: none; }
+.screen .fld span:first-child { color: var(--stone); font-size: 11px; }
+.screen .fld span:last-child { font-weight: 700; text-align: right; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc-head">
+  <h1>ハイカーズカード｜Supabaseセットアップ手順 v2</h1>
+  <p>プロジェクト作成から、MVPのテーブルが動く状態になるまで。所要60〜90分。<br>
+  管理画面の表記は2026年9月時点のものです。</p>
+</header>
+
+<nav class="toc">
+  <b>目次</b>
+  <ol>
+    <li><a href="#s0">既存プロジェクトを使う場合</a> <span class="time">読むだけ</span></li>
+    <li><a href="#s1">準備するもの</a> <span class="time">5分</span></li>
+    <li><a href="#s2">組織（Organization）を作る</a> <span class="time">3分</span></li>
+    <li><a href="#s3">プロジェクトを作る</a> <span class="time">10分</span></li>
+    <li><a href="#s4">テーブルを作る（SQL実行）</a> <span class="time">10分</span></li>
+    <li><a href="#s5">APIキーを取得する</a> <span class="time">5分</span></li>
+    <li><a href="#s6">Google OAuthを設定する</a> <span class="time">30分</span></li>
+    <li><a href="#s7">メール認証を設定する</a> <span class="time">10分</span></li>
+    <li><a href="#s8">動作確認</a> <span class="time">15分</span></li>
+    <li><a href="#s9">つまずきやすいポイント</a></li>
+  </ol>
+</nav>
+
+<!-- 0 -->
+<section class="blk" id="s0">
+  <h2><span class="no">0</span>既存プロジェクトを使う場合</h2>
+  <div class="card">
+    <p class="role">すでに <code class="inline">yamatype16</code> プロジェクトを作成済みの場合。</p>
+    <ul class="plain">
+      <li><b>作り直す必要はありません。</b>そのまま使えます</li>
+      <li>MVPのSQLには<b>冒頭に旧テーブルの削除文が入っている</b>ので、上書き実行できます</li>
+      <li>セクション2・3を飛ばして、<b>セクション4（SQL実行）から</b>始めてください</li>
+      <li>APIキーの取得（セクション5）も済んでいれば飛ばせます</li>
+    </ul>
+    <div class="note">
+      新しいプロジェクトを作りたい場合のみ、セクション2から読んでください。プロジェクトを分けると<b>Google OAuthの設定をやり直す必要がある</b>ので、特に理由がなければ既存を使う方が早いです。
+    </div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="blk" id="s1">
+  <h2><span class="no">1</span>準備するもの</h2>
+  <div class="card">
+    <ul class="plain">
+      <li><b>GitHubアカウント</b>（Supabaseへのサインインに使うのが手軽）</li>
+      <li><b>Googleアカウント</b>（Google Cloudの設定に使用）</li>
+      <li><b>MVP DB設計書</b>のSQL全文（<code class="inline">hikers-card-db-mvp-v1.html</code> のセクション6）</li>
+      <li>開発用のローカルサーバー。<code class="inline">npx serve</code> などで <code class="inline">http://localhost:3000</code> で開ける状態にしておくと後の設定が楽</li>
+    </ul>
+    <div class="note">
+      <b>費用：</b>無料プランで始められます。ただし<b>7日間アクセスがないとプロジェクトが一時停止</b>します（管理画面から復帰可能、データは消えません）。開発中に間が空きそうなら、週に一度でも開いておくと安心です。
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="blk" id="s2">
+  <h2><span class="no">2</span>組織（Organization）を作る</h2>
+  <p class="lead">Supabaseでは、プロジェクトの前に<b>組織</b>を作ります。プロジェクトをまとめる入れ物で、<b>ユーザーには一切見えません。</b></p>
+  <div class="card">
+    <ol class="steps">
+      <li><code class="inline">https://supabase.com</code> でサインアップ（GitHub連携が早い）</li>
+      <li><b>Create a new organization</b> の画面が出る</li>
+      <li>入力は下記のとおり</li>
+    </ol>
+    <div class="screen">
+      <div class="t">Create a new organization</div>
+      <div class="fld"><span>Name</span><span>自動入力のままでOK<br>（後から変更可）</span></div>
+      <div class="fld"><span>Type</span><span>Personal</span></div>
+      <div class="fld"><span>Plan</span><span>Free - $0/month</span></div>
+    </div>
+    <div class="note">組織名はユーザーに見えないので、こだわる必要はありません。</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="blk" id="s3">
+  <h2><span class="no">3</span>プロジェクトを作る</h2>
+  <div class="card">
+    <ol class="steps">
+      <li><b>New project</b> を選ぶ</li>
+      <li>下記のとおり入力する</li>
+      <li><b>Create new project</b> を押して、構築完了まで2分ほど待つ</li>
+    </ol>
+    <div class="screen">
+      <div class="t">New project</div>
+      <div class="fld"><span>GitHub (optional)</span><span>空のままでOK</span></div>
+      <div class="fld"><span>Project name</span><span><code class="inline">hikers-card</code> など<br>分かる名前に変更</span></div>
+      <div class="fld"><span>Database password</span><span><b>Copyして必ず保存</b></span></div>
+      <div class="fld"><span>Region</span><span><b>Northeast Asia (Tokyo)</b></span></div>
+    </div>
+    <div class="note danger">
+      <b>Database password は、この画面を離れると二度と確認できません。</b>Copyボタンを押して、パスワード管理ツールやメモに必ず保存してください。SQL Editorを使う分には不要ですが、外部ツールから繋ぐときに必要になります。
+    </div>
+    <div class="note warn">
+      <b>Region は「Asia-Pacific」ではなく「Northeast Asia (Tokyo)」を選ぶ。</b>ドロップダウンを開くと地域グループの下に個別のリージョンが並びます。日本のユーザー向けなので、東京にすると応答速度が変わります。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Security 設定（3つ）</h3>
+    <p class="role">同じ画面の下部にあります。ここは判断が要るので個別に説明します。</p>
+    <table class="st">
+      <tr><th>項目</th><th>設定と理由</th></tr>
+      <tr><td class="s">Enable<br>Data API</td><td><b>オン。</b>supabase-jsから接続するのに必要です</td></tr>
+      <tr><td class="s">Automatically<br>expose new tables</td><td><b>オン。</b>Supabaseは無効化を推奨していますが、それは手動で権限管理する前提の話です。<b>設計書のSQLには権限付与（GRANT）を書いていないので、オフにするとRLSが正しくてもアクセスできずエラーになります。</b>RLSで守る設計なので、オンのままで問題ありません</td></tr>
+      <tr><td class="s">Enable<br>automatic RLS</td><td><b>オン推奨。</b>新しくテーブルを作ったとき自動でRLSが有効になる安全装置です。設計書のSQLでも全テーブルにRLSを設定しているので重複しますが、二重に有効化しても害はありません。将来の設定漏れを防げます</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="blk" id="s4">
+  <h2><span class="no">4</span>テーブルを作る（SQL実行）</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>左メニューの <span class="ui-path">SQL Editor</span> を開く</li>
+      <li><b>New query</b> を選ぶ</li>
+      <li>MVP DB設計書の<b>セクション6「SQL全文」</b>をすべてコピーして貼り付ける</li>
+      <li><b>Run</b>（またはCtrl/Cmd + Enter）で実行</li>
+    </ol>
+    <div class="note warn">
+      <b>必ず一度にまとめて実行してください。</b>SQLは上から順に依存関係があるので、分割して実行するとエラーになります。<br>
+      冒頭に旧テーブルの削除文が入っているので、<b>すでにテーブルがあっても そのまま実行できます</b>（前回のような「already exists」エラーは起きません）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>できたか確認する</h3>
+    <p class="role">Table Editorで7テーブルが見えるはずです。あわせてSQLでも確認します。</p>
+<pre class="sql"><span class="cm">-- RLSが全テーブルで有効か（7行すべて true になるはず）</span>
+select tablename, rowsecurity
+from pg_tables
+where schemaname = 'public'
+order by tablename;
+
+<span class="cm">-- 関数ができているか（8つ並ぶはず）</span>
+select routine_name
+from information_schema.routines
+where routine_schema = 'public'
+order by routine_name;</pre>
+    <div class="note">
+      <b>できるテーブル（7つ）：</b>blocks / climbed_mountains / exchanges / exchange_tokens / mountains / profiles / reports<br>
+      <b>できる関数（8つ）：</b>get_my_collection / get_public_card / handle_new_user / issue_exchange_token / on_block_created / protect_profile_fields / random_public_id / random_token / redeem_exchange_token
+    </div>
+    <div class="note warn">
+      <b>山マスタ（mountains）は空のままです。</b>百名山100座のデータは別途投入します。空でもアカウント作成と交換の動作確認はできます。
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="blk" id="s5">
+  <h2><span class="no">5</span>APIキーを取得する</h2>
+  <p class="lead">Supabaseはキーの形式を移行中で、<b>従来のanonキーは2026年末に廃止予定</b>です。新形式を使います。</p>
+  <div class="card">
+    <ol class="steps">
+      <li><span class="ui-path">Project Settings</span> → <span class="ui-path">API Keys</span> を開く</li>
+      <li><b>publishable key</b>（<code class="inline">sb_publishable_...</code>）をコピーして控える</li>
+      <li><span class="ui-path">Project Settings</span> → <span class="ui-path">Data API</span> でプロジェクトURL（<code class="inline">https://xxxxx.supabase.co</code>）も控える</li>
+    </ol>
+    <table class="st">
+      <tr><th>キー</th><th>扱い</th></tr>
+      <tr><td class="s">publishable<br><span class="pill pub"><i></i>公開OK</span></td><td>フロントのJavaScriptに直接書いてよい。RLSが効くので、これだけでは他人のデータを読めない</td></tr>
+      <tr><td class="s">secret<br><span class="pill pri"><i></i>絶対に出さない</span></td><td><b>RLSをすべて無視できる</b>キー。GitHubにも、フロントのコードにも、絶対に書かない。今回の実装では登場しません</td></tr>
+    </table>
+    <div class="note danger">
+      <b>secretキーを誤って公開すると、全ユーザーのデータが読み書きされ放題になります。</b>「publishableキーだけをコードに書く」と覚えてください。
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="blk" id="s6">
+  <h2><span class="no">6</span>Google OAuthを設定する</h2>
+  <p class="lead">ここが一番手数の多い工程です。<b>Google側とSupabase側を行き来する</b>ので、両方のタブを開いておくと楽になります。</p>
+
+  <div class="card">
+    <h3>6-1. SupabaseのコールバックURLを控える</h3>
+    <ol class="steps">
+      <li><span class="ui-path">Authentication</span> → <span class="ui-path">Sign In / Up</span> → <span class="ui-path">Auth Providers</span> を開く</li>
+      <li><b>Google</b> を選んで展開する</li>
+      <li><b>Callback URL (for OAuth)</b> をコピーする。<code class="inline">https://xxxxx.supabase.co/auth/v1/callback</code> の形</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>6-2. Google Cloud側の設定</h3>
+    <p class="role">Google Cloudの認証まわりは「Google Auth Platform」という画面に集約されています（以前の「OAuth同意画面」から変更されました）。</p>
+    <ol class="steps">
+      <li><code class="inline">https://console.cloud.google.com</code> でプロジェクトを新規作成（名前は何でも可）</li>
+      <li><b>Google Auth Platform</b> を開く（<code class="inline">console.cloud.google.com/auth/overview</code>）</li>
+      <li><b>Audience</b>：ユーザーの種類を <b>External</b> にする。個人開発なのでこちら</li>
+      <li>同じ<b>Audience</b>の画面で、<b>自分のGoogleアカウントをテストユーザーとして追加</b>する。<b>これを忘れると自分でもログインできません</b></li>
+      <li><b>Data Access（スコープ）</b>：<code class="inline">userinfo.email</code> と <code class="inline">userinfo.profile</code> は既定で入っています。<b><code class="inline">openid</code> だけ手動で追加</b>してください</li>
+      <li><b>Clients</b> → <b>Create client</b> → 種類は <b>ウェブ アプリケーション</b></li>
+      <li><b>承認済みの JavaScript 生成元</b>：サイトのURL（開発中なら <code class="inline">http://localhost:3000</code>）を追加</li>
+      <li><b>承認済みのリダイレクト URI</b>：6-1で控えた<b>SupabaseのコールバックURL</b>を貼る</li>
+      <li>作成すると <b>クライアントID</b> と <b>クライアントシークレット</b> が表示されるのでコピー</li>
+    </ol>
+    <div class="note warn">
+      <b>スコープは増やさないこと。</b>必要以上のスコープ（Gmail読み取りなど）を追加すると、Googleの審査対象になって公開までに何週間もかかります。上記3つだけなら審査は不要です。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>6-3. Supabaseに貼り戻す</h3>
+    <ol class="steps">
+      <li>Supabaseの <span class="ui-path">Auth Providers</span> → <b>Google</b> に戻る</li>
+      <li><b>Enable Sign in with Google</b> をオンにする</li>
+      <li>クライアントIDとクライアントシークレットを貼り付けて <b>Save</b></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>6-4. リダイレクトURLを許可リストに登録</h3>
+    <p class="role">認証後にユーザーが戻ってくる先を、Supabaseに事前登録します。<b>ここを忘れると認証後に画面が戻らず、原因も分かりにくい</b>ので必ず設定してください。</p>
+    <ol class="steps">
+      <li><span class="ui-path">Authentication</span> → <span class="ui-path">URL Configuration</span> を開く</li>
+      <li><b>Site URL</b>：本番URL（未定なら <code class="inline">http://localhost:3000</code>）</li>
+      <li><b>Redirect URLs</b> に、開発用と本番用の両方を追加しておく<br>
+        例：<code class="inline">http://localhost:3000/**</code> と <code class="inline">https://本番ドメイン/**</code></li>
+    </ol>
+    <div class="note">末尾に <code class="inline">/**</code> を付けておくと、パスの違いで弾かれなくなります。</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="blk" id="s7">
+  <h2><span class="no">7</span>メール認証（マジックリンク）を設定する</h2>
+  <div class="card">
+    <ol class="steps">
+      <li><span class="ui-path">Authentication</span> → <span class="ui-path">Sign In / Up</span> で <b>Email</b> が有効になっていることを確認（既定でオン）</li>
+      <li><b>Confirm email</b> をオンにする</li>
+      <li><span class="ui-path">Authentication</span> → <span class="ui-path">Emails</span> でメール本文を日本語にする</li>
+    </ol>
+    <div class="note warn">
+      <b>開発中のメール送信数には上限があります</b>（1時間あたり数通程度）。テストを繰り返すとすぐ頭打ちになるので、<b>普段のテストはGoogleログインで行い、マジックリンクは動作確認のときだけ使う</b>のが現実的です。<br>
+      公開時には独自のメール配信サービス（Resend、SendGridなど）をSMTPとして設定する必要があります。これは公開直前でよく、今は不要です。
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="blk" id="s8">
+  <h2><span class="no">8</span>動作確認</h2>
+  <p class="lead"><b>フロントを1行も書かないうちに、SQL Editorだけで交換の仕組みまで確認できます。</b>ここで動けば、あとは画面を作るだけです。</p>
+
+  <div class="card">
+    <h3>確認1：アカウント作成でprofiles行が自動生成されるか</h3>
+    <ol class="steps">
+      <li><span class="ui-path">Authentication</span> → <span class="ui-path">Users</span> → <b>Add user</b> でテスト用アカウントを<b>2つ</b>作る（交換のテストに2人必要）</li>
+      <li><span class="ui-path">Table Editor</span> → <b>profiles</b> を開く</li>
+      <li><b>行が2つ自動で増えていれば成功。</b>public_idにランダムな6文字、card_noに連番が入っているはず</li>
+    </ol>
+    <div class="note">これが動いていれば、トリガー（handle_new_user）とID自動生成が正しく動作しています。</div>
+  </div>
+
+  <div class="card">
+    <h3>確認2：カードが公開できるか</h3>
+<pre class="sql"><span class="cm">-- profilesから2人のidとpublic_idを確認しておく</span>
+select id, public_id, card_no from public.profiles;
+
+<span class="cm">-- 1人目に表示名と診断結果を入れる（idは上で確認したものに置き換え）</span>
+update public.profiles
+   set display_name = 'テスト太郎', comment = 'よろしくお願いします',
+       type_code = 'PGLA', axis_pe = 73, axis_sg = 33, axis_lf = 60, axis_ca = 47
+ where public_id = '1人目のpublic_id';
+
+<span class="cm">-- 公開カードを取得してみる</span>
+select public.get_public_card('1人目のpublic_id');</pre>
+    <div class="note">
+      <b>期待する結果：</b>表示名・カード番号・診断タイプ・4軸を含むJSONが返る。<br>
+      <b>表示名を空に戻して再実行すると null が返る</b>はずです。これが「表示名が未設定なら公開しない」という設計どおりの挙動です。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>確認3：交換の仕組みが動くか <span class="pill sun"><i></i>ここが本番</span></h3>
+    <p class="role">SQL Editorは管理者権限で動くので <code class="inline">auth.uid()</code> が空になります。ユーザーになりきるために <code class="inline">set local role</code> と <code class="inline">request.jwt.claims</code> を使います。</p>
+<pre class="sql"><span class="cm">-- 2人目にも表示名を入れておく</span>
+update public.profiles set display_name = 'テスト花子'
+ where public_id = '2人目のpublic_id';
+
+<span class="cm">-- ① 1人目になりきってトークンを発行</span>
+begin;
+  select set_config('request.jwt.claims',
+    json_build_object('sub', '1人目のid')::text, true);
+  set local role authenticated;
+  select public.issue_exchange_token();
+commit;
+
+<span class="cm">-- ② 2人目になりきって、そのトークンで交換</span>
+begin;
+  select set_config('request.jwt.claims',
+    json_build_object('sub', '2人目のid')::text, true);
+  set local role authenticated;
+  select public.redeem_exchange_token('①で出たトークン');
+commit;
+
+<span class="cm">-- ③ 交換記録ができているか</span>
+select * from public.exchanges;
+
+<span class="cm">-- ④ 2人目のコレクションに1人目がいるか</span>
+begin;
+  select set_config('request.jwt.claims',
+    json_build_object('sub', '2人目のid')::text, true);
+  set local role authenticated;
+  select public.get_my_collection();
+commit;</pre>
+    <div class="note">
+      <b>期待する結果：</b>②で <code class="inline">{"ok": true, "is_new": true, ...}</code> が返り、③で1行できて、④に相手のカードが入っている。<br>
+      <b>同じトークンでもう一度②を実行すると</b>、<code class="inline">is_new</code> が false になり、exchangesは1行のままのはずです（再交換の上書き挙動）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>確認4：不正な交換が弾かれるか</h3>
+<pre class="sql"><span class="cm">-- 自分自身のトークンは使えない</span>
+begin;
+  select set_config('request.jwt.claims',
+    json_build_object('sub', '1人目のid')::text, true);
+  set local role authenticated;
+  select public.redeem_exchange_token('1人目が発行したトークン');
+commit;
+<span class="cm">-- → {"ok": false, "reason": "self"} が返る</span>
+
+<span class="cm">-- 期限切れのトークンは使えない（手動で期限を過去にして試す）</span>
+update public.exchange_tokens set expires_at = now() - interval '1 minute';
+<span class="cm">-- → もう一度 redeem すると {"ok": false, "reason": "expired"}</span>
+
+<span class="cm">-- ブロックすると交換記録が自動削除される</span>
+insert into public.blocks (blocker_id, blocked_id)
+values ('1人目のid', '2人目のid');
+select * from public.exchanges;
+<span class="cm">-- → 0行になっているはず</span></pre>
+    <div class="note">
+      <b>ここまで確認できれば、設計が意図どおりに機能しています。</b>フロントにバグがあっても、DBが最後の砦として不正な交換を防ぎます。
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="blk" id="s9">
+  <h2><span class="no">9</span>つまずきやすいポイント</h2>
+  <div class="card">
+    <table class="st">
+      <tr><th>症状</th><th>原因と対処</th></tr>
+      <tr><td class="s">SQLで「already<br>exists」が出る</td><td>SQLを分割して実行している可能性。<b>全文を一度にまとめて実行</b>してください。冒頭の削除文が効かないまま作成文に進むとこうなります</td></tr>
+      <tr><td class="s">Googleログイン後に<br>元の画面へ戻らない</td><td><b>Redirect URLsの登録漏れ</b>が最有力。6-4で開発用URLも登録したか確認。末尾に <code class="inline">/**</code> を付ける</td></tr>
+      <tr><td class="s">Googleの画面で<br>「アクセスをブロック」</td><td>テストユーザーに自分のアカウントを追加し忘れている。Audienceの画面で追加</td></tr>
+      <tr><td class="s">マジックリンクが<br>届かない</td><td>迷惑メールフォルダを確認。それでも来なければ送信数の上限。時間を置くか、Googleログインでテストする</td></tr>
+      <tr><td class="s">get_public_cardが<br>常にnullを返す</td><td>①表示名が空 ②ブロックされている のどちらか。profilesを直接見て確認</td></tr>
+      <tr><td class="s">redeem_exchange_tokenで<br>「not authenticated」</td><td>SQL Editorは管理者権限なので <code class="inline">auth.uid()</code> が空です。確認3の <code class="inline">set_config</code> を使ってユーザーになりきってください</td></tr>
+      <tr><td class="s">プロジェクトが<br>停止している</td><td>無料プランは7日間アクセスがないと一時停止。管理画面から復帰できます（データは消えません）</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- チェックリスト -->
+<section class="blk">
+  <h2><span class="no">✓</span>完了チェックリスト</h2>
+  <div class="card">
+    <ul class="check">
+      <li>プロジェクトを東京リージョンで作成した（既存を使う場合は不要）</li>
+      <li>データベースのパスワードを保存した</li>
+      <li>SQLを一度にまとめて実行し、テーブルが7つできている</li>
+      <li>全テーブルで rowsecurity が true</li>
+      <li>関数が8つできている</li>
+      <li>publishableキーとプロジェクトURLを控えた</li>
+      <li>Google OAuthのクライアントIDとシークレットをSupabaseに設定した</li>
+      <li>Googleのテストユーザーに自分を追加した</li>
+      <li>Redirect URLsに開発用URLを登録した</li>
+      <li>テストユーザーを2人作り、profiles行が自動生成された</li>
+      <li>get_public_cardが期待どおりの値を返す</li>
+      <li><b>2人の間で交換が成立し、コレクションに相手が入った</b></li>
+      <li>自分自身・期限切れ・ブロックで交換が弾かれる</li>
+    </ul>
+    <div class="note">
+      ここまで終われば、<b>コア機能のDB側は完成</b>です。次は百名山100座のデータ投入か、フロントエンドの実装に進みます。
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

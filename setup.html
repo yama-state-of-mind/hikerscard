@@ -163,12 +163,6 @@ document.getElementById("save").onclick = async () => {
     return;
   }
 
-  // 交換URLから来た場合は、そのまま交換へ戻す
-  if (localStorage.getItem("pendingExchangeToken")) {
-    location.href = "./card.html";
-    return;
-  }
-
   location.href = "./index.html";
 };
 </script>

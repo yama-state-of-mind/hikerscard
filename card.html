@@ -55,7 +55,39 @@
     border: 1.4px solid var(--line); background: var(--paper); color: var(--fjord);
     border-radius: 999px; padding: 6px 13px; cursor: pointer;
   }
+
+  .a2hs {
+    background: var(--paper); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card); padding: 14px 16px; margin-top: 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .a2hs img { width: 42px; height: 42px; border-radius: 12px; flex: none; }
+  .a2hs .bd { flex: 1; min-width: 0; }
+  .a2hs .t { font-size: 12.5px; font-weight: 900; }
+  .a2hs .d { font-size: 11px; color: var(--stone); margin-top: 3px; line-height: 1.7; }
+  .a2hs .close {
+    flex: none; border: none; background: none; color: var(--stone);
+    font-size: 16px; cursor: pointer; padding: 0 2px; line-height: 1;
+  }
+  .a2hs .go {
+    font-family: var(--font); font-size: 11.5px; font-weight: 700;
+    color: #fff; background: var(--pine); border: none; border-radius: 999px;
+    padding: 6px 14px; margin-top: 8px; cursor: pointer;
+  }
 </style>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1E3A31">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+</script>
 </head>
 <body>
 
@@ -71,6 +103,8 @@
       <button class="icon-btn" id="more"><i></i><i></i><i></i></button>
     </div>
     <div class="menu" id="menu" hidden></div>
+
+    <div id="a2hs" class="a2hs" hidden></div>
 
     <div id="card-area"></div>
 
@@ -241,6 +275,70 @@ $("#go-edit").onclick = () => location.href = "./setup.html";
 
 $("#loading").hidden = true;
 $("#main").hidden = false;
+
+// =============================================
+// ホーム画面への追加を案内する
+//
+// Androidは「インストールしますか」の案内が自動で出るので、
+// そのタイミングを捕まえてボタンにする。
+// iPhoneは自動で出ないため、手順を文章で案内する。
+//
+// 一度閉じたら二度と出さない（しつこくしない）
+// =============================================
+(function setupA2HS() {
+  const box = $("#a2hs");
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+
+  // すでにアプリとして起動している、または以前閉じた場合は出さない
+  if (standalone || localStorage.getItem("a2hsDismissed")) return;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  let deferred = null;
+
+  function show(inner) {
+    box.innerHTML = `
+      <img src="/icons/icon-192.png" alt="">
+      <div class="bd">${inner}</div>
+      <button class="close" aria-label="閉じる">&times;</button>`;
+    box.hidden = false;
+
+    box.querySelector(".close").onclick = () => {
+      box.hidden = true;
+      localStorage.setItem("a2hsDismissed", "1");
+    };
+
+    const go = box.querySelector(".go");
+    if (go) go.onclick = async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+      box.hidden = true;
+      localStorage.setItem("a2hsDismissed", "1");
+    };
+  }
+
+  // Android / PC版Chromeなど
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferred = e;
+    show(`
+      <p class="t">ホーム画面に追加できます</p>
+      <p class="d">アプリとして開けるようになり、QRをすぐ出せます。</p>
+      <button class="go">追加する</button>`);
+  });
+
+  // iPhone
+  if (isIOS) {
+    show(`
+      <p class="t">ホーム画面に追加できます</p>
+      <p class="d">下の共有ボタン → 「ホーム画面に追加」で、<br>
+      アプリとして開けるようになります。</p>`);
+  }
+})();
+
 </script>
 </body>
 </html>
