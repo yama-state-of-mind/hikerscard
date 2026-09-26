@@ -250,3 +250,211 @@ h1 {
 .row .v { font-weight: 700; text-align: right; word-break: break-all; }
 .row .v.mono { font-family: var(--mono); }
 .row .v.empty { color: #B8C4BD; font-weight: 400; }
+
+/* =============================================
+   ハイカーズカード本体
+   縦長・ブロック積み上げ構造
+   ============================================= */
+
+.hcard {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: 0 8px 26px rgba(30, 58, 49, .16);
+  margin-top: 18px;
+}
+
+.card-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+.hcard-inner { position: relative; z-index: 1; }
+
+/* ---------- 固定ブロック（ヘッダー） ---------- */
+.hc-head {
+  padding: 22px 20px 18px;
+  text-align: center;
+  position: relative;
+}
+.hc-no {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--stone);
+  opacity: .7;
+}
+.hc-avatar {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--paper);
+  border: 3px solid var(--paper);
+  box-shadow: 0 3px 12px rgba(30, 58, 49, .16);
+}
+.hc-avatar svg { width: 100%; height: 100%; display: block; }
+
+.hc-name {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .5px;
+  line-height: 1.4;
+}
+.hc-type {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--fjord);
+  margin-top: 2px;
+}
+.hc-type.undiag { color: var(--stone); font-weight: 400; }
+
+.hc-code {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  background: var(--pine);
+  color: #fff;
+  border-radius: 999px;
+  padding: 3px 13px;
+}
+
+/* ---------- 選べるブロック ---------- */
+.hc-blk {
+  padding: 15px 20px;
+  border-top: 1px solid rgba(30, 58, 49, .09);
+}
+.hc-blk-t {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--stone);
+  margin-bottom: 10px;
+}
+.hc-n {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: #EDF3EF;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 4px;
+}
+
+/* ---------- ひとこと ---------- */
+.hc-cmt {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #45564e;
+}
+.hc-cmt .q { color: var(--stone); opacity: .5; }
+
+/* ---------- 4軸 ---------- */
+.hc-ax + .hc-ax { margin-top: 12px; }
+.hc-ax-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--stone);
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.hc-ax-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+}
+.hc-ax-head .w { font-weight: 900; color: var(--pine); }
+.hc-ax-head .l { color: #AFBDB6; }
+.hc-ax-head b { font-family: var(--mono); font-size: 11px; }
+.hc-ax-head .w b { color: var(--sun); }
+.hc-ax-head .l b { color: #C6D0CA; }
+
+.hc-ax-track {
+  margin-top: 4px;
+  height: 6px;
+  border-radius: 999px;
+  background: #EDF3EF;
+  position: relative;
+  overflow: hidden;
+}
+.hc-ax-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+}
+.hc-ax-bar.a { left: 0;  background: var(--pine); }
+.hc-ax-bar.b { right: 0; background: var(--fjord); }
+
+/* ---------- 百名山 ---------- */
+.hc-hy { display: flex; align-items: center; gap: 15px; }
+.hc-ring { position: relative; width: 62px; height: 62px; flex: none; }
+.hc-ring svg { width: 100%; height: 100%; }
+.hc-ring-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.hc-ring-num b {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+.hc-ring-num span { font-size: 8px; color: var(--stone); margin-top: 1px; }
+.hc-hy-txt { font-size: 12.5px; line-height: 1.7; }
+.hc-hy-txt b { font-weight: 900; }
+.hc-hy-txt .muted { color: var(--stone); font-size: 11.5px; }
+
+/* ---------- 山タグ ---------- */
+.hc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.hc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pine);
+  background: #EDF3EF;
+  border-radius: 999px;
+  padding: 5px 11px 5px 8px;
+}
+.hc-b100 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--sun);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  font-family: var(--mono);
+  flex: none;
+}
+
+/* ---------- 空のときの案内 ---------- */
+.hc-empty {
+  text-align: center;
+  background: var(--paper);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+  margin-top: 16px;
+}
+.hc-empty p { font-size: 12.5px; color: #45564e; line-height: 1.9; }

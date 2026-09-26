@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .notfound { text-align: center; padding: 60px 20px; }
+  .notfound h1 { font-size: 18px; }
+  .notfound p { font-size: 12.5px; color: var(--stone); margin-top: 10px; line-height: 2; }
+  .cta-box {
+    background: var(--paper); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card); padding: 18px 20px; margin-top: 20px;
+    text-align: center;
+  }
+  .cta-box p { font-size: 12.5px; color: #45564e; line-height: 1.9; }
+  .report {
+    text-align: center; margin-top: 26px;
+  }
+  .report button {
+    font-family: var(--font); font-size: 11px; color: var(--stone);
+    background: none; border: none; cursor: pointer; text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <div id="main" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <div id="card-area"></div>
+    <div id="below"></div>
+  </div>
+
+  <div id="notfound" hidden class="notfound">
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>カードが見つかりません</h1>
+    <p>
+      URLが間違っているか、<br>
+      このカードは公開されていません。
+    </p>
+    <button class="btn ghost" style="margin-top:20px"
+            onclick="location.href='/'">トップへ</button>
+  </div>
+</div>
+
+<script src="/data.js"></script>
+<script src="/characters.js"></script>
+
+<script type="module">
+import { supabase, getUser } from "/supabase.js";
+import { renderCard, esc } from "/card.js";
+
+const $ = (s) => document.querySelector(s);
+
+// ---------------------------------------------
+// URLからpublic_idを取り出す
+//   /u/x7k2p9        … vercel.json のリライト経由
+//   /u.html?id=x7k2p9 … 直接開いた場合
+// ---------------------------------------------
+function readPublicId() {
+  const q = new URLSearchParams(location.search).get("id");
+  if (q) return q;
+  const m = location.pathname.match(/\/u\/([^/?#]+)/);
+  return m ? m[1] : null;
+}
+
+const publicId = readPublicId();
+
+if (!publicId) {
+  $("#loading").hidden = true;
+  $("#notfound").hidden = false;
+} else {
+  // 公開カードはRPC経由でしか取れない。
+  // 非公開の項目はそもそもブラウザに届かない仕組み
+  const { data, error } = await supabase.rpc("get_public_card", {
+    p_public_id: publicId,
+  });
+
+  if (error || !data) {
+    if (error) console.error(error);
+    $("#loading").hidden = true;
+    $("#notfound").hidden = false;
+  } else {
+    const diagnosed = !!data.type_code;
+
+    document.title = `${data.display_name}さんのカード｜ハイカーズカード`;
+
+    $("#card-area").innerHTML = renderCard(data, {
+      charSVG: diagnosed ? characterSVG(data.type_code) : "",
+      animal:  diagnosed ? CHARACTERS[data.type_code]?.animal : "",
+      typeName: diagnosed ? TYPES[data.type_code]?.name : "",
+    });
+
+    // 閲覧者の状態に応じた案内
+    const me = await getUser();
+
+    let below = "";
+    if (!me) {
+      below = `
+        <div class="cta-box">
+          <p>あなたも自分のカードを作れます。<br>
+             12の質問で、登山タイプが分かります。</p>
+          <button class="btn sun" style="margin-top:12px"
+                  onclick="location.href='/login.html'">カードを作る</button>
+        </div>`;
+    } else if (data.exchanged) {
+      below = `
+        <div class="cta-box">
+          <p>このカードは<b style="color:var(--pine)">交換済み</b>です。<br>
+             コレクションから見られます。</p>
+        </div>`;
+    } else {
+      below = `
+        <div class="cta-box">
+          <p>カードを交換するには、<br>
+             会ったときにQRコードを読み取ってください。</p>
+        </div>`;
+    }
+
+    below += `
+      <div class="report">
+        <button id="report">このカードを通報する</button>
+      </div>`;
+
+    $("#below").innerHTML = below;
+
+    $("#report").onclick = () => {
+      // 通報画面はこのあとのステップで作る
+      alert("通報機能はこのあと実装します。");
+    };
+
+    $("#loading").hidden = true;
+    $("#main").hidden = false;
+  }
+}
+</script>
+</body>
+</html>
