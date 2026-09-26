@@ -146,6 +146,10 @@ if (error) {
 const cards = Array.isArray(data) ? data : [];
 $("#n").textContent = cards.length;
 
+// 手前に出ているカードの番号。
+// drawDeck() より前に宣言しておく必要がある（letは宣言行を通るまで使えない）
+let frontIndex = 0;
+
 if (!cards.length) {
   $("#body").innerHTML = `
     <div class="deck-empty">
@@ -186,8 +190,6 @@ if (cards.length) drawDeck();
 // 重なったカードの描画
 // 手前のカードの下に、次のカードの端が覗く形にする
 // =============================================
-let frontIndex = 0;   // 手前に出ているカードの番号
-
 function drawDeck() {
   const deck = $("#deck");
   const n = cards.length;
