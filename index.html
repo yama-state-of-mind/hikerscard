@@ -8,96 +8,38 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1E3A31">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+</script>
 </head>
 <body>
 
 <div class="wrap">
-  <!-- セッションの判定が終わるまで、この表示を出しておく。
-       いきなり中身を出すと、一瞬ログアウト状態に見える事故が起きる -->
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
-
-  <div id="content" hidden></div>
 </div>
 
 <script type="module">
-import { resolveDestination, signOut } from "./supabase.js";
+import { resolveDestination } from "./supabase.js";
 
-const loading = document.getElementById("loading");
-const content = document.getElementById("content");
+// 入口。ログイン状態に応じて行き先を振り分けるだけ
+const { to } = await resolveDestination();
 
-const { to, user, profile } = await resolveDestination();
-
-// 行き先が login / setup なら、そのページへ送る
-if (to === "login") {
-  location.replace("./login.html");
-} else if (to === "setup") {
-  location.replace("./setup.html");
-} else {
-  // ログイン済み・設定済み。
-  // 本来は自分のカードを表示する画面だが、
-  // 今は接続確認のためプロフィールの中身をそのまま並べる。
-  content.innerHTML = `
-    <p class="brand">ハイカーズ<span>カード</span></p>
-    <h1>ようこそ、${escapeHtml(profile.display_name)}さん</h1>
-    <p class="sub">Supabaseとの接続が正しく動いています。</p>
-
-    <div class="card">
-      <h2>プロフィール（DBから取得）</h2>
-      ${row("カード番号", `No.${String(profile.card_no).padStart(4, "0")}`, "mono")}
-      ${row("表示名", profile.display_name)}
-      ${row("ひとこと", profile.comment)}
-      ${row("診断タイプ", profile.type_code)}
-      ${row("公開URL", `/u/${profile.public_id}`, "mono")}
-    </div>
-
-    <div class="card">
-      <h2>診断の4軸</h2>
-      ${row("目的（P側）", fmtAxis(profile.axis_pe))}
-      ${row("仲間（S側）", fmtAxis(profile.axis_sg))}
-      ${row("計画（L側）", fmtAxis(profile.axis_lf))}
-      ${row("リスク（C側）", fmtAxis(profile.axis_ca))}
-    </div>
-
-    <div class="card">
-      <h2>ログイン情報</h2>
-      ${row("メール", user.email)}
-      ${row("方法", user.app_metadata?.provider ?? "-")}
-    </div>
-
-    <button class="btn ghost" id="edit">プロフィールを編集</button>
-    <button class="btn flat" id="logout">ログアウト</button>
-  `;
-
-  document.getElementById("edit").onclick = () => {
-    location.href = "./setup.html";
-  };
-  document.getElementById("logout").onclick = signOut;
-
-  loading.hidden = true;
-  content.hidden = false;
-}
-
-// ---------- 小さなヘルパー ----------
-function row(key, value, cls = "") {
-  const empty = value === null || value === undefined || value === "";
-  return `<div class="row">
-    <span class="k">${key}</span>
-    <span class="v ${cls} ${empty ? "empty" : ""}">${empty ? "未設定" : escapeHtml(String(value))}</span>
-  </div>`;
-}
-
-function fmtAxis(v) {
-  return v === null || v === undefined ? "" : `${v} / 100`;
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
-}
+if (to === "login")      location.replace("./login.html");
+else if (to === "setup") location.replace("./setup.html");
+else                     location.replace("./card.html");
 </script>
 </body>
 </html>

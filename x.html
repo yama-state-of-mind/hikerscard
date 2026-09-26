@@ -17,6 +17,19 @@
   .done-lead { font-size: 13px; color: #45564e; margin-top: 14px; line-height: 1.9; }
   .done-lead b { color: var(--pine); }
 </style>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1E3A31">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+</script>
 </head>
 <body>
 
