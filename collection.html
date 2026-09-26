@@ -186,14 +186,14 @@ if (cards.length) drawDeck();
 // 重なったカードの描画
 // 手前のカードの下に、次のカードの端が覗く形にする
 // =============================================
-let top = 0;
+let frontIndex = 0;   // 手前に出ているカードの番号
 
 function drawDeck() {
   const deck = $("#deck");
   const n = cards.length;
 
   deck.innerHTML = cards.map((c, i) => {
-    const pos = (i - top + n) % n;          // 0 が手前
+    const pos = (i - frontIndex + n) % n;   // 0 が手前
     const diagnosed = !!c.type_code;
     return `
       <div class="deck-item${pos === 0 ? " front" : ""}" data-pos="${pos}">
@@ -235,14 +235,14 @@ function layout() {
 
 function cycle(dir) {
   const n = cards.length;
-  top = (top + dir + n) % n;
+  frontIndex = (frontIndex + dir + n) % n;
   drawDeck();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateLabels() {
-  $("#pos").textContent = `${top + 1} / ${cards.length}`;
-  const c = cards[top];
+  $("#pos").textContent = `${frontIndex + 1} / ${cards.length}`;
+  const c = cards[frontIndex];
   $("#met").textContent = c.first_met_at
     ? `${fmtDate(c.first_met_at)} に交換`
     : "";
