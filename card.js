@@ -1,17 +1,70 @@
 // =============================================
 // カードの描画
 //
-// 自分のカード（card.html）と公開ページ（u.html）で共有する。
-// データの取得元は違うが、描くものは同じなのでここにまとめる。
-//
-// 期待するデータの形：
-// {
-//   public_id, card_no, display_name, comment, type_code,
-//   axes: { pe, sg, lf, ca },      // 1文字目側への寄り 0〜100。未診断なら null
-//   hyakumeizan_done: 12,
-//   climbed: [{ name, hyaku }]
-// }
+// card.html / u.html / collection.html で共有する。
+// データの取得元は違うが、描くものは同じ。
 // =============================================
+
+// ---------------------------------------------
+// 背景のパターン
+// ---------------------------------------------
+export const BG = {
+  contour: () => {
+    let p = "";
+    for (let i = 0; i < 12; i++) {
+      const y = 20 + i * 46;
+      p += `<path d="M-20 ${y} Q 80 ${y - 30} 165 ${y} T 350 ${y}"
+               fill="none" stroke="rgba(30,58,49,.055)" stroke-width="1.6"/>`;
+    }
+    return p;
+  },
+
+  ridge: () => `
+    <path d="M-10 540 L60 380 L118 442 L190 320 L250 400 L330 540 Z" fill="rgba(30,58,49,.06)"/>
+    <path d="M-10 540 L40 450 L96 500 L160 420 L228 486 L300 430 L340 540 Z" fill="rgba(70,112,143,.06)"/>`,
+
+  mist: () => `
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6DCC0" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#FBF6F1" stop-opacity="0"/>
+    </linearGradient></defs>
+    <rect width="320" height="540" fill="url(#mg)"/>
+    <path d="M-10 300 Q 90 278 170 300 T 340 296" fill="none" stroke="rgba(193,128,74,.14)" stroke-width="2"/>
+    <path d="M-10 336 Q 100 314 180 336 T 340 330" fill="none" stroke="rgba(193,128,74,.1)" stroke-width="2"/>`,
+
+  forest: () => {
+    let p = "";
+    [14, 52, 96, 140, 186, 232, 276, 308].forEach((x, i) => {
+      const w = 7 + (i % 3) * 3;
+      p += `<rect x="${x}" y="0" width="${w}" height="540" fill="rgba(34,65,44,.045)"/>`;
+      p += `<path d="M${x - 6} ${90 + i * 40} L${x + w / 2} ${56 + i * 40} L${x + w + 6} ${90 + i * 40} Z"
+               fill="rgba(79,138,91,.07)"/>`;
+    });
+    return p;
+  },
+
+  night: () => {
+    let p = "";
+    const stars = [[28,54],[76,32],[122,78],[168,44],[214,92],[262,38],[296,70],
+                   [46,132],[104,158],[186,126],[248,164],[300,140],
+                   [22,214],[88,246],[152,206],[226,252],[288,228]];
+    stars.forEach(([x, y], i) => {
+      const r = i % 4 === 0 ? 1.8 : 1.1;
+      p += `<circle cx="${x}" cy="${y}" r="${r}"
+               fill="rgba(255,255,255,${i % 3 === 0 ? .5 : .28})"/>`;
+    });
+    p += `<path d="M-10 540 L52 402 L110 460 L182 356 L244 428 L330 540 Z" fill="rgba(0,0,0,.22)"/>`;
+    return p;
+  },
+};
+
+export const THEMES = [
+  { id: "contour", name: "等高線" },
+  { id: "ridge",   name: "山なみ" },
+  { id: "mist",    name: "朝もや" },
+  { id: "forest",  name: "木立"   },
+  { id: "night",   name: "夜空"   },
+];
 
 // ---------------------------------------------
 // 未診断のときのアイコン
@@ -26,33 +79,29 @@ export const SILHOUETTE = `
 </svg>`;
 
 // ---------------------------------------------
-// 背景パターン（等高線）
-// カードの奥行きを出すための薄い模様
+// SNSの定義
 // ---------------------------------------------
-function bgContour() {
-  let p = "";
-  for (let i = 0; i < 11; i++) {
-    const y = 26 + i * 46;
-    p += `<path d="M-20 ${y} Q 80 ${y - 28} 160 ${y} T 340 ${y}"
-             fill="none" stroke="rgba(30,58,49,.05)" stroke-width="1.6"/>`;
-  }
-  return `<svg class="card-bg" viewBox="0 0 320 520" preserveAspectRatio="none">${p}</svg>`;
-}
+export const SNS = {
+  yamap:     { label: "YAMAP",     bg: "#2BA24C", short: "Y",  url: (v) => `https://yamap.com/users/${v}` },
+  yamareco:  { label: "ヤマレコ",   bg: "#1F6FB2", short: "ヤ", url: (v) => `https://www.yamareco.com/modules/yamareco/userinfo-${v}.html` },
+  instagram: { label: "Instagram", bg: "#C13584", short: "in", url: (v) => `https://instagram.com/${v}` },
+  x:         { label: "X",         bg: "#111111", short: "X",  url: (v) => `https://x.com/${v}` },
+};
+
+const STAR = `<svg class="hc-star" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7 .9-5.2 4.9 1.4 7L12 18l-6.2 3.4 1.4-7L2 9.5l7-.9z"/></svg>`;
+const FLAG = `<svg class="hc-flag" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
 
 // ---------------------------------------------
 // カード全体
-//
-// opts:
-//   charSVG   診断キャラのSVG文字列（未診断なら省略）
-//   animal    キャラ名
-//   typeName  タイプ名
 // ---------------------------------------------
 export function renderCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
+  const bg = BG[d.card_bg] ? d.card_bg : "contour";
+  const uid = opts.uid ?? Math.random().toString(36).slice(2, 8);
 
   return `
-  <div class="hcard">
-    ${bgContour()}
+  <div class="hcard t-${bg}" data-uid="${uid}">
+    <svg class="card-bg" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
     <div class="hcard-inner">
 
       <div class="hc-head">
@@ -68,22 +117,39 @@ export function renderCard(d, opts = {}) {
       ${d.comment ? `
       <div class="hc-blk">
         <p class="hc-blk-t">COMMENT</p>
-        <p class="hc-cmt"><span class="q">&ldquo;</span>${esc(d.comment)}<span class="q">&rdquo;</span></p>
+        <p class="hc-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>
       </div>` : ""}
 
       ${diagnosed && d.axes ? axesBlock(d.axes) : ""}
 
-      ${hyakuBlock(d.hyakumeizan_done ?? 0)}
+      ${hyakuBlock(d, uid)}
 
-      ${(d.climbed?.length) ? climbedBlock(d.climbed) : ""}
+      ${tagBlock("FAVORITE", d.favorites, "fav", STAR)}
+      ${tagBlock("WISHLIST", d.wishlist,  "wish", FLAG)}
+
+      ${snsBlock(d.sns)}
 
     </div>
   </div>`;
 }
 
 // ---------------------------------------------
-// 診断の4軸
-// 両端型の軸なので、レーダーではなく横バーで表す
+// 折りたたみの開閉を有効にする。カードを描いたあとに呼ぶ
+// ---------------------------------------------
+export function bindCardToggles(root = document) {
+  root.querySelectorAll(".hy-row").forEach((row) => {
+    if (row.dataset.bound) return;
+    row.dataset.bound = "1";
+    row.addEventListener("click", () => {
+      const list = root.querySelector(`#hy-list-${row.dataset.uid}`);
+      row.classList.toggle("open");
+      if (list) list.classList.toggle("open");
+    });
+  });
+}
+
+// ---------------------------------------------
+// 診断の4軸（両端型なので横バーで表す）
 // ---------------------------------------------
 const AXIS_DEFS = [
   { key: "pe", title: "目的",   a: "P", b: "E", aName: "ピークハント", bName: "エンジョイ" },
@@ -106,8 +172,7 @@ function axesBlock(axes) {
           <span class="${aWins ? "l" : "w"}"><b>${bPct}</b> ${ax.bName} ${ax.b}</span>
         </div>
         <div class="hc-ax-track">
-          <div class="hc-ax-bar ${aWins ? "a" : "b"}"
-               style="width:${aWins ? aPct : bPct}%"></div>
+          <div class="hc-ax-bar ${aWins ? "a" : "b"}" style="width:${aWins ? aPct : bPct}%"></div>
         </div>
       </div>`;
   }).join("");
@@ -117,51 +182,84 @@ function axesBlock(axes) {
 }
 
 // ---------------------------------------------
-// 百名山 踏破リング
+// 百名山：踏破リング＋折りたたみ
+// 山が並びっぱなしだとくどいので、押したときだけ開く
 // ---------------------------------------------
-function hyakuBlock(done) {
+function hyakuBlock(d, uid) {
+  const done = d.hyakumeizan_done ?? 0;
+  const list = d.climbed ?? [];
   const r = 26;
   const C = 2 * Math.PI * r;
+  const hasList = list.length > 0;
+
   return `
   <div class="hc-blk">
     <p class="hc-blk-t">HYAKUMEIZAN</p>
-    <div class="hc-hy">
+    <button class="hy-row${hasList ? "" : " nolist"}" data-uid="${uid}" ${hasList ? "" : "disabled"}>
       <div class="hc-ring">
         <svg viewBox="0 0 62 62">
-          <circle cx="31" cy="31" r="${r}" fill="none" stroke="rgba(30,58,49,.1)" stroke-width="6"/>
+          <circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--c-soft)" stroke-width="6"/>
           <circle cx="31" cy="31" r="${r}" fill="none" stroke="#E0A33B" stroke-width="6"
                   stroke-linecap="round" stroke-dasharray="${C}"
                   stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 31 31)"/>
         </svg>
         <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
       </div>
-      <p class="hc-hy-txt">
-        ${done === 0
+      <p class="hy-txt">
+        ${done === 0 && !hasList
           ? `<span class="muted">まだ登録がありません</span>`
           : `日本百名山<br><b>${done}座</b> 踏破 <span class="muted">／ 残り ${100 - done}座</span>`}
       </p>
-    </div>
+      ${hasList ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
+    </button>
+    ${hasList ? `
+    <div class="hy-list" id="hy-list-${uid}">
+      <div class="hy-list-in">
+        <div class="hc-tags">
+          ${list.map((m) => `
+            <span class="hc-tag">
+              ${m.hyaku ? `<span class="hc-b100">百</span>` : ""}${esc(m.name)}
+            </span>`).join("")}
+        </div>
+      </div>
+    </div>` : ""}
   </div>`;
 }
 
 // ---------------------------------------------
-// 行った山
+// 好きな山・登りたい山
 // ---------------------------------------------
-function climbedBlock(list) {
+function tagBlock(label, list, cls, icon) {
+  if (!list?.length) return "";
   return `
   <div class="hc-blk">
-    <p class="hc-blk-t">CLIMBED <span class="hc-n">${list.length}</span></p>
+    <p class="hc-blk-t">${label} <span class="hc-n">${list.length}</span></p>
     <div class="hc-tags">
-      ${list.map((m) => `
-        <span class="hc-tag">
-          ${m.hyaku ? `<span class="hc-b100">百</span>` : ""}${esc(m.name)}
-        </span>`).join("")}
+      ${list.map((m) => `<span class="hc-tag ${cls}">${icon}${esc(m.name)}</span>`).join("")}
     </div>
   </div>`;
 }
 
 // ---------------------------------------------
-// HTMLエスケープ
+// SNSリンク
+// ---------------------------------------------
+function snsBlock(sns) {
+  if (!sns) return "";
+  const items = Object.entries(sns)
+    .filter(([k, v]) => SNS[k] && v)
+    .map(([k, v]) => {
+      const s = SNS[k];
+      return `<a href="${s.url(encodeURIComponent(v))}" target="_blank" rel="noopener noreferrer">
+        <span class="ic" style="background:${s.bg}">${s.short}</span>${esc(v)}
+      </a>`;
+    });
+
+  if (!items.length) return "";
+  return `<div class="hc-blk"><p class="hc-blk-t">LINKS</p>
+    <div class="hc-sns">${items.join("")}</div></div>`;
+}
+
 // ---------------------------------------------
 export function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>

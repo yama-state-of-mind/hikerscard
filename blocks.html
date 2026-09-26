@@ -53,14 +53,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
     <h1>ブロック中のユーザー</h1>
     <p class="sub">
       ブロックを解除しても、消えた交換記録は戻りません。<br>
@@ -92,7 +91,10 @@ window.addEventListener("unhandledrejection", (e) =>
 </script>
 
 <script type="module">
-import { supabase, getUser } from "./supabase.js";
+import { supabase, getUser, signOut } from "./supabase.js";
+import { mountHeader } from "./header.js";
+
+mountHeader(signOut);
 import { SILHOUETTE, esc } from "./card.js";
 
 const $ = (s) => document.querySelector(s);

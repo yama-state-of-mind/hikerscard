@@ -3,65 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>プロフィールを作る｜ハイカーズカード</title>
+<title>プロフィール編集｜ハイカーズカード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
-<style>
-  .avatar-wrap { text-align: center; margin: 20px 0 4px; }
-  .avatar {
-    width: 96px; height: 96px; margin: 0 auto;
-    border-radius: 50%; overflow: hidden;
-    background: var(--paper); border: 4px solid var(--paper);
-    box-shadow: 0 4px 14px rgba(30, 58, 49, .16);
-  }
-  .avatar svg { width: 100%; height: 100%; display: block; }
-  .avatar-cap {
-    font-size: 11px; color: var(--stone);
-    margin-top: 8px; line-height: 1.8;
-  }
-</style>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1E3A31">
 <link rel="apple-touch-icon" href="/icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ハイカーズカード">
 <script>
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/sw.js").catch(function () {});
-    });
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
   }
 </script>
+<style>
+  .avatar-wrap { text-align: center; margin: 18px 0 4px; }
+  .avatar {
+    width: 92px; height: 92px; margin: 0 auto; border-radius: 50%;
+    overflow: hidden; background: var(--paper); border: 4px solid var(--paper);
+    box-shadow: 0 4px 14px rgba(30,58,49,.16);
+  }
+  .avatar svg { width: 100%; height: 100%; display: block; }
+  .avatar-cap { font-size: 11px; color: var(--stone); margin-top: 8px; line-height: 1.8; }
+
+  .group { margin-top: 26px; }
+  .group > h2 { font-size: 13px; font-weight: 900; }
+  .group > .d { font-size: 11.5px; color: var(--stone); margin-top: 3px; line-height: 1.8; }
+
+  .sns-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .sns-row .ic {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-family: var(--mono); font-size: 11px; font-weight: 900;
+  }
+  .sns-row input { flex: 1; }
+  .sns-row .pre { font-size: 11px; color: var(--stone); flex: none; }
+</style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap" id="wrap">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="form" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
+    <p class="brand" id="brand">ハイカーズ<span>カード</span></p>
 
     <h1 id="title">プロフィールを作る</h1>
     <p class="sub">あとから何度でも変更できます。</p>
 
     <div class="avatar-wrap">
-      <div class="avatar">
-        <!-- 未診断のシルエット。診断を実装したらタイプのキャラに差し替える -->
-        <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="80" cy="80" r="78" fill="#EDF3EF"/>
-          <circle cx="80" cy="64" r="26" fill="#C3D0C8"/>
-          <path d="M80 96 C52 96 34 116 32 146 L128 146 C126 116 108 96 80 96 Z" fill="#C3D0C8"/>
-          <path d="M104 40 L116 22 L128 40 Z" fill="#DCE4DF"/>
-          <path d="M120 40 L132 26 L142 40 Z" fill="#DCE4DF"/>
-        </svg>
-      </div>
-      <p class="avatar-cap">診断を受けると、あなたのキャラに変わります</p>
+      <div class="avatar" id="avatar"></div>
+      <p class="avatar-cap" id="avatar-cap"></p>
     </div>
 
     <div class="field">
@@ -77,74 +74,159 @@
       <p class="count"><span id="comment-count">0</span> / 50</p>
     </div>
 
-    <div class="url-box">
-      あなたのカードのURL<br>
-      <span id="url"></span>
+    <!-- 背景デザイン -->
+    <div class="group" id="bg-group">
+      <h2>カードの背景</h2>
+      <p class="d">カードの雰囲気が変わります。あとから変更できます。</p>
+      <div class="bgs" id="bgs" style="margin-top:10px"></div>
     </div>
+
+    <!-- SNS -->
+    <div class="group" id="sns-group">
+      <h2>SNSリンク</h2>
+      <p class="d">
+        入力したものだけカードに表示されます。<br>
+        ユーザー名（IDの部分）だけを入れてください。
+      </p>
+      <div id="sns"></div>
+    </div>
+
+    <div class="url-box" id="url-box"></div>
 
     <button class="btn sun" id="save">保存する</button>
     <div id="msg" class="msg"></div>
 
-    <p class="terms" id="later">
-      診断・行った山は、あとから追加できます。
-    </p>
+    <p class="terms" id="later">診断・行った山は、あとから追加できます。</p>
   </div>
 </div>
 
+<script src="./data.js"></script>
+<script src="./characters.js"></script>
+
+<script>
+window.__showFatal = function (label, detail) {
+  var el = document.getElementById("loading");
+  if (!el) return;
+  el.innerHTML = '<p class="msg error" style="text-align:left"><b>' + label + '</b><br>' +
+                 String(detail).replace(/[<>&]/g, "") + '</p>';
+  el.hidden = false;
+};
+window.addEventListener("error", (e) =>
+  window.__showFatal("読み込みに失敗しました", (e.message || "") + " " + (e.filename || "")));
+window.addEventListener("unhandledrejection", (e) =>
+  window.__showFatal("エラーが発生しました", (e.reason && (e.reason.message || e.reason)) || ""));
+</script>
+
 <script type="module">
-import { supabase, getUser, getMyProfile, baseUrl } from "./supabase.js";
+import { supabase, getUser, getMyProfile, signOut, baseUrl } from "./supabase.js";
+import { mountHeader } from "./header.js";
+import { BG, THEMES, SILHOUETTE, SNS } from "./card.js";
 
-const loading = document.getElementById("loading");
-const form    = document.getElementById("form");
-const msg     = document.getElementById("msg");
+const $ = (s) => document.querySelector(s);
 
-const nameInput    = document.getElementById("name");
-const commentInput = document.getElementById("comment");
-
-// 未ログインならログイン画面へ
 const user = await getUser();
-if (!user) {
-  location.replace("./login.html");
-}
+if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 
 const profile = await getMyProfile();
 if (!profile) {
-  loading.innerHTML = `
-    <p class="msg error">プロフィールを読み込めませんでした。<br>
-    ページを再読み込みしてください。</p>`;
-} else {
-  // 既存の値を入れておく（編集のときはここが埋まる）
-  nameInput.value    = profile.display_name ?? "";
-  commentInput.value = profile.comment ?? "";
-
-  document.getElementById("url").innerHTML =
-    `${baseUrl()}u/<b>${profile.public_id}</b>`;
-
-  // すでに設定済みなら「編集」として見せる
-  if (profile.display_name) {
-    document.getElementById("title").textContent = "プロフィールを編集";
-    document.getElementById("later").textContent = "";
-  }
-
-  updateCounts();
-  loading.hidden = true;
-  form.hidden = false;
+  window.__showFatal("プロフィールを読み込めませんでした", "ページを再読み込みしてください。");
+  throw new Error("no profile");
 }
 
-// ---------- 文字数カウント ----------
-nameInput.addEventListener("input", updateCounts);
-commentInput.addEventListener("input", updateCounts);
-
-function updateCounts() {
-  document.getElementById("name-count").textContent    = nameInput.value.length;
-  document.getElementById("comment-count").textContent = commentInput.value.length;
+// 初回（表示名なし）はヘッダーを出さない。まず設定に集中してもらう
+const isFirst = !profile.display_name;
+if (!isFirst) {
+  mountHeader(signOut);
+  $("#wrap").classList.add("has-hd");
+  $("#brand").hidden = true;
+  $("#title").textContent = "プロフィール編集";
+  $("#later").textContent = "";
 }
 
-// ---------- 保存 ----------
-document.getElementById("save").onclick = async () => {
-  const name    = nameInput.value.trim();
-  const comment = commentInput.value.trim();
+// ---------------------------------------------
+// アイコン
+// ---------------------------------------------
+const diagnosed = !!profile.type_code;
+$("#avatar").innerHTML = diagnosed ? characterSVG(profile.type_code) : SILHOUETTE;
+$("#avatar-cap").innerHTML = diagnosed
+  ? `アイコンは診断結果の<b style="color:var(--pine)">${CHARACTERS[profile.type_code].animal}</b>です`
+  : "診断を受けると、あなたのキャラに変わります";
 
+// ---------------------------------------------
+// 初期値
+// ---------------------------------------------
+const nameInput = $("#name");
+const commentInput = $("#comment");
+nameInput.value = profile.display_name ?? "";
+commentInput.value = profile.comment ?? "";
+
+let bg = profile.card_bg ?? "contour";
+
+$("#url-box").innerHTML = `あなたのカードのURL<br>${baseUrl()}u/<b>${profile.public_id}</b>`;
+
+// ---------------------------------------------
+// 背景の選択
+// ---------------------------------------------
+function drawBgs() {
+  $("#bgs").innerHTML = THEMES.map((t) => `
+    <button type="button" class="bg-chip ${t.id === bg ? "on" : ""}" data-id="${t.id}">
+      <div class="sw t-${t.id}">
+        <svg viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[t.id]()}</svg>
+      </div>
+      <span>${t.name}</span>
+    </button>`).join("");
+}
+drawBgs();
+
+$("#bgs").addEventListener("click", (e) => {
+  const b = e.target.closest(".bg-chip");
+  if (!b) return;
+  bg = b.dataset.id;
+  drawBgs();
+});
+
+// ---------------------------------------------
+// SNS
+// ---------------------------------------------
+const SNS_KEYS = ["yamap", "yamareco", "instagram", "x"];
+const HINT = {
+  yamap: "YAMAPのユーザーID",
+  yamareco: "ヤマレコのユーザーID（数字）",
+  instagram: "@なしのユーザー名",
+  x: "@なしのユーザー名",
+};
+
+$("#sns").innerHTML = SNS_KEYS.map((k) => {
+  const s = SNS[k];
+  const v = profile["sns_" + k] ?? "";
+  return `
+    <div class="sns-row">
+      <span class="ic" style="background:${s.bg}">${s.short}</span>
+      <input type="text" id="sns-${k}" maxlength="60"
+             placeholder="${HINT[k]}" value="${escAttr(v)}" autocomplete="off">
+    </div>`;
+}).join("");
+
+// ---------------------------------------------
+// 文字数
+// ---------------------------------------------
+function counts() {
+  $("#name-count").textContent = nameInput.value.length;
+  $("#comment-count").textContent = commentInput.value.length;
+}
+nameInput.addEventListener("input", counts);
+commentInput.addEventListener("input", counts);
+counts();
+
+$("#loading").hidden = true;
+$("#form").hidden = false;
+
+// ---------------------------------------------
+// 保存
+// ---------------------------------------------
+$("#save").onclick = async () => {
+  const name = nameInput.value.trim();
+  const msg = $("#msg");
   msg.className = "msg";
   msg.textContent = "";
 
@@ -155,17 +237,22 @@ document.getElementById("save").onclick = async () => {
     return;
   }
 
-  const btn = document.getElementById("save");
+  const btn = $("#save");
   btn.disabled = true;
   btn.textContent = "保存しています…";
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      display_name: name,
-      comment: comment || null,
-    })
-    .eq("id", user.id);
+  const payload = {
+    display_name: name,
+    comment: commentInput.value.trim() || null,
+    card_bg: bg,
+  };
+  SNS_KEYS.forEach((k) => {
+    // @や空白を取り除いて保存する
+    const v = $(`#sns-${k}`).value.trim().replace(/^@+/, "");
+    payload["sns_" + k] = v || null;
+  });
+
+  const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
 
   btn.disabled = false;
   btn.textContent = "保存する";
@@ -181,9 +268,13 @@ document.getElementById("save").onclick = async () => {
     location.href = "./card.html";
     return;
   }
-
-  location.href = "./index.html";
+  location.href = "./card.html";
 };
+
+function escAttr(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 </script>
 </body>
 </html>

@@ -92,15 +92,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
-
     <div class="deck-head">
       <b id="n">0</b><span>枚のカード</span>
     </div>
@@ -139,7 +137,11 @@ window.addEventListener("unhandledrejection", function (e) {
 
 <script type="module">
 import { supabase, getUser } from "./supabase.js";
-import { renderCard } from "./card.js";
+import { renderCard, bindCardToggles } from "./card.js";
+import { mountHeader } from "./header.js";
+import { signOut } from "./supabase.js";
+
+mountHeader(signOut);
 
 const $ = (s) => document.querySelector(s);
 
@@ -216,12 +218,14 @@ function drawDeck() {
           charSVG: diagnosed ? characterSVG(c.type_code) : "",
           animal:  diagnosed ? CHARACTERS[c.type_code]?.animal : "",
           typeName: diagnosed ? TYPES[c.type_code]?.name : "",
+          uid: "c" + i,
         })}
       </div>`;
   }).join("");
 
   layout();
   bindSwipe();
+  bindCardToggles();
   updateLabels();
 }
 

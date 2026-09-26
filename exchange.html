@@ -104,14 +104,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
     <h1>カードを交換する</h1>
     <p class="sub">会った人とその場で交換します。<br>QRの有効期限は10分です。</p>
 
@@ -161,7 +160,6 @@
 
   <!-- ===== 交換成立 ===== -->
   <div id="done" hidden class="done-box">
-    <p class="brand">ハイカーズ<span>カード</span></p>
     <div class="done-char" id="done-char"></div>
     <p class="done-name" id="done-name"></p>
     <p class="done-type" id="done-type"></p>
@@ -177,7 +175,10 @@
 <script type="module">
 import qrcode from "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/+esm";
 import jsQR from "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm";
-import { supabase, getUser, getMyProfile } from "./supabase.js";
+import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
+import { mountHeader } from "./header.js";
+
+mountHeader(signOut);
 
 const $ = (s) => document.querySelector(s);
 

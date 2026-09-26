@@ -9,39 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
 <style>
-  .top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 4px;
-  }
-  .top-bar .brand { margin-bottom: 0; }
-  .icon-btn {
-    width: 34px; height: 34px; border-radius: 50%; border: none;
-    background: var(--paper); box-shadow: var(--shadow-card);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-  .icon-btn i {
-    width: 3.4px; height: 3.4px; border-radius: 50%;
-    background: var(--pine); margin: 0 1.4px; display: block;
-  }
-  .menu {
-    position: absolute; right: 22px; z-index: 30;
-    background: var(--paper); border-radius: 14px;
-    box-shadow: 0 6px 22px rgba(30,58,49,.2);
-    padding: 6px; min-width: 200px; margin-top: 4px;
-  }
-  .menu button {
-    display: flex; align-items: center; gap: 9px; width: 100%;
-    font-family: var(--font); font-size: 12.5px; font-weight: 700;
-    color: var(--pine); background: none; border: none;
-    padding: 10px 12px; border-radius: 10px; cursor: pointer; text-align: left;
-  }
-  .menu button + button { border-top: 1px solid var(--line); }
-  .menu button:active { background: var(--birch); }
-  .menu svg {
-    width: 15px; height: 15px; stroke: currentColor; fill: none;
-    stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
-  }
   .share-url {
     display: flex; align-items: center; gap: 8px;
     background: #EDF3EF; border-radius: 12px; padding: 10px 14px; margin-top: 16px;
@@ -91,19 +58,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <div class="top-bar">
-      <p class="brand">ハイカーズ<span>カード</span></p>
-      <button class="icon-btn" id="more"><i></i><i></i><i></i></button>
-    </div>
-    <div class="menu" id="menu" hidden></div>
-
     <div id="a2hs" class="a2hs" hidden></div>
 
     <div id="card-area"></div>
@@ -130,7 +91,10 @@
 <script type="module">
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
          applyPendingExchange, signOut } from "./supabase.js";
-import { renderCard, esc } from "./card.js";
+import { renderCard, bindCardToggles, esc } from "./card.js";
+import { mountHeader } from "./header.js";
+
+mountHeader(signOut);
 
 const $ = (s) => document.querySelector(s);
 
@@ -150,17 +114,25 @@ profile = await applyPendingDiagnosis(profile);
 // 未ログインのまま開いた交換URLがあれば、ここで交換する
 const justExchanged = await applyPendingExchange();
 
-// 登った山
-const { data: climbedRows } = await supabase
-  .from("climbed_mountains")
-  .select("mountains(name, is_hyakumeizan, elevation)")
-  .eq("user_id", user.id);
+// 登った山・好きな山・登りたい山
+const [climbedRes, wishRes] = await Promise.all([
+  supabase.from("climbed_mountains")
+          .select("is_favorite, mountains(name, is_hyakumeizan, elevation)")
+          .eq("user_id", user.id),
+  supabase.from("wishlist_mountains")
+          .select("mountains(name, is_hyakumeizan, elevation)")
+          .eq("user_id", user.id),
+]);
 
-const climbed = (climbedRows ?? [])
-  .map((r) => r.mountains)
-  .filter(Boolean)
-  .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0))
-  .map((m) => ({ name: m.name, hyaku: m.is_hyakumeizan }));
+const byElev = (a, b) => (b.elevation ?? 0) - (a.elevation ?? 0);
+const toTag = (m) => ({ name: m.name, hyaku: m.is_hyakumeizan });
+
+const climbedRows = (climbedRes.data ?? []).filter((r) => r.mountains);
+const climbed = climbedRows.map((r) => r.mountains).sort(byElev).map(toTag);
+const favorites = climbedRows.filter((r) => r.is_favorite)
+                             .map((r) => r.mountains).sort(byElev).map(toTag);
+const wishlist = (wishRes.data ?? []).map((r) => r.mountains)
+                             .filter(Boolean).sort(byElev).map(toTag);
 
 const hyakuDone = climbed.filter((m) => m.hyaku).length;
 
@@ -175,8 +147,15 @@ const cardData = {
     pe: profile.axis_pe, sg: profile.axis_sg,
     lf: profile.axis_lf, ca: profile.axis_ca,
   },
+  card_bg: profile.card_bg,
   hyakumeizan_done: hyakuDone,
   climbed,
+  favorites,
+  wishlist,
+  sns: {
+    yamap: profile.sns_yamap, yamareco: profile.sns_yamareco,
+    instagram: profile.sns_instagram, x: profile.sns_x,
+  },
 };
 
 const diagnosed = !!profile.type_code;
@@ -185,7 +164,9 @@ $("#card-area").innerHTML = renderCard(cardData, {
   charSVG: diagnosed ? characterSVG(profile.type_code) : "",
   animal:  diagnosed ? CHARACTERS[profile.type_code]?.animal : "",
   typeName: diagnosed ? TYPES[profile.type_code]?.name : "",
+  uid: "me",
 });
+bindCardToggles();
 
 // 足りないものがあれば案内を出す
 const tips = [];
@@ -199,6 +180,12 @@ if (!climbed.length) {
   tips.push(`<div class="hc-empty">
     <p>登った山がまだ登録されていません。<br>百名山から選ぶと、踏破リングが動きます。</p>
     <button class="btn ghost" style="margin-top:12px" data-go="./mountains.html">山を登録する</button>
+  </div>`);
+}
+if (climbed.length && !favorites.length && !wishlist.length) {
+  tips.push(`<div class="hc-empty">
+    <p>好きな山・これから登りたい山を<br>それぞれ5座まで載せられます。</p>
+    <button class="btn ghost" style="margin-top:12px" data-go="./picks.html">選ぶ</button>
   </div>`);
 }
 $("#tips").innerHTML = tips.join("");
@@ -224,46 +211,10 @@ $("#copy").onclick = async () => {
   setTimeout(() => { msg.textContent = ""; msg.className = "msg"; }, 2600);
 };
 
-// メニュー
-const menu = $("#menu");
-menu.innerHTML = `
-  <button data-act="open">
-    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>
-      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-    公開ページを開く
-  </button>
-  ${diagnosed ? `<button data-act="requiz">
-    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-    診断をやり直す
-  </button>` : ""}
-  <button data-act="blocks">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
-    ブロック中のユーザー
-  </button>
-  <button data-act="logout">
-    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-    ログアウト
-  </button>`;
-
-$("#more").onclick = (e) => {
-  e.stopPropagation();
-  menu.hidden = !menu.hidden;
-};
-document.addEventListener("click", () => { menu.hidden = true; });
-
-menu.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-act]");
-  if (!b) return;
-  if (b.dataset.act === "open")   location.href = shareUrl;
-  if (b.dataset.act === "requiz") location.href = "./quiz.html";
-  if (b.dataset.act === "blocks") location.href = "./blocks.html";
-  if (b.dataset.act === "logout") signOut();
-});
-
 $("#go-exchange").onclick   = () => location.href = "./exchange.html";
 $("#go-collection").onclick = () => location.href = "./collection.html";
 $("#go-mt").onclick   = () => location.href = "./mountains.html";
+$("#go-edit").onclick = () => location.href = "./setup.html";
 
 // ログイン直後に交換が成立していたら知らせる
 if (justExchanged) {
@@ -271,7 +222,6 @@ if (justExchanged) {
   m.className = "msg success";
   m.textContent = "カードを交換しました。コレクションから確認できます。";
 }
-$("#go-edit").onclick = () => location.href = "./setup.html";
 
 $("#loading").hidden = true;
 $("#main").hidden = false;

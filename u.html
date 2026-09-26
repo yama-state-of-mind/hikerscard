@@ -71,7 +71,7 @@
 
 <script type="module">
 import { supabase, getUser } from "/supabase.js";
-import { renderCard, esc } from "/card.js";
+import { renderCard, bindCardToggles, esc } from "/card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -112,7 +112,9 @@ if (!publicId) {
       charSVG: diagnosed ? characterSVG(data.type_code) : "",
       animal:  diagnosed ? CHARACTERS[data.type_code]?.animal : "",
       typeName: diagnosed ? TYPES[data.type_code]?.name : "",
+      uid: "pub",
     });
+    bindCardToggles();
 
     // 閲覧者の状態に応じた案内
     const me = await getUser();
