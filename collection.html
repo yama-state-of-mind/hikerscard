@@ -99,6 +99,28 @@
   </div>
 </div>
 
+<!-- エラーを画面に出す。モジュールの読み込み失敗もここで拾える -->
+<script>
+window.__showFatal = function (label, detail) {
+  var el = document.getElementById("loading");
+  if (!el) return;
+  el.innerHTML =
+    '<p class="msg error" style="text-align:left">' +
+    '<b>' + label + '</b><br>' +
+    String(detail).replace(/[<>&]/g, "") +
+    '</p>';
+  el.hidden = false;
+};
+window.addEventListener("error", function (e) {
+  window.__showFatal("読み込みに失敗しました",
+    (e.message || "") + " " + (e.filename || ""));
+});
+window.addEventListener("unhandledrejection", function (e) {
+  window.__showFatal("処理中にエラーが発生しました",
+    (e.reason && (e.reason.message || e.reason)) || "");
+});
+</script>
+
 <script src="./data.js"></script>
 <script src="./characters.js"></script>
 
@@ -109,16 +131,19 @@ import { renderCard } from "./card.js";
 const $ = (s) => document.querySelector(s);
 
 const user = await getUser();
-if (!user) location.replace("./login.html");
+if (!user) {
+  location.replace("./login.html");
+  throw new Error("redirect");
+}
 
 const { data, error } = await supabase.rpc("get_my_collection");
 
 if (error) {
-  $("#loading").innerHTML = `<p class="msg error">読み込めませんでした：${error.message}</p>`;
+  window.__showFatal("コレクションを読み込めませんでした", error.message);
   throw error;
 }
 
-const cards = data ?? [];
+const cards = Array.isArray(data) ? data : [];
 $("#n").textContent = cards.length;
 
 if (!cards.length) {
@@ -143,7 +168,6 @@ if (!cards.length) {
       <button class="deck-btn" id="next">めくる ▶</button>
     </div>`;
 
-  drawDeck();
   $("#prev").onclick = () => cycle(-1);
   $("#next").onclick = () => cycle(1);
 }
@@ -151,8 +175,12 @@ if (!cards.length) {
 $("#go-exchange").onclick = () => location.href = "./exchange.html";
 $("#back").onclick = () => location.href = "./card.html";
 
+// 先に表示してから描く。
+// 非表示のまま描くと、カードの高さが0として測られてレイアウトが崩れる
 $("#loading").hidden = true;
 $("#main").hidden = false;
+
+if (cards.length) drawDeck();
 
 // =============================================
 // 重なったカードの描画
@@ -195,9 +223,14 @@ function layout() {
     el.dataset.base = el.style.transform;
   });
 
-  // 一番手前のカードの高さに合わせて、枠の高さを決める
-  const front = document.querySelector(".deck-item.front .hcard");
-  if (front) $("#deck").style.minHeight = front.offsetHeight + 60 + "px";
+  // 一番手前のカードの高さに合わせて、枠の高さを決める。
+  // 描画が画面に反映されてから測る必要があるので、1フレーム待つ
+  requestAnimationFrame(() => {
+    const front = document.querySelector(".deck-item.front .hcard");
+    if (front && front.offsetHeight > 0) {
+      $("#deck").style.minHeight = front.offsetHeight + 60 + "px";
+    }
+  });
 }
 
 function cycle(dir) {
