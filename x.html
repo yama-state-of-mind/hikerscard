@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>カードを交換する｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .center { text-align: center; }
+  .done-char { width: 120px; height: 120px; margin: 10px auto; }
+  .done-char svg { width: 100%; height: 100%; }
+  .done-name { font-size: 22px; font-weight: 900; }
+  .done-type { font-size: 12.5px; font-weight: 700; color: var(--fjord); margin-top: 2px; }
+  .done-lead { font-size: 13px; color: #45564e; margin-top: 14px; line-height: 1.9; }
+  .done-lead b { color: var(--pine); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>交換しています…</p>
+  </div>
+
+  <div id="out" hidden class="center"></div>
+</div>
+
+<script src="/data.js"></script>
+<script src="/characters.js"></script>
+
+<script type="module">
+import { supabase, getUser, getMyProfile } from "/supabase.js";
+
+const $ = (s) => document.querySelector(s);
+
+// ---------------------------------------------
+// URLからトークンを取り出す
+//   /x/AbCd1234...      … vercel.json のリライト経由
+//   /x.html?t=AbCd...   … 直接開いた場合
+// ---------------------------------------------
+function readToken() {
+  const q = new URLSearchParams(location.search).get("t");
+  if (q) return q;
+  const m = location.pathname.match(/\/x\/([A-Za-z0-9]+)/);
+  return m ? m[1] : null;
+}
+
+const token = readToken();
+
+if (!token) {
+  render(`
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>コードが見つかりません</h1>
+    <p class="sub">URLをもう一度ご確認ください。</p>
+    <button class="btn ghost" onclick="location.href='/'">トップへ</button>`);
+} else {
+  const user = await getUser();
+
+  if (!user) {
+    // 未ログイン。トークンを預かってログインへ送り、戻ってきたら交換する
+    localStorage.setItem("pendingExchangeToken", token);
+    render(`
+      <p class="brand">ハイカーズ<span>カード</span></p>
+      <h1>カードを交換します</h1>
+      <p class="sub">
+        交換するには、あなたのカードが必要です。<br>
+        登録すると、そのまま交換が完了します。
+      </p>
+      <button class="btn sun" onclick="location.href='/login.html'">
+        カードを作って交換する
+      </button>
+      <p class="terms">
+        すでにお持ちの方も、同じ入口からログインできます。
+      </p>`);
+  } else {
+    const profile = await getMyProfile();
+
+    if (!profile?.display_name) {
+      // プロフィール未設定。設定後に交換できるようトークンを預かる
+      localStorage.setItem("pendingExchangeToken", token);
+      location.replace("/setup.html");
+    } else {
+      await redeem(token);
+    }
+  }
+}
+
+// ---------------------------------------------
+// 交換の実行
+// ---------------------------------------------
+async function redeem(tok) {
+  const { data, error } = await supabase.rpc("redeem_exchange_token", {
+    p_token: tok,
+  });
+
+  if (error) {
+    render(errorView("交換できませんでした", error.message));
+    return;
+  }
+
+  if (!data?.ok) {
+    render(errorView("交換できませんでした", reasonText(data?.reason)));
+    return;
+  }
+
+  const { data: card } = await supabase.rpc("get_public_card", {
+    p_public_id: data.partner,
+  });
+
+  const diagnosed = !!card?.type_code;
+
+  render(`
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <div class="done-char">${diagnosed ? characterSVG(card.type_code) : ""}</div>
+    <p class="done-name">${esc(card?.display_name ?? "")}</p>
+    <p class="done-type">${diagnosed
+      ? `${esc(CHARACTERS[card.type_code].animal)}・${esc(TYPES[card.type_code].name)}`
+      : "未診断"}</p>
+    <p class="done-lead">${data.is_new
+      ? "カードを交換しました。<br><b>お互いのコレクション</b>に入りました。"
+      : "すでに交換済みの相手でした。<br>カードの内容を最新にしました。"}</p>
+    <button class="btn sun"   onclick="location.href='/collection.html'">コレクションを見る</button>
+    <button class="btn ghost" onclick="location.href='/card.html'">マイカードへ</button>`);
+}
+
+function errorView(title, detail) {
+  return `
+    <p class="brand">ハイカーズ<span>カード</span></p>
+    <h1>${title}</h1>
+    <p class="sub">${esc(detail)}</p>
+    <button class="btn ghost" onclick="location.href='/card.html'">マイカードへ</button>`;
+}
+
+function reasonText(reason) {
+  return {
+    not_found: "このコードは使えません。",
+    expired:   "有効期限が切れています。相手にQRを作り直してもらってください。",
+    revoked:   "このQRは無効になっています。",
+    self:      "自分のQRは読み取れません。",
+    blocked:   "このユーザーとは交換できません。",
+    profile_not_ready: "先にプロフィールの表示名を設定してください。",
+  }[reason] ?? "交換できませんでした。";
+}
+
+function render(html) {
+  $("#out").innerHTML = html;
+  $("#loading").hidden = true;
+  $("#out").hidden = false;
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+</script>
+</body>
+</html>

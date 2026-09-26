@@ -83,6 +83,8 @@
 
     <div id="msg" class="msg"></div>
 
+    <button class="btn sun"   id="go-exchange">カードを交換する</button>
+    <button class="btn ghost" id="go-collection">コレクション</button>
     <button class="btn ghost" id="go-mt">登った山を登録する</button>
     <button class="btn ghost" id="go-edit">プロフィールを編集</button>
   </div>
@@ -92,7 +94,8 @@
 <script src="./characters.js"></script>
 
 <script type="module">
-import { supabase, getUser, getMyProfile, applyPendingDiagnosis, signOut } from "./supabase.js";
+import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
+         applyPendingExchange, signOut } from "./supabase.js";
 import { renderCard, esc } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
@@ -109,6 +112,9 @@ if (!profile.display_name) location.replace("./setup.html");
 
 // 未ログインのまま受けた診断結果があれば反映
 profile = await applyPendingDiagnosis(profile);
+
+// 未ログインのまま開いた交換URLがあれば、ここで交換する
+const justExchanged = await applyPendingExchange();
 
 // 登った山
 const { data: climbedRows } = await supabase
@@ -216,7 +222,16 @@ menu.addEventListener("click", (e) => {
   if (b.dataset.act === "logout") signOut();
 });
 
+$("#go-exchange").onclick   = () => location.href = "./exchange.html";
+$("#go-collection").onclick = () => location.href = "./collection.html";
 $("#go-mt").onclick   = () => location.href = "./mountains.html";
+
+// ログイン直後に交換が成立していたら知らせる
+if (justExchanged) {
+  const m = $("#msg");
+  m.className = "msg success";
+  m.textContent = "カードを交換しました。コレクションから確認できます。";
+}
 $("#go-edit").onclick = () => location.href = "./setup.html";
 
 $("#loading").hidden = true;

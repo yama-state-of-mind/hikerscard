@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>コレクション｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<style>
+/* ---------- 枚数の表示 ---------- */
+.deck-head {
+  display: flex; align-items: baseline; gap: 8px; margin-top: 18px;
+}
+.deck-head b {
+  font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1;
+}
+.deck-head span { font-size: 12.5px; color: var(--stone); }
+
+/* ---------- 重なったカード ---------- */
+.deck {
+  position: relative; margin: 16px auto 0;
+  width: 100%; max-width: 330px;
+  /* カードの高さ＋重なり分。中身に応じてJSで調整する */
+  min-height: 520px;
+}
+.deck-item {
+  position: absolute; left: 50%; top: 0; width: 100%;
+  transform-origin: 50% 100%;
+  transition: transform .34s cubic-bezier(.22,.9,.3,1), opacity .25s;
+  will-change: transform;
+}
+.deck-item .hcard { margin-top: 0; }
+
+/* 手前のカードだけ操作できるようにする */
+.deck-item:not(.front) { pointer-events: none; }
+.deck-item.front { cursor: grab; }
+.deck-item.front:active { cursor: grabbing; }
+
+/* ---------- 操作 ---------- */
+.deck-ctrl {
+  display: flex; justify-content: center; gap: 10px; margin-top: 18px;
+}
+.deck-btn {
+  font-family: var(--font); font-size: 12.5px; font-weight: 700;
+  color: var(--fjord); background: var(--paper);
+  border: 1.5px solid var(--line); border-radius: 999px;
+  padding: 9px 22px; cursor: pointer;
+}
+.deck-btn:active { background: var(--birch); }
+.deck-btn:disabled { opacity: .4; cursor: default; }
+
+.deck-pos {
+  text-align: center; font-family: var(--mono); font-size: 12px;
+  color: var(--stone); margin-top: 10px; letter-spacing: 1px;
+}
+.met-at {
+  text-align: center; font-size: 11.5px; color: var(--stone); margin-top: 4px;
+}
+
+/* ---------- 空のとき ---------- */
+.deck-empty {
+  text-align: center; background: var(--paper);
+  border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+  padding: 40px 24px; margin-top: 20px;
+}
+.deck-empty .ic {
+  width: 64px; height: 64px; margin: 0 auto 14px;
+  border-radius: 50%; background: #EDF3EF;
+  display: flex; align-items: center; justify-content: center;
+}
+.deck-empty .ic svg {
+  width: 28px; height: 28px; stroke: var(--stone);
+  fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.deck-empty p { font-size: 12.5px; color: #45564e; line-height: 2; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <div id="main" hidden>
+    <p class="brand">ハイカーズ<span>カード</span></p>
+
+    <div class="deck-head">
+      <b id="n">0</b><span>枚のカード</span>
+    </div>
+
+    <div id="body"></div>
+
+    <button class="btn sun"  id="go-exchange">カードを交換する</button>
+    <button class="btn flat" id="back">マイカードへ</button>
+  </div>
+</div>
+
+<script src="./data.js"></script>
+<script src="./characters.js"></script>
+
+<script type="module">
+import { supabase, getUser } from "./supabase.js";
+import { renderCard } from "./card.js";
+
+const $ = (s) => document.querySelector(s);
+
+const user = await getUser();
+if (!user) location.replace("./login.html");
+
+const { data, error } = await supabase.rpc("get_my_collection");
+
+if (error) {
+  $("#loading").innerHTML = `<p class="msg error">読み込めませんでした：${error.message}</p>`;
+  throw error;
+}
+
+const cards = data ?? [];
+$("#n").textContent = cards.length;
+
+if (!cards.length) {
+  $("#body").innerHTML = `
+    <div class="deck-empty">
+      <div class="ic">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="5" width="13" height="16" rx="2"/>
+          <path d="M8 3h11a2 2 0 0 1 2 2v13"/>
+        </svg>
+      </div>
+      <p>まだカードがありません。<br>
+         山で会った人とQRを読み合うと、<br>ここにカードが増えていきます。</p>
+    </div>`;
+} else {
+  $("#body").innerHTML = `
+    <div class="deck" id="deck"></div>
+    <p class="deck-pos" id="pos"></p>
+    <p class="met-at" id="met"></p>
+    <div class="deck-ctrl">
+      <button class="deck-btn" id="prev">◀ もどす</button>
+      <button class="deck-btn" id="next">めくる ▶</button>
+    </div>`;
+
+  drawDeck();
+  $("#prev").onclick = () => cycle(-1);
+  $("#next").onclick = () => cycle(1);
+}
+
+$("#go-exchange").onclick = () => location.href = "./exchange.html";
+$("#back").onclick = () => location.href = "./card.html";
+
+$("#loading").hidden = true;
+$("#main").hidden = false;
+
+// =============================================
+// 重なったカードの描画
+// 手前のカードの下に、次のカードの端が覗く形にする
+// =============================================
+let top = 0;
+
+function drawDeck() {
+  const deck = $("#deck");
+  const n = cards.length;
+
+  deck.innerHTML = cards.map((c, i) => {
+    const pos = (i - top + n) % n;          // 0 が手前
+    const diagnosed = !!c.type_code;
+    return `
+      <div class="deck-item${pos === 0 ? " front" : ""}" data-pos="${pos}">
+        ${renderCard(c, {
+          charSVG: diagnosed ? characterSVG(c.type_code) : "",
+          animal:  diagnosed ? CHARACTERS[c.type_code]?.animal : "",
+          typeName: diagnosed ? TYPES[c.type_code]?.name : "",
+        })}
+      </div>`;
+  }).join("");
+
+  layout();
+  bindSwipe();
+  updateLabels();
+}
+
+// 位置・拡大率・重ね順を割り当てる
+function layout() {
+  const n = cards.length;
+  document.querySelectorAll(".deck-item").forEach((el) => {
+    const pos = Number(el.dataset.pos);
+    const y = pos * 16;                      // 下にずらす量
+    const sc = 1 - pos * 0.035;              // 奥ほど小さく
+    el.style.transform = `translateX(-50%) translateY(${y}px) scale(${sc})`;
+    el.style.zIndex = String(n - pos);
+    el.style.opacity = pos > 3 ? "0" : "1";  // 4枚目より奥は隠す
+    el.dataset.base = el.style.transform;
+  });
+
+  // 一番手前のカードの高さに合わせて、枠の高さを決める
+  const front = document.querySelector(".deck-item.front .hcard");
+  if (front) $("#deck").style.minHeight = front.offsetHeight + 60 + "px";
+}
+
+function cycle(dir) {
+  const n = cards.length;
+  top = (top + dir + n) % n;
+  drawDeck();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function updateLabels() {
+  $("#pos").textContent = `${top + 1} / ${cards.length}`;
+  const c = cards[top];
+  $("#met").textContent = c.first_met_at
+    ? `${fmtDate(c.first_met_at)} に交換`
+    : "";
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// =============================================
+// スワイプでめくる
+// =============================================
+function bindSwipe() {
+  const el = document.querySelector(".deck-item.front");
+  if (!el || cards.length < 2) return;
+
+  const base = el.dataset.base;
+  let sx = 0, dx = 0, dragging = false;
+
+  const start = (x) => { sx = x; dragging = true; el.style.transition = "none"; };
+  const move = (x) => {
+    if (!dragging) return;
+    dx = x - sx;
+    el.style.transform = `${base} translateX(${dx}px) rotate(${dx * 0.03}deg)`;
+  };
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    el.style.transition = "";
+    if (Math.abs(dx) > 70) cycle(dx < 0 ? 1 : -1);
+    else el.style.transform = base;
+    dx = 0;
+  };
+
+  el.addEventListener("mousedown", (e) => { e.preventDefault(); start(e.clientX); });
+  window.addEventListener("mousemove", (e) => move(e.clientX));
+  window.addEventListener("mouseup", end);
+
+  el.addEventListener("touchstart", (e) => start(e.touches[0].clientX), { passive: true });
+  el.addEventListener("touchmove",  (e) => move(e.touches[0].clientX),  { passive: true });
+  el.addEventListener("touchend", end);
+}
+</script>
+</body>
+</html>

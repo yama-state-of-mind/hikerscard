@@ -128,6 +128,39 @@ export async function applyPendingDiagnosis(profile) {
 }
 
 // ---------------------------------------------
+// 未ログインのまま開いた交換URLを、ログイン後に実行する
+//
+// x.html が localStorage に預けたトークンを拾う。
+// 成功・失敗どちらでも預かり分は消す（期限切れのトークンが
+// 残り続けると、毎回エラーが出てしまうため）
+//
+// 戻り値: 交換できたら相手のpublic_id、そうでなければ null
+// ---------------------------------------------
+export async function applyPendingExchange() {
+  const token = localStorage.getItem("pendingExchangeToken");
+  if (!token) return null;
+
+  const user = await getUser();
+  if (!user) return null;
+
+  localStorage.removeItem("pendingExchangeToken");
+
+  const { data, error } = await supabase.rpc("redeem_exchange_token", {
+    p_token: token,
+  });
+
+  if (error) {
+    console.error("交換に失敗:", error);
+    return null;
+  }
+  if (!data?.ok) {
+    console.warn("交換できませんでした:", data?.reason);
+    return null;
+  }
+  return data.partner;
+}
+
+// ---------------------------------------------
 // ログアウト
 // ---------------------------------------------
 export async function signOut() {
