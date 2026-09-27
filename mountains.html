@@ -318,7 +318,7 @@ if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 // ---------------------------------------------
 const [mtRes, myRes] = await Promise.all([
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, pref, region, meizan_rank, is_popular")
+          .select("id, name, kana, elevation, area, prefs, region, meizan_rank, is_popular")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id")
@@ -565,7 +565,7 @@ function render() {
   }
 
   // 絞り込みが効いていないときは件数を抑える（スクロール負荷を下げる）
-  const limited = !kw && !onlySelected && !area && list.length > 80;
+  const limited = !kw && !onlySelected && !activeCount() && list.length > 80;
   const shown = limited ? list.slice(0, 80) : list;
 
   $("#list").innerHTML = shown.length
@@ -613,7 +613,7 @@ function itemHtml(m) {
       </div>
       <div class="mt-body">
         <p class="mt-name">${m.name}${badge}</p>
-        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.pref ? ` ・ ${m.pref}` : ""}</p>
+        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.prefs?.length ? ` ・ ${m.prefs.join("・")}` : ""}</p>
       </div>
     </div>`;
 }

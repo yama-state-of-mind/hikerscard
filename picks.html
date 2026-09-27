@@ -183,7 +183,7 @@ if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 // ---------------------------------------------
 const [mtRes, climbedRes, wishRes] = await Promise.all([
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, meizan_rank")
+          .select("id, name, kana, elevation, area, prefs, meizan_rank")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id, is_favorite")
@@ -338,7 +338,7 @@ function item(m, sel) {
           ? `<span class="rank-badge rank-${m.meizan_rank}">${
               m.meizan_rank === 100 ? "百" : m.meizan_rank === 200 ? "二百" : "三百"}</span>`
           : ""}</p>
-        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ ${m.elevation}m` : ""}${m.area ? ` ・ ${m.area}` : ""}</p>
+        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ ${m.elevation}m` : ""}${m.prefs?.length ? ` ・ ${m.prefs.join("・")}` : ""}</p>
       </div>
     </div>`;
 }
