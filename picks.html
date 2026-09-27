@@ -423,12 +423,19 @@ $("#save").onclick = async () => {
     // 好きな山：climbed_mountains のフラグを切り替える
     for (const [ids, val] of [[f.add, true], [f.del, false]]) {
       if (!ids.length) continue;
-      const { error } = await supabase
+      // select() を付けて、実際に何行更新されたかを受け取る。
+      // RLSで弾かれると 0行・エラーなしで静かに終わるため、
+      // ここで気づけるようにしておく
+      const { data, error } = await supabase
         .from("climbed_mountains")
         .update({ is_favorite: val })
         .eq("user_id", user.id)
-        .in("mountain_id", ids);
+        .in("mountain_id", ids)
+        .select("mountain_id");
       if (error) throw error;
+      if ((data?.length ?? 0) !== ids.length) {
+        throw new Error("更新が反映されませんでした（権限の設定を確認してください）");
+      }
     }
 
     // 登りたい山：行の追加・削除

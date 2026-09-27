@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <style>
 /* ---------- 枚数の表示 ---------- */
@@ -35,7 +43,11 @@
 
 /* 手前のカードだけ操作できるようにする */
 .deck-item:not(.front) { pointer-events: none; }
-.deck-item.front { cursor: grab; }
+.deck-item.front { cursor: pointer; }
+  .deck-hint {
+    text-align: center; font-size: 11px; color: var(--c-mut, var(--stone));
+    margin-top: 10px;
+  }
 .deck-item.front:active { cursor: grabbing; }
 
 /* ---------- 操作 ---------- */
@@ -193,7 +205,8 @@ if (!cards.length) {
     <div class="deck-ctrl">
       <button class="deck-btn" id="prev">◀ もどす</button>
       <button class="deck-btn" id="next">めくる ▶</button>
-    </div>`;
+    </div>
+    <p class="deck-hint">カードを押すと、その人のページが開きます</p>`;
 
   $("#prev").onclick = () => cycle(-1);
   $("#next").onclick = () => cycle(1);
@@ -285,22 +298,36 @@ function fmtDate(iso) {
 // =============================================
 function bindSwipe() {
   const el = document.querySelector(".deck-item.front");
-  if (!el || cards.length < 2) return;
+  if (!el) return;
 
   const base = el.dataset.base;
-  let sx = 0, dx = 0, dragging = false;
+  const openUrl = `/u/${encodeURIComponent(el.dataset.uid)}`;
 
-  const start = (x) => { sx = x; dragging = true; el.style.transition = "none"; };
+  let sx = 0, dx = 0, dragging = false, moved = false;
+
+  const start = (x) => {
+    sx = x; dx = 0; moved = false; dragging = true;
+    el.style.transition = "none";
+  };
   const move = (x) => {
     if (!dragging) return;
     dx = x - sx;
+    if (Math.abs(dx) > 6) moved = true;      // 6pxを超えたらスワイプ扱い
+    if (cards.length < 2) return;            // 1枚だけなら動かさない
     el.style.transform = `${base} translateX(${dx}px) rotate(${dx * 0.03}deg)`;
   };
   const end = () => {
     if (!dragging) return;
     dragging = false;
     el.style.transition = "";
-    if (Math.abs(dx) > 70) cycle(dx < 0 ? 1 : -1);
+
+    // ほとんど動いていなければ「押した」とみなして、その人のページへ
+    if (!moved) {
+      location.href = openUrl;
+      return;
+    }
+
+    if (cards.length > 1 && Math.abs(dx) > 70) cycle(dx < 0 ? 1 : -1);
     else el.style.transform = base;
     dx = 0;
   };
