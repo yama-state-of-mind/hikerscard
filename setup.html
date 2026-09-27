@@ -40,6 +40,25 @@
   }
   .sns-row input { flex: 1; }
   .sns-row .pre { font-size: 11px; color: var(--stone); flex: none; }
+
+  .vis-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--paper); border-radius: 12px;
+    box-shadow: var(--shadow-card); padding: 11px 15px; margin-top: 8px;
+  }
+  .vis-row .t { flex: 1; font-size: 13px; font-weight: 700; }
+  .tog {
+    width: 42px; height: 24px; border-radius: 999px; background: #DCE4DF;
+    position: relative; cursor: pointer; flex: none; border: none;
+    transition: background .18s;
+  }
+  .tog::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    transition: transform .18s;
+  }
+  .tog.on { background: var(--sun); }
+  .tog.on::after { transform: translateX(18px); }
 </style>
 </head>
 <body>
@@ -79,6 +98,14 @@
       <h2>カードの背景</h2>
       <p class="d">カードの雰囲気が変わります。あとから変更できます。</p>
       <div class="bgs" id="bgs" style="margin-top:10px"></div>
+    </div>
+
+    <!-- 名山の公開設定 -->
+    <div class="group">
+      <h2>カードに載せる踏破数</h2>
+      <p class="d">オフにしたものはカードに表示されません。<br>
+        登録した山そのものは消えません。</p>
+      <div id="vis"></div>
     </div>
 
     <!-- SNS -->
@@ -161,6 +188,37 @@ nameInput.value = profile.display_name ?? "";
 commentInput.value = profile.comment ?? "";
 
 let bg = profile.card_bg ?? "contour";
+
+// 名山ランクごとの公開設定
+const vis = {
+  100: profile.vis_rank_100 !== false,
+  200: profile.vis_rank_200 !== false,
+  300: profile.vis_rank_300 !== false,
+};
+
+const RANK_LABELS = [
+  { key: 100, label: "日本百名山" },
+  { key: 200, label: "日本二百名山" },
+  { key: 300, label: "日本三百名山" },
+];
+
+function drawVis() {
+  $("#vis").innerHTML = RANK_LABELS.map((r) => `
+    <div class="vis-row">
+      <span class="t">${r.label}</span>
+      <button type="button" class="tog ${vis[r.key] ? "on" : ""}" data-rank="${r.key}"
+        aria-label="${r.label}を${vis[r.key] ? "非表示" : "表示"}にする"></button>
+    </div>`).join("");
+}
+drawVis();
+
+$("#vis").addEventListener("click", (e) => {
+  const b = e.target.closest(".tog");
+  if (!b) return;
+  const k = Number(b.dataset.rank);
+  vis[k] = !vis[k];
+  drawVis();
+});
 
 $("#url-box").innerHTML = `あなたのカードのURL<br>${baseUrl()}u/<b>${profile.public_id}</b>`;
 
@@ -245,6 +303,9 @@ $("#save").onclick = async () => {
     display_name: name,
     comment: commentInput.value.trim() || null,
     card_bg: bg,
+    vis_rank_100: vis[100],
+    vis_rank_200: vis[200],
+    vis_rank_300: vis[300],
   };
   SNS_KEYS.forEach((k) => {
     // @や空白を取り除いて保存する

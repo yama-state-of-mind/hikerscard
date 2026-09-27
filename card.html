@@ -115,17 +115,28 @@ profile = await applyPendingDiagnosis(profile);
 const justExchanged = await applyPendingExchange();
 
 // 登った山・好きな山・登りたい山
-const [climbedRes, wishRes] = await Promise.all([
+const [climbedRes, wishRes, cntRes] = await Promise.all([
   supabase.from("climbed_mountains")
-          .select("is_favorite, mountains(name, is_hyakumeizan, elevation)")
+          .select("is_favorite, mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
   supabase.from("wishlist_mountains")
-          .select("mountains(name, is_hyakumeizan, elevation)")
+          .select("mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
+  supabase.rpc("meizan_counts", { p_user: user.id }),
 ]);
 
+// クエリが失敗していたら、黙って空にせず画面に出す
+// （列やテーブルが無いとここに来る）
+if (climbedRes.error) {
+  window.__showFatal("登った山を読み込めませんでした", climbedRes.error.message);
+  throw climbedRes.error;
+}
+if (wishRes.error) {
+  console.warn("登りたい山を読み込めませんでした:", wishRes.error.message);
+}
+
 const byElev = (a, b) => (b.elevation ?? 0) - (a.elevation ?? 0);
-const toTag = (m) => ({ name: m.name, hyaku: m.is_hyakumeizan });
+const toTag = (m) => ({ name: m.name, rank: m.meizan_rank });
 
 const climbedRows = (climbedRes.data ?? []).filter((r) => r.mountains);
 const climbed = climbedRows.map((r) => r.mountains).sort(byElev).map(toTag);
@@ -134,7 +145,14 @@ const favorites = climbedRows.filter((r) => r.is_favorite)
 const wishlist = (wishRes.data ?? []).map((r) => r.mountains)
                              .filter(Boolean).sort(byElev).map(toTag);
 
-const hyakuDone = climbed.filter((m) => m.hyaku).length;
+// 踏破数はDBの集計を使う（数え方を1か所にまとめるため）
+const counts = cntRes.data ?? { "100": 0, "200": 0, "300": 0, other: 0 };
+
+// 公開設定がオンのランクだけカードに載せる
+const ranks = { other: counts.other };
+if (profile.vis_rank_100) ranks["100"] = counts["100"];
+if (profile.vis_rank_200) ranks["200"] = counts["200"];
+if (profile.vis_rank_300) ranks["300"] = counts["300"];
 
 // カードに渡す形に整える
 const cardData = {
@@ -148,7 +166,7 @@ const cardData = {
     lf: profile.axis_lf, ca: profile.axis_ca,
   },
   card_bg: profile.card_bg,
-  hyakumeizan_done: hyakuDone,
+  ranks,
   climbed,
   favorites,
   wishlist,

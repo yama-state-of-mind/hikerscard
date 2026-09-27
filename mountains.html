@@ -8,111 +8,139 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1E3A31">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  }
+</script>
 <style>
-/* ---------- 上部の進捗 ---------- */
+/* ---------- 上部（カテゴリ＋達成率＋検索＋タグ） ---------- */
 .head-bar {
-  position: sticky; top: 0; z-index: 20;
-  background: var(--birch); padding: 14px 0 10px;
+  position: sticky; top: 0; z-index: 30;
+  background: var(--birch);
+  padding: 10px 0 8px;
+  margin: 0 -18px;              /* wrap の余白を打ち消して全幅に */
 }
-.count-row { display: flex; align-items: center; gap: 14px; }
-.ring { position: relative; width: 62px; height: 62px; flex: none; }
+.head-in { padding: 0 18px; }
+
+/* カテゴリのタブ */
+.cats {
+  display: flex; gap: 5px; background: #E2E9E4;
+  border-radius: 999px; padding: 3px;
+}
+.cat {
+  flex: 1; font-family: var(--font); font-size: 11.5px; font-weight: 700;
+  border: none; background: transparent; color: var(--stone);
+  border-radius: 999px; padding: 7px 0; cursor: pointer; white-space: nowrap;
+}
+.cat.on { background: var(--paper); color: var(--pine); box-shadow: var(--shadow-card); }
+
+/* 達成率 */
+.count-row { display: flex; align-items: center; gap: 14px; margin-top: 11px; }
+.ring { position: relative; width: 58px; height: 58px; flex: none; }
 .ring svg { width: 100%; height: 100%; }
 .ring-num {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.ring-num b { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1; }
+.ring-num b { font-family: var(--mono); font-size: 17px; font-weight: 700; line-height: 1; }
 .ring-num span { font-size: 8px; color: var(--stone); margin-top: 1px; }
-.count-txt { font-size: 12.5px; line-height: 1.7; }
+.count-txt { font-size: 12.5px; line-height: 1.6; }
 .count-txt b { font-weight: 900; }
 .count-txt span { color: var(--stone); font-size: 11.5px; }
 
-/* ---------- 検索 ---------- */
-.search-wrap { position: relative; margin-top: 12px; }
+/* 検索 */
+.search-wrap { position: relative; margin-top: 10px; }
 .search-wrap input {
   width: 100%; font-family: var(--font); font-size: 15px;
   background: var(--paper); border: 1.6px solid var(--line);
-  border-radius: 999px; padding: 11px 40px 11px 42px; outline: none;
+  border-radius: 999px; padding: 10px 40px 10px 40px; outline: none;
 }
 .search-wrap input:focus {
   border-color: var(--fjord); box-shadow: 0 0 0 3px rgba(70,112,143,.12);
 }
-.search-wrap .icon {
-  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+.search-wrap .ic {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   width: 16px; height: 16px; stroke: var(--stone); fill: none; stroke-width: 2;
 }
 .search-wrap .clear {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  width: 26px; height: 26px; border: none; background: #EDF3EF;
-  border-radius: 50%; color: var(--stone); cursor: pointer; font-size: 14px;
-  line-height: 1; font-family: var(--font);
+  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 25px; height: 25px; border: none; background: #EDF3EF;
+  border-radius: 50%; color: var(--stone); cursor: pointer;
+  font-size: 13px; line-height: 1; font-family: var(--font);
 }
 
-/* ---------- エリアの絞り込み ---------- */
-.areas { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 2px; }
+/* エリアタグ */
+.areas { display: flex; gap: 6px; overflow-x: auto; padding: 9px 18px 2px; margin: 0 -18px; }
 .areas::-webkit-scrollbar { display: none; }
 .area-chip {
   flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700;
-  border: none; border-radius: 999px; padding: 5px 13px; cursor: pointer;
-  background: var(--paper); color: #45564e; border: 1.4px solid var(--line);
+  border: 1.4px solid var(--line); border-radius: 999px;
+  padding: 5px 12px; cursor: pointer; background: var(--paper); color: #45564e;
 }
 .area-chip.on { background: var(--pine); color: #fff; border-color: var(--pine); }
+.area-chip.sel { border-color: var(--sun); color: #96701E; background: #FCF6EA; }
+.area-chip.sel.on { background: var(--sun); color: #fff; border-color: var(--sun); }
 
-/* ---------- 山のリスト ---------- */
+/* ---------- 山のリスト（コンパクト） ---------- */
 .mt-list { margin-top: 10px; }
 .mt-item {
-  display: flex; align-items: center; gap: 11px;
-  background: var(--paper); border-radius: 14px;
-  box-shadow: var(--shadow-card); padding: 11px 14px; margin-bottom: 7px;
-  cursor: pointer; transition: box-shadow .15s;
-  border: 1.6px solid transparent;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--paper); border-radius: 12px;
+  box-shadow: var(--shadow-card); padding: 8px 12px; margin-bottom: 5px;
+  cursor: pointer; border: 1.6px solid transparent;
+  transition: background .12s;
 }
-.mt-item.on { border-color: var(--sun); }
-.mt-item:active { box-shadow: 0 0 0 2px var(--line), var(--shadow-card); }
+.mt-item.on { border-color: var(--sun); background: #FCF6EA; }
 
 .mt-check {
-  width: 22px; height: 22px; border-radius: 7px; flex: none;
+  width: 20px; height: 20px; border-radius: 6px; flex: none;
   border: 2px solid var(--line); background: var(--paper);
   display: flex; align-items: center; justify-content: center;
 }
 .mt-item.on .mt-check { background: var(--sun); border-color: var(--sun); }
-.mt-check svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; opacity: 0; }
+.mt-check svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 3; opacity: 0; }
 .mt-item.on .mt-check svg { opacity: 1; }
 
 .mt-body { flex: 1; min-width: 0; }
-.mt-name { font-size: 13.5px; font-weight: 700; }
-.mt-meta { font-size: 10.5px; color: var(--stone); margin-top: 1px; }
+.mt-name {
+  font-size: 13px; font-weight: 700; line-height: 1.4;
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+.mt-meta { font-size: 10px; color: var(--stone); margin-top: 1px; }
 .mt-meta .el { font-family: var(--mono); }
+
+.rank-badge {
+  font-size: 8.5px; font-weight: 900; font-family: var(--mono);
+  border-radius: 4px; padding: 1px 5px; flex: none;
+}
+.rank-100 { background: var(--sun);   color: #fff; }
+.rank-200 { background: #8CA9BD;      color: #fff; }
+.rank-300 { background: #B9C6BD;      color: #fff; }
 
 .mt-empty {
   text-align: center; font-size: 12.5px; color: var(--stone);
-  padding: 40px 20px; line-height: 2;
+  padding: 36px 20px; line-height: 2;
+}
+.more-note {
+  text-align: center; font-size: 11.5px; color: var(--stone);
+  padding: 14px 20px 4px; line-height: 1.9;
 }
 
 /* ---------- 保存バー ---------- */
 .save-bar {
   position: sticky; bottom: 0; z-index: 20;
-  background: linear-gradient(to top, var(--birch) 70%, transparent);
-  padding: 14px 0 16px; margin-top: 8px;
+  background: linear-gradient(to top, var(--birch) 72%, transparent);
+  padding: 14px 0 16px; margin-top: 6px;
 }
 .save-bar .btn { margin-top: 0; }
-.save-note {
-  font-size: 11px; color: var(--stone); text-align: center; margin-bottom: 8px;
-}
+.save-note { font-size: 11px; color: var(--stone); text-align: center; margin-bottom: 8px; }
 </style>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1E3A31">
-<link rel="apple-touch-icon" href="/icons/icon-180.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/sw.js").catch(function () {});
-    });
-  }
-</script>
 </head>
 <body>
 
@@ -124,30 +152,31 @@
 
   <div id="main" hidden>
     <div class="head-bar">
-      <div class="count-row">
-        <div class="ring">
-          <svg viewBox="0 0 62 62">
-            <circle cx="31" cy="31" r="26" fill="none" stroke="#E7EEE9" stroke-width="6"/>
-            <circle id="ring-bar" cx="31" cy="31" r="26" fill="none" stroke="#E0A33B"
-                    stroke-width="6" stroke-linecap="round"
-                    stroke-dasharray="163.4" stroke-dashoffset="163.4"
-                    transform="rotate(-90 31 31)"/>
-          </svg>
-          <div class="ring-num"><b id="ring-n">0</b><span>/100</span></div>
-        </div>
-        <p class="count-txt">
-          <b>日本百名山</b><br>
-          <span id="count-note">登った山を選んでください</span>
-        </p>
-      </div>
+      <div class="head-in">
+        <div class="cats" id="cats"></div>
 
-      <div class="search-wrap">
-        <svg class="icon" viewBox="0 0 24 24" stroke-linecap="round">
-          <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
-        </svg>
-        <input type="text" id="q" placeholder="山名・よみで探す（例：やり）"
-               autocomplete="off" inputmode="search">
-        <button class="clear" id="clear" hidden>×</button>
+        <div class="count-row">
+          <div class="ring">
+            <svg viewBox="0 0 58 58">
+              <circle cx="29" cy="29" r="24" fill="none" stroke="#E7EEE9" stroke-width="6"/>
+              <circle id="ring-bar" cx="29" cy="29" r="24" fill="none" stroke="#E0A33B"
+                      stroke-width="6" stroke-linecap="round"
+                      stroke-dasharray="150.8" stroke-dashoffset="150.8"
+                      transform="rotate(-90 29 29)"/>
+            </svg>
+            <div class="ring-num"><b id="ring-n">0</b><span id="ring-d">/100</span></div>
+          </div>
+          <p class="count-txt" id="count-txt"></p>
+        </div>
+
+        <div class="search-wrap">
+          <svg class="ic" viewBox="0 0 24 24" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
+          </svg>
+          <input type="text" id="q" placeholder="山名・よみで探す（例：やり）"
+                 autocomplete="off" inputmode="search">
+          <button class="clear" id="clear" hidden>×</button>
+        </div>
       </div>
 
       <div class="areas" id="areas"></div>
@@ -158,30 +187,42 @@
     <div class="save-bar">
       <p class="save-note" id="save-note"></p>
       <button class="btn sun" id="save">保存する</button>
-      <button class="btn flat" id="back">もどる</button>
       <div id="msg" class="msg"></div>
     </div>
   </div>
 </div>
 
+<script>
+window.__showFatal = function (label, detail) {
+  var el = document.getElementById("loading");
+  if (!el) return;
+  el.innerHTML = '<p class="msg error" style="text-align:left"><b>' + label + '</b><br>' +
+                 String(detail).replace(/[<>&]/g, "") + '</p>';
+  el.hidden = false;
+};
+window.addEventListener("error", (e) =>
+  window.__showFatal("読み込みに失敗しました", (e.message || "") + " " + (e.filename || "")));
+window.addEventListener("unhandledrejection", (e) =>
+  window.__showFatal("エラーが発生しました", (e.reason && (e.reason.message || e.reason)) || ""));
+</script>
+
 <script type="module">
 import { supabase, getUser, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
 
+const $ = (s) => document.querySelector(s);
+
 mountHeader(signOut);
 
-const $ = (s) => document.querySelector(s);
-const loading = $("#loading");
-
 const user = await getUser();
-if (!user) location.replace("./login.html");
+if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 
 // ---------------------------------------------
-// 山マスタと、自分がすでに登録している山を取ってくる
+// 山マスタと、登録済みの山
 // ---------------------------------------------
 const [mtRes, myRes] = await Promise.all([
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, is_hyakumeizan")
+          .select("id, name, kana, elevation, area, meizan_rank")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id")
@@ -189,49 +230,94 @@ const [mtRes, myRes] = await Promise.all([
 ]);
 
 if (mtRes.error) {
-  loading.innerHTML = `<p class="msg error">山のデータを読み込めませんでした：${mtRes.error.message}</p>`;
+  window.__showFatal("山のデータを読み込めませんでした", mtRes.error.message);
   throw mtRes.error;
 }
 
 const MOUNTAINS = mtRes.data ?? [];
-
-// 元々登録していたもの（保存時の差分計算に使う）
 const original = new Set((myRes.data ?? []).map((r) => r.mountain_id));
-// 画面上の選択状態
 const selected = new Set(original);
 
-// エリアの一覧（出現順を保つ）
-const AREAS = [...new Set(MOUNTAINS.map((m) => m.area).filter(Boolean))];
-let activeArea = null;
+// ---------------------------------------------
+// カテゴリ
+// ---------------------------------------------
+const CATS = [
+  { id: "100",   label: "百名山",   rank: 100,  total: 100 },
+  { id: "200",   label: "二百名山", rank: 200,  total: 100 },
+  { id: "300",   label: "三百名山", rank: 300,  total: 100 },
+  { id: "other", label: "その他",   rank: null, total: null },
+];
+let cat = "100";
+let area = null;          // null なら「すべて」
+let onlySelected = false; // 「選択中」タグ
 let keyword = "";
 
-loading.hidden = true;
+$("#loading").hidden = true;
 $("#main").hidden = false;
 
-renderAreas();
+drawCats();
+drawAreas();
 render();
 
 // ---------------------------------------------
-// エリアのチップ
+// カテゴリのタブ
 // ---------------------------------------------
-function renderAreas() {
+function drawCats() {
+  $("#cats").innerHTML = CATS.map((c) =>
+    `<button class="cat ${c.id === cat ? "on" : ""}" data-id="${c.id}">${c.label}</button>`
+  ).join("");
+}
+
+$("#cats").addEventListener("click", (e) => {
+  const b = e.target.closest(".cat");
+  if (!b) return;
+  cat = b.dataset.id;
+  area = null;
+  onlySelected = false;
+  drawCats();
+  drawAreas();
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// ---------------------------------------------
+// エリアのタグ
+// カテゴリごとに、実際に山があるエリアだけを出す
+// ---------------------------------------------
+function inCat(m) {
+  const c = CATS.find((x) => x.id === cat);
+  return c.rank === null ? m.meizan_rank === null : m.meizan_rank === c.rank;
+}
+
+function drawAreas() {
+  const areas = [...new Set(MOUNTAINS.filter(inCat).map((m) => m.area).filter(Boolean))];
+  const selCount = MOUNTAINS.filter((m) => inCat(m) && selected.has(m.id)).length;
+
   $("#areas").innerHTML =
-    `<button class="area-chip on" data-area="">すべて</button>` +
-    AREAS.map((a) => `<button class="area-chip" data-area="${a}">${a}</button>`).join("");
+    `<button class="area-chip ${!area && !onlySelected ? "on" : ""}" data-area="">すべて</button>` +
+    `<button class="area-chip sel ${onlySelected ? "on" : ""}" data-sel="1">選択中 (${selCount})</button>` +
+    areas.map((a) =>
+      `<button class="area-chip ${area === a ? "on" : ""}" data-area="${a}">${a}</button>`
+    ).join("");
 }
 
 $("#areas").addEventListener("click", (e) => {
-  const chip = e.target.closest(".area-chip");
-  if (!chip) return;
-  activeArea = chip.dataset.area || null;
-  $("#areas").querySelectorAll(".area-chip").forEach((c) => c.classList.remove("on"));
-  chip.classList.add("on");
+  const b = e.target.closest(".area-chip");
+  if (!b) return;
+
+  if (b.dataset.sel) {
+    onlySelected = !onlySelected;
+    area = null;
+  } else {
+    area = b.dataset.area || null;
+    onlySelected = false;
+  }
+  drawAreas();
   render();
 });
 
 // ---------------------------------------------
 // 検索
-// かな・漢字のどちらでも引けるようにする
 // ---------------------------------------------
 $("#q").addEventListener("input", (e) => {
   keyword = e.target.value.trim();
@@ -249,45 +335,61 @@ $("#clear").onclick = () => {
 
 // ---------------------------------------------
 // リストの描画
+// カテゴリ ＋ エリア ＋ 選択中 ＋ 検索 をすべてAND条件で絞る
 // ---------------------------------------------
 function render() {
   const kw = normalize(keyword);
 
   const list = MOUNTAINS.filter((m) => {
-    if (activeArea && m.area !== activeArea) return false;
+    if (!inCat(m)) return false;
+    if (area && m.area !== area) return false;
+    if (onlySelected && !selected.has(m.id)) return false;
     if (!kw) return true;
     return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw);
   });
 
-  $("#list").innerHTML = list.length
-    ? list.map(itemHtml).join("")
-    : `<p class="mt-empty">見つかりませんでした。<br>ひらがなでも探せます（例：やり）</p>`;
+  // 絞り込みが効いていないときは件数を抑える（スクロール負荷を下げる）
+  const limited = !kw && !onlySelected && !area && list.length > 80;
+  const shown = limited ? list.slice(0, 80) : list;
+
+  $("#list").innerHTML = shown.length
+    ? shown.map(itemHtml).join("") +
+      (limited
+        ? `<p class="more-note">ほか ${list.length - shown.length}座。<br>
+             エリアや検索で絞り込めます。</p>`
+        : "")
+    : `<p class="mt-empty">${onlySelected
+        ? "このカテゴリで選択中の山はありません。"
+        : "見つかりませんでした。<br>ひらがなでも探せます（例：やり）"}</p>`;
 
   updateCount();
 }
 
 function itemHtml(m) {
-  const on = selected.has(m.id) ? " on" : "";
+  const on = selected.has(m.id);
+  const badge = m.meizan_rank
+    ? `<span class="rank-badge rank-${m.meizan_rank}">${
+        m.meizan_rank === 100 ? "百" : m.meizan_rank === 200 ? "二百" : "三百"}</span>`
+    : "";
   return `
-    <div class="mt-item${on}" data-id="${m.id}">
+    <div class="mt-item${on ? " on" : ""}" data-id="${m.id}">
       <div class="mt-check">
         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 12l6 6L20 6"/>
         </svg>
       </div>
       <div class="mt-body">
-        <p class="mt-name">${m.name}</p>
-        <p class="mt-meta">${m.kana}
-          ${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}
-          ${m.area ? ` ・ ${m.area}` : ""}</p>
+        <p class="mt-name">${m.name}${badge}</p>
+        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.area ? ` ・ ${m.area}` : ""}</p>
       </div>
     </div>`;
 }
 
-// 全角英数と大文字の差を吸収する
+// 全角英数と大文字小文字、カタカナの差を吸収する
 function normalize(s) {
   return (s ?? "")
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[\u30A1-\u30F6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
     .toLowerCase();
 }
 
@@ -302,24 +404,42 @@ $("#list").addEventListener("click", (e) => {
   if (selected.has(id)) { selected.delete(id); item.classList.remove("on"); }
   else                  { selected.add(id);    item.classList.add("on"); }
 
+  // 「選択中」で絞っている最中に外したら、その場から消す
+  if (onlySelected && !selected.has(id)) {
+    item.remove();
+    if (!$("#list").querySelector(".mt-item")) render();
+  }
+
+  drawAreas();
   updateCount();
 });
 
 // ---------------------------------------------
-// 踏破数の表示
+// 達成率の表示
 // ---------------------------------------------
 function updateCount() {
-  const hyaku = MOUNTAINS.filter((m) => m.is_hyakumeizan && selected.has(m.id)).length;
-  const C = 2 * Math.PI * 26;
+  const c = CATS.find((x) => x.id === cat);
+  const done = MOUNTAINS.filter((m) => inCat(m) && selected.has(m.id)).length;
+  const C = 2 * Math.PI * 24;
 
-  $("#ring-n").textContent = hyaku;
-  $("#ring-bar").style.strokeDashoffset = C * (1 - hyaku / 100);
-  $("#count-note").textContent =
-    hyaku === 0 ? "登った山を選んでください" : `残り ${100 - hyaku}座`;
+  if (c.total) {
+    $("#ring-n").textContent = done;
+    $("#ring-d").textContent = `/${c.total}`;
+    $("#ring-bar").style.strokeDashoffset = C * (1 - done / c.total);
+    $("#count-txt").innerHTML = done === 0
+      ? `日本${c.label}<br><span>登った山を選んでください</span>`
+      : `日本${c.label}<br><b>${done}座</b> 踏破 <span>／ 残り ${c.total - done}座</span>`;
+  } else {
+    const total = MOUNTAINS.filter(inCat).length;
+    $("#ring-n").textContent = done;
+    $("#ring-d").textContent = `/${total}`;
+    $("#ring-bar").style.strokeDashoffset = total ? C * (1 - done / total) : C;
+    $("#count-txt").innerHTML = `その他・人気の低山<br>
+      ${done === 0 ? `<span>登った山を選んでください</span>` : `<b>${done}座</b> 登録`}`;
+  }
 
   const added = [...selected].filter((id) => !original.has(id)).length;
   const removed = [...original].filter((id) => !selected.has(id)).length;
-
   $("#save-note").textContent =
     added || removed
       ? `${added ? `+${added}座` : ""}${added && removed ? " / " : ""}${removed ? `−${removed}座` : ""} の変更`
@@ -338,7 +458,7 @@ $("#save").onclick = async () => {
   msg.textContent = "";
 
   if (!toAdd.length && !toRemove.length) {
-    location.href = "./index.html";
+    location.href = "./card.html";
     return;
   }
 
@@ -355,15 +475,13 @@ $("#save").onclick = async () => {
         .in("mountain_id", toRemove);
       if (error) throw error;
     }
-
     if (toAdd.length) {
       const { error } = await supabase
         .from("climbed_mountains")
         .insert(toAdd.map((mountain_id) => ({ user_id: user.id, mountain_id })));
       if (error) throw error;
     }
-
-    location.href = "./index.html";
+    location.href = "./card.html";
   } catch (err) {
     btn.disabled = false;
     btn.textContent = "保存する";
@@ -371,8 +489,6 @@ $("#save").onclick = async () => {
     msg.textContent = "保存できませんでした：" + err.message;
   }
 };
-
-$("#back").onclick = () => location.href = "./index.html";
 </script>
 </body>
 </html>

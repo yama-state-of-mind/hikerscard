@@ -154,7 +154,7 @@ if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 // ---------------------------------------------
 const [mtRes, climbedRes, wishRes] = await Promise.all([
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, is_hyakumeizan")
+          .select("id, name, kana, elevation, area, meizan_rank")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id, is_favorite")

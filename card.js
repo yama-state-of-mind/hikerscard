@@ -122,7 +122,7 @@ export function renderCard(d, opts = {}) {
 
       ${diagnosed && d.axes ? axesBlock(d.axes) : ""}
 
-      ${hyakuBlock(d, uid)}
+      ${meizanBlock(d, uid)}
 
       ${tagBlock("FAVORITE", d.favorites, "fav", STAR)}
       ${tagBlock("WISHLIST", d.wishlist,  "wish", FLAG)}
@@ -182,49 +182,72 @@ function axesBlock(axes) {
 }
 
 // ---------------------------------------------
-// 百名山：踏破リング＋折りたたみ
-// 山が並びっぱなしだとくどいので、押したときだけ開く
+// 名山の踏破リング＋折りたたみ
+//
+// 百名山・二百名山・三百名山を、公開設定がオンのものだけ横に並べる。
+// 山の一覧は押したときだけ開く（並びっぱなしだとくどいため）
 // ---------------------------------------------
-function hyakuBlock(d, uid) {
-  const done = d.hyakumeizan_done ?? 0;
+const RANKS = [
+  { key: "100", label: "百名山",   short: "百",   color: "#E0A33B" },
+  { key: "200", label: "二百名山", short: "二百", color: "#8CA9BD" },
+  { key: "300", label: "三百名山", short: "三百", color: "#B9C6BD" },
+];
+
+function meizanBlock(d, uid) {
+  const ranks = d.ranks ?? {};
   const list = d.climbed ?? [];
-  const r = 26;
-  const C = 2 * Math.PI * r;
   const hasList = list.length > 0;
+
+  const rings = RANKS
+    .filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null)
+    .map((r) => ring(Number(ranks[r.key]), r));
+
+  // 公開されているリングが1つもなく、山の登録もないなら出さない
+  if (!rings.length && !hasList) return "";
+
+  const other = Number(ranks.other ?? 0);
 
   return `
   <div class="hc-blk">
-    <p class="hc-blk-t">HYAKUMEIZAN</p>
+    <p class="hc-blk-t">MEIZAN</p>
     <button class="hy-row${hasList ? "" : " nolist"}" data-uid="${uid}" ${hasList ? "" : "disabled"}>
-      <div class="hc-ring">
-        <svg viewBox="0 0 62 62">
-          <circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--c-soft)" stroke-width="6"/>
-          <circle cx="31" cy="31" r="${r}" fill="none" stroke="#E0A33B" stroke-width="6"
-                  stroke-linecap="round" stroke-dasharray="${C}"
-                  stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 31 31)"/>
-        </svg>
-        <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
-      </div>
-      <p class="hy-txt">
-        ${done === 0 && !hasList
-          ? `<span class="muted">まだ登録がありません</span>`
-          : `日本百名山<br><b>${done}座</b> 踏破 <span class="muted">／ 残り ${100 - done}座</span>`}
-      </p>
+      <div class="hc-rings">${rings.join("")}</div>
       ${hasList ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
         stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
     </button>
+    ${other > 0 ? `<p class="hc-other">そのほか <b>${other}座</b></p>` : ""}
     ${hasList ? `
     <div class="hy-list" id="hy-list-${uid}">
       <div class="hy-list-in">
         <div class="hc-tags">
           ${list.map((m) => `
             <span class="hc-tag">
-              ${m.hyaku ? `<span class="hc-b100">百</span>` : ""}${esc(m.name)}
+              ${m.rank ? `<span class="hc-b100 r${m.rank}">${
+                m.rank === 100 ? "百" : m.rank === 200 ? "二百" : "三百"}</span>` : ""}${esc(m.name)}
             </span>`).join("")}
         </div>
       </div>
     </div>` : ""}
   </div>`;
+}
+
+function ring(done, r) {
+  const rad = 22;
+  const C = 2 * Math.PI * rad;
+  return `
+    <div class="hc-ring-item">
+      <div class="hc-ring">
+        <svg viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="${rad}" fill="none" stroke="var(--c-soft)" stroke-width="5"/>
+          <circle cx="26" cy="26" r="${rad}" fill="none" stroke="${r.color}" stroke-width="5"
+                  stroke-linecap="round" stroke-dasharray="${C}"
+                  stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 26 26)"/>
+        </svg>
+        <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
+      </div>
+      <p class="hc-ring-label">${r.label}</p>
+      <p class="hc-ring-rest">${done >= 100 ? "完登" : `あと${100 - done}`}</p>
+    </div>`;
 }
 
 // ---------------------------------------------
