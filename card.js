@@ -111,19 +111,15 @@ export function renderCard(d, opts = {}) {
         <span class="hc-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
         <div class="hc-avatar">${diagnosed ? (opts.charSVG ?? "") : SILHOUETTE}</div>
         <p class="hc-name">${esc(d.display_name)}</p>
-        ${diagnosed
-          ? `<p class="hc-type">${esc(opts.animal ?? "")}・${esc(opts.typeName ?? "")}</p>
-             <span class="hc-code">${esc(d.type_code)}</span>`
-          : `<p class="hc-type undiag">未診断</p>`}
       </div>
+
+      ${typeBlock(d, uid, opts)}
 
       ${d.comment ? `
       <div class="hc-blk">
         <p class="hc-blk-t">ひとこと</p>
         <p class="hc-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>
       </div>` : ""}
-
-      ${diagnosed && d.axes ? axesBlock(d.axes, uid, opts) : ""}
 
       ${meizanBlock(d, uid)}
 
@@ -137,19 +133,82 @@ export function renderCard(d, opts = {}) {
 }
 
 // ---------------------------------------------
+// 登山タイプ
+//
+// 見出しの下にキャラ名とタイプ名を置き、押すと
+// 4軸のスコア・特徴・気をつけたいことが開く。
+// カードの上部が名前だけになり、すっきりする。
+// ---------------------------------------------
+function typeBlock(d, uid, opts) {
+  if (!d.type_code) {
+    return `<div class="hc-blk">
+      <p class="hc-blk-t">登山タイプ</p>
+      <p class="hc-type undiag" style="text-align:left">未診断</p>
+    </div>`;
+  }
+
+  const hasDetail = !!(d.axes || opts.features || opts.caution);
+
+  return `
+  <div class="hc-blk">
+    <p class="hc-blk-t">登山タイプ</p>
+    <button class="ax-row${hasDetail ? "" : " nolist"}" data-uid="${uid}" ${hasDetail ? "" : "disabled"}>
+      <span class="hc-code">${esc(d.type_code)}</span>
+      <span class="type-names">
+        <b>${esc(opts.animal ?? "")}</b>
+        <span>${esc(opts.typeName ?? "")}</span>
+      </span>
+      ${hasDetail ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
+    </button>
+    ${hasDetail ? `
+    <div class="hy-list" id="ax-list-${uid}">
+      <div class="hy-list-in">
+        ${d.axes ? axesRows(d.axes) : ""}
+        ${opts.features ? `
+          <p class="hc-sub-t" style="margin-top:14px">特徴</p>
+          <p class="hc-desc">${esc(opts.features)}</p>` : ""}
+        ${opts.caution ? `
+          <p class="hc-sub-t" style="margin-top:12px">気をつけたいこと</p>
+          <p class="hc-desc">${esc(opts.caution)}</p>` : ""}
+      </div>
+    </div>` : ""}
+  </div>`;
+}
+
+// ---------------------------------------------
 // 折りたたみの開閉を有効にする。カードを描いたあとに呼ぶ
 // ---------------------------------------------
 export function bindCardToggles(root = document) {
-  // 名山の一覧（hy-row）と、登山タイプの説明（ax-row）
-  [["hy-row", "hy-list"], ["ax-row", "ax-list"]].forEach(([rowCls, listId]) => {
-    root.querySelectorAll("." + rowCls).forEach((row) => {
-      if (row.dataset.bound) return;
-      row.dataset.bound = "1";
-      row.addEventListener("click", () => {
-        const list = root.querySelector(`#${listId}-${row.dataset.uid}`);
-        row.classList.toggle("open");
-        if (list) list.classList.toggle("open");
-      });
+  // 登山タイプの説明
+  root.querySelectorAll(".ax-row").forEach((row) => {
+    if (row.dataset.bound) return;
+    row.dataset.bound = "1";
+    row.addEventListener("click", () => {
+      const list = root.querySelector(`#ax-list-${row.dataset.uid}`);
+      row.classList.toggle("open");
+      if (list) list.classList.toggle("open");
+    });
+  });
+
+  // 名山ハントのリング。押されたものだけを開き、他は閉じる
+  root.querySelectorAll("[data-rank]").forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const { uid, rank } = btn.dataset;
+      const target = root.querySelector(`#mz-${uid}-${rank}`);
+      const wasOpen = btn.classList.contains("open");
+
+      root.querySelectorAll(`[data-uid="${uid}"][data-rank]`)
+          .forEach((b) => b.classList.remove("open"));
+      root.querySelectorAll(`[id^="mz-${uid}-"]`)
+          .forEach((l) => l.classList.remove("open"));
+
+      if (!wasOpen && target) {
+        btn.classList.add("open");
+        target.classList.add("open");
+      }
     });
   });
 
@@ -159,6 +218,8 @@ export function bindCardToggles(root = document) {
     if (tag.dataset.bound) return;
     tag.dataset.bound = "1";
     tag.addEventListener("click", (e) => {
+      // 吹き出しの中のリンクは、そのまま開かせる
+      if (e.target.closest("a")) return;
       e.stopPropagation();
       const open = tag.classList.contains("show-ov");
       root.querySelectorAll(".hc-tag.show-ov").forEach((t) => t.classList.remove("show-ov"));
@@ -180,8 +241,8 @@ const AXIS_DEFS = [
   { key: "ca", title: "リスク", a: "C", b: "A", aName: "慎重",         bName: "挑戦的" },
 ];
 
-function axesBlock(axes, uid, opts = {}) {
-  const rows = AXIS_DEFS.map((ax) => {
+function axesRows(axes) {
+  return AXIS_DEFS.map((ax) => {
     const aPct = axes[ax.key];
     if (aPct === null || aPct === undefined) return "";
     const bPct = 100 - aPct;
@@ -198,108 +259,101 @@ function axesBlock(axes, uid, opts = {}) {
         </div>
       </div>`;
   }).join("");
-
-  if (!rows.trim()) return "";
-
-  // 押すと4軸の下に「特徴」「気をつけたいこと」が開く
-  const hasText = !!(opts.features || opts.caution);
-
-  return `
-  <div class="hc-blk">
-    <p class="hc-blk-t">登山タイプ</p>
-    <button class="ax-row${hasText ? "" : " nolist"}" data-uid="${uid}" ${hasText ? "" : "disabled"}>
-      <div class="ax-rows">${rows}</div>
-      ${hasText ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
-        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
-    </button>
-    ${hasText ? `
-    <div class="hy-list" id="ax-list-${uid}">
-      <div class="hy-list-in">
-        ${opts.features ? `
-          <p class="hc-sub-t">特徴</p>
-          <p class="hc-desc">${esc(opts.features)}</p>` : ""}
-        ${opts.caution ? `
-          <p class="hc-sub-t" style="margin-top:12px">気をつけたいこと</p>
-          <p class="hc-desc">${esc(opts.caution)}</p>` : ""}
-      </div>
-    </div>` : ""}
-  </div>`;
 }
 
 // ---------------------------------------------
-// 名山の踏破リング＋折りたたみ
+// 名山ハント
 //
-// 百名山・二百名山・三百名山を、公開設定がオンのものだけ横に並べる。
-// 山の一覧は押したときだけ開く（並びっぱなしだとくどいため）
+// リングを押すと、そのランクの山だけが開く。
+// 全部まとめて出すと数が多すぎて読めないため。
+// 開いた中ではランクが自明なので、バッジは付けない。
 // ---------------------------------------------
 const RANKS = [
-  { key: "100", label: "百名山",   short: "百",   color: "#E0A33B" },
-  { key: "200", label: "二百名山", short: "二百", color: "#8CA9BD" },
-  { key: "300", label: "三百名山", short: "三百", color: "#B9C6BD" },
+  { key: "100", label: "百名山",   color: "#E0A33B" },
+  { key: "200", label: "二百名山", color: "#8CA9BD" },
+  { key: "300", label: "三百名山", color: "#B9C6BD" },
 ];
 
 function meizanBlock(d, uid) {
   const ranks = d.ranks ?? {};
   const list = d.climbed ?? [];
-  const hasList = list.length > 0;
 
-  const rings = RANKS
-    .filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null)
-    .map((r) => ring(Number(ranks[r.key]), r));
+  const shown = RANKS.filter((r) =>
+    ranks[r.key] !== undefined && ranks[r.key] !== null);
 
-  // 公開されているリングが1つもなく、山の登録もないなら出さない
-  if (!rings.length && !hasList) return "";
+  if (!shown.length && !list.length) return "";
 
   const other = Number(ranks.other ?? 0);
+
+  const rings = shown.map((r) => {
+    const done = Number(ranks[r.key]);
+    const inRank = list.filter((m) => String(m.rank) === r.key);
+    const rad = 22, C = 2 * Math.PI * rad;
+
+    return `
+      <button class="hc-ring-item${inRank.length ? "" : " nolist"}"
+              data-uid="${uid}" data-rank="${r.key}" ${inRank.length ? "" : "disabled"}>
+        <div class="hc-ring">
+          <svg viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="${rad}" fill="none" stroke="var(--c-soft)" stroke-width="5"/>
+            <circle cx="26" cy="26" r="${rad}" fill="none" stroke="${r.color}" stroke-width="5"
+                    stroke-linecap="round" stroke-dasharray="${C}"
+                    stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 26 26)"/>
+          </svg>
+          <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
+        </div>
+        <p class="hc-ring-label">${r.label}</p>
+        <p class="hc-ring-rest">${done >= 100 ? "完登" : `あと${100 - done}`}</p>
+      </button>`;
+  }).join("");
+
+  // ランクごとの一覧。押されたものだけが開く
+  const lists = shown.map((r) => {
+    const inRank = list.filter((m) => String(m.rank) === r.key);
+    if (!inRank.length) return "";
+    return `
+      <div class="hy-list" id="mz-${uid}-${r.key}">
+        <div class="hy-list-in">
+          <p class="hc-sub-t">${r.label}（${inRank.length}座）</p>
+          <div class="hc-tags">
+            ${inRank.map((m) => `<span class="hc-tag">${esc(m.name)}</span>`).join("")}
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+
+  // 名山でない山
+  const others = list.filter((m) => !m.rank);
+  const otherList = others.length ? `
+    <div class="hy-list" id="mz-${uid}-other">
+      <div class="hy-list-in">
+        <p class="hc-sub-t">そのほか（${others.length}座）</p>
+        <div class="hc-tags">
+          ${others.map((m) => `<span class="hc-tag">${esc(m.name)}</span>`).join("")}
+        </div>
+      </div>
+    </div>` : "";
 
   return `
   <div class="hc-blk">
     <p class="hc-blk-t">名山ハント</p>
-    <button class="hy-row${hasList ? "" : " nolist"}" data-uid="${uid}" ${hasList ? "" : "disabled"}>
-      <div class="hc-rings">${rings.join("")}</div>
-      ${hasList ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
-        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
-    </button>
-    ${other > 0 ? `<p class="hc-other">そのほか <b>${other}座</b></p>` : ""}
-    ${hasList ? `
-    <div class="hy-list" id="hy-list-${uid}">
-      <div class="hy-list-in">
-        <div class="hc-tags">
-          ${list.map((m) => `
-            <span class="hc-tag">
-              ${m.rank ? `<span class="hc-b100 r${m.rank}">${
-                m.rank === 100 ? "百" : m.rank === 200 ? "二百" : "三百"}</span>` : ""}${esc(m.name)}
-            </span>`).join("")}
-        </div>
-      </div>
-    </div>` : ""}
+    <div class="hc-rings">${rings}</div>
+    ${lists}
+    ${other > 0 ? `
+      <button class="hc-other${others.length ? "" : " nolist"}"
+              data-uid="${uid}" data-rank="other" ${others.length ? "" : "disabled"}>
+        そのほか <b>${other}座</b>
+      </button>` : ""}
+    ${otherList}
   </div>`;
-}
-
-function ring(done, r) {
-  const rad = 22;
-  const C = 2 * Math.PI * rad;
-  return `
-    <div class="hc-ring-item">
-      <div class="hc-ring">
-        <svg viewBox="0 0 52 52">
-          <circle cx="26" cy="26" r="${rad}" fill="none" stroke="var(--c-soft)" stroke-width="5"/>
-          <circle cx="26" cy="26" r="${rad}" fill="none" stroke="${r.color}" stroke-width="5"
-                  stroke-linecap="round" stroke-dasharray="${C}"
-                  stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 26 26)"/>
-        </svg>
-        <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
-      </div>
-      <p class="hc-ring-label">${r.label}</p>
-      <p class="hc-ring-rest">${done >= 100 ? "完登" : `あと${100 - done}`}</p>
-    </div>`;
 }
 
 // ---------------------------------------------
 // 好きな山・登りたい山
 // ---------------------------------------------
-// overlaps: { 山名: ["たくみ", "green_mt"] }
-// 交換した相手と同じ山を選んでいたら、吹き出しで知らせる
+// overlaps: { 山名: [{ name, public_id }] }
+// 交換した相手と同じ山を選んでいたら、吹き出しで知らせる。
+// 名前はその人のカードへのリンクにする。
 function tagBlock(label, list, cls, icon, overlaps) {
   if (!list?.length) return "";
 
@@ -312,11 +366,15 @@ function tagBlock(label, list, cls, icon, overlaps) {
       ${list.map((m) => {
         const who = overlaps?.[m.name];
         if (!who?.length) return `<span class="hc-tag ${cls}">${icon}${esc(m.name)}</span>`;
-        const names = who.slice(0, 3).map(esc).join("、")
-          + (who.length > 3 ? ` ほか${who.length - 3}人` : "");
+
+        const links = who.slice(0, 4)
+          .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}</a>`)
+          .join("、");
+        const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
+
         return `<span class="hc-tag ${cls} has-ov">
           ${icon}${esc(m.name)}<span class="ov-dot">${who.length}</span>
-          <span class="ov-bubble">${names}${verb}</span>
+          <span class="ov-bubble">${links}${rest}${verb}</span>
         </span>`;
       }).join("")}
     </div>

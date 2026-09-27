@@ -80,8 +80,7 @@
 
     <button class="btn sun"   id="go-exchange">カードを交換する</button>
     <button class="btn ghost" id="go-collection">コレクション</button>
-    <button class="btn ghost" id="go-mt">登った山を登録する</button>
-    <button class="btn ghost" id="go-edit">プロフィールを編集</button>
+    <button class="btn ghost" id="go-edit">カードを編集する</button>
   </div>
 </div>
 
@@ -183,7 +182,7 @@ function buildOverlaps(key) {
   const map = {};
   for (const c of (colRes.data ?? [])) {
     for (const m of (c[key] ?? [])) {
-      (map[m.name] ??= []).push(c.display_name);
+      (map[m.name] ??= []).push({ name: c.display_name, public_id: c.public_id });
     }
   }
   return map;
@@ -251,8 +250,7 @@ $("#copy").onclick = async () => {
 
 $("#go-exchange").onclick   = () => location.href = "./exchange.html";
 $("#go-collection").onclick = () => location.href = "./collection.html";
-$("#go-mt").onclick   = () => location.href = "./mountains.html";
-$("#go-edit").onclick = () => location.href = "./setup.html";
+$("#go-edit").onclick       = () => location.href = "./edit.html";
 
 // ログイン直後に交換が成立していたら知らせる
 if (justExchanged) {

@@ -101,7 +101,7 @@
     </div>
 
     <!-- 名山の公開設定 -->
-    <div class="group">
+    <div class="group" id="vis-group">
       <h2>カードに載せる踏破数</h2>
       <p class="d">オフにしたものはカードに表示されません。<br>
         登録した山そのものは消えません。</p>
@@ -278,6 +278,16 @@ counts();
 
 $("#loading").hidden = true;
 $("#form").hidden = false;
+
+// 編集画面から「背景」「SNS」などを指定して来た場合は、その位置まで送る
+if (location.hash) {
+  const target = document.querySelector(location.hash);
+  if (target) {
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}
 
 // ---------------------------------------------
 // 保存

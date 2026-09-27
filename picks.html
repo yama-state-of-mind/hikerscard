@@ -30,6 +30,33 @@
   }
   .tab.on { background: var(--paper); color: var(--pine); box-shadow: var(--shadow-card); }
 
+  /* 名山カテゴリの絞り込み（登った山の画面と同じ形） */
+  .cats {
+    display: flex; gap: 5px; background: #E2E9E4;
+    border-radius: 999px; padding: 3px; margin-top: 12px;
+  }
+  .cat {
+    flex: 1; font-family: var(--font); font-size: 11px; font-weight: 700;
+    border: none; background: transparent; color: var(--stone);
+    border-radius: 999px; padding: 7px 0; cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .cat.on { background: var(--paper); color: var(--pine); box-shadow: var(--shadow-card); }
+  .cat .box {
+    width: 13px; height: 13px; border-radius: 4px; flex: none;
+    border: 1.6px solid #C3D0C8; background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cat .box svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 3.4; opacity: 0; }
+  .cat.on .box svg { opacity: 1; }
+  .rank-badge {
+    font-size: 8.5px; font-weight: 900; font-family: var(--mono);
+    border-radius: 4px; padding: 1px 5px; flex: none; margin-left: 4px;
+  }
+  .rank-100 { background: var(--sun); color: #fff; }
+  .rank-200 { background: #8CA9BD;    color: #fff; }
+  .rank-300 { background: #B9C6BD;    color: #fff; }
+
   .cap {
     display: flex; align-items: baseline; gap: 8px;
     margin-top: 16px; font-size: 12.5px;
@@ -104,6 +131,8 @@
     <p class="cap" id="cap"></p>
     <p class="sub" id="lead" style="margin-top:4px"></p>
 
+    <div class="cats" id="cats"></div>
+
     <div class="search-wrap">
       <svg class="ic" viewBox="0 0 24 24" stroke-linecap="round">
         <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
@@ -176,16 +205,62 @@ const origWish = new Set((wishRes.data ?? []).map((r) => r.mountain_id));
 const selFav  = new Set(origFav);
 const selWish = new Set(origWish);
 
-let tab = "fav";
+let tab = location.hash === "#wish" ? "wish" : "fav";
 let keyword = "";
+
+// 名山カテゴリの絞り込み。登った山の画面と同じ考え方
+const CATS = [
+  { id: "100",   label: "百名山",   rank: 100,  color: "#E0A33B" },
+  { id: "200",   label: "二百名山", rank: 200,  color: "#8CA9BD" },
+  { id: "300",   label: "三百名山", rank: 300,  color: "#B9C6BD" },
+  { id: "other", label: "その他",   rank: null, color: "#9CB0A3" },
+];
+const cats = new Set(["100", "200", "300", "other"]);   // 既定はすべて
+
+const inCat = (m) => m.meizan_rank === null
+  ? cats.has("other")
+  : cats.has(String(m.meizan_rank));
+
+function drawCats() {
+  $("#cats").innerHTML = CATS.map((c) => {
+    const on = cats.has(c.id);
+    return `
+      <button class="cat ${on ? "on" : ""}" data-id="${c.id}">
+        <span class="box" style="${on ? `background:${c.color};border-color:${c.color}` : ""}">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12l6 6L20 6"/>
+          </svg>
+        </span>${c.label}
+      </button>`;
+  }).join("");
+}
+
+$("#cats").addEventListener("click", (e) => {
+  const b = e.target.closest(".cat");
+  if (!b) return;
+  const id = b.dataset.id;
+  if (cats.has(id)) {
+    if (cats.size === 1) return;   // 最後の1つは外せない
+    cats.delete(id);
+  } else {
+    cats.add(id);
+  }
+  drawCats();
+  render();
+});
 
 $("#loading").hidden = true;
 $("#main").hidden = false;
+drawCats();
 render();
 
 // ---------------------------------------------
 // タブ
 // ---------------------------------------------
+// ハッシュで指定されたタブを最初から開く
+document.querySelectorAll(".tab").forEach((t) =>
+  t.classList.toggle("on", t.dataset.tab === tab));
+
 document.querySelector(".tabs").addEventListener("click", (e) => {
   const t = e.target.closest(".tab");
   if (!t) return;
@@ -206,9 +281,10 @@ function render() {
   const sel = isFav ? selFav : selWish;
 
   // 対象になる山を絞る
-  let base = isFav
+  let base = (isFav
     ? MOUNTAINS.filter((m) => climbedIds.has(m.id))          // 登った山だけ
-    : MOUNTAINS.filter((m) => !climbedIds.has(m.id));        // まだ登っていない山だけ
+    : MOUNTAINS.filter((m) => !climbedIds.has(m.id))         // まだ登っていない山だけ
+  ).filter((m) => inCat(m) || sel.has(m.id));                // 選択済みは絞っても残す
 
   $("#lead").textContent = isFav
     ? "「登った山」に登録した中から選べます。"
@@ -258,7 +334,10 @@ function item(m, sel) {
     <div class="mt-item${on ? " on" : ""}${full ? " dim" : ""}" data-id="${m.id}">
       <div class="mt-mark"><svg viewBox="0 0 24 24">${icon}</svg></div>
       <div class="mt-body">
-        <p class="mt-name">${m.name}</p>
+        <p class="mt-name">${m.name}${m.meizan_rank
+          ? `<span class="rank-badge rank-${m.meizan_rank}">${
+              m.meizan_rank === 100 ? "百" : m.meizan_rank === 200 ? "二百" : "三百"}</span>`
+          : ""}</p>
         <p class="mt-meta">${m.kana}${m.elevation ? ` ・ ${m.elevation}m` : ""}${m.area ? ` ・ ${m.area}` : ""}</p>
       </div>
     </div>`;
