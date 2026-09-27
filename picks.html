@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1E3A31">
@@ -202,6 +210,8 @@ const [mtRes, climbedRes, wishRes] = await Promise.all([
 ]);
 
 if (mtRes.error) { window.__showFatal("山のデータを読み込めませんでした", mtRes.error.message); throw mtRes.error; }
+if (climbedRes.error) { window.__showFatal("登った山を読み込めませんでした", climbedRes.error.message); throw climbedRes.error; }
+if (wishRes.error) { window.__showFatal("登りたい山を読み込めませんでした", wishRes.error.message); throw wishRes.error; }
 
 const MOUNTAINS = mtRes.data ?? [];
 const byId = new Map(MOUNTAINS.map((m) => [m.id, m]));
@@ -433,7 +443,8 @@ $("#save").onclick = async () => {
     if (w.add.length) {
       const { error } = await supabase
         .from("wishlist_mountains")
-        .insert(w.add.map((mountain_id) => ({ user_id: user.id, mountain_id })));
+        .upsert(w.add.map((mountain_id) => ({ user_id: user.id, mountain_id })),
+                { onConflict: "user_id,mountain_id", ignoreDuplicates: true });
       if (error) throw error;
     }
 

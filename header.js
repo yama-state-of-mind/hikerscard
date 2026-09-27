@@ -10,6 +10,8 @@
 //   .wrap に has-hd クラスを付けると、高さぶん下がる
 // =============================================
 
+import { LOGO_MARK } from "./card.js";
+
 const ICON = {
   card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
   deck: `<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 4h11a2 2 0 0 1 2 2v13"/></svg>`,
@@ -50,7 +52,9 @@ export function mountHeader(onLogout) {
   const html = `
   <header class="hd" id="hd">
     <div class="hd-in">
-      <button class="hd-logo" id="hd-logo">ハイカーズ<span>カード</span></button>
+      <button class="hd-logo" id="hd-logo">
+        <span class="hd-mark">${LOGO_MARK}</span>ハイカーズ<span class="hd-c">カード</span>
+      </button>
       <button class="hd-menu" id="hd-menu" aria-label="メニュー">
         <i></i><i></i><i></i>
       </button>

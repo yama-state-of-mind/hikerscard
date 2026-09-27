@@ -361,85 +361,87 @@ body[class*="t-"] textarea { background: var(--c-bg); color: var(--c-fg); border
 .drawer .mut svg { stroke: var(--c-mut, var(--stone)); }
 
 /* =============================================
-   ヒーローカード（横長・要約）
+   カード（縦長・要約）
    ============================================= */
 .hero {
-  position: relative; aspect-ratio: 1.58 / 1; border-radius: 18px; overflow: hidden;
+  position: relative; border-radius: 20px; overflow: hidden;
   background: var(--c-bg); color: var(--c-fg);
-  box-shadow: 0 8px 26px rgba(30,58,49,.18); display: flex;
+  box-shadow: 0 8px 26px rgba(30,58,49,.18); margin-top: 4px;
 }
 .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-.hero > *:not(.hero-bg) { position: relative; z-index: 1; }
-
-.hero-l {
-  width: 47%; padding: 13px 11px 13px 15px; display: flex; flex-direction: column;
-  border-right: 1px solid var(--c-div);
+.hero-paw {
+  position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+  color: var(--c-fg); opacity: .055; pointer-events: none;
 }
-.hero-no { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--c-mut); }
-.hero-chip {
-  width: 26px; height: 18px; border-radius: 3px; margin-top: 7px; position: relative;
-  overflow: hidden; background: linear-gradient(135deg, #D8DEDA, #BCC8C0);
-}
-.hero-chip::before, .hero-chip::after { content: ""; position: absolute; background: rgba(255,255,255,.6); }
-.hero-chip::before { left: 0; right: 0; top: 6px; height: 1px; }
-.hero-chip::after { left: 9px; top: 0; bottom: 0; width: 1px; }
+.hero-in { position: relative; z-index: 1; padding: 14px 18px 18px; }
 
-.hero-me { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+.hero-top { display: flex; align-items: center; justify-content: space-between; }
+.hero-brand {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 900; letter-spacing: .3px; color: var(--c-mut);
+}
+.hero-brand svg { width: 16px; height: 16px; display: block; }
+.hero-no { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: var(--c-mut); }
+
+.hero-me { text-align: center; margin-top: 10px; }
 .hero-av {
-  width: 54px; height: 54px; border-radius: 50%; overflow: hidden; flex: none;
-  background: var(--c-bg); box-shadow: 0 2px 8px rgba(30,58,49,.16);
+  width: 92px; height: 92px; margin: 0 auto 9px; border-radius: 50%;
+  overflow: hidden; background: var(--c-bg); border: 3px solid var(--c-bg);
+  box-shadow: 0 3px 12px rgba(30,58,49,.18);
 }
 .hero-av svg { width: 100%; height: 100%; display: block; }
-.hero-name { font-size: 19px; font-weight: 900; line-height: 1.25; word-break: break-all; }
+.hero-name { font-size: 21px; font-weight: 900; letter-spacing: .5px; line-height: 1.35; }
 
-.hero-type { margin-top: auto; }
+.hero-trow { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; }
+.hero-code {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  background: var(--c-chip); color: var(--c-chipfg); border-radius: 999px; padding: 3px 11px;
+}
+.hero-tn { font-size: 12px; font-weight: 700; color: var(--c-acc); }
+.hero-undiag { font-size: 12px; color: var(--c-mut); margin-top: 4px; }
+.hero-cmt {
+  font-size: 12.5px; color: var(--c-fg2); margin-top: 10px; line-height: 1.8;
+  text-align: left; background: var(--c-soft); border-radius: 12px; padding: 9px 13px;
+}
+
 .hero-lbl {
-  font-size: 8.5px; font-weight: 700; color: var(--c-mut); letter-spacing: .5px;
+  font-size: 9.5px; font-weight: 700; color: var(--c-mut); letter-spacing: .5px;
   display: flex; align-items: center; gap: 6px;
 }
-.hero-trow { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
-.hero-code {
-  font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 1px;
-  background: var(--c-chip); color: var(--c-chipfg); border-radius: 999px;
-  padding: 2px 9px; flex: none;
-}
-.hero-tn b { display: block; font-size: 12px; font-weight: 900; line-height: 1.3; }
-.hero-tn span { display: block; font-size: 9.5px; color: var(--c-acc); font-weight: 700; }
-.hero-undiag { font-size: 11px; color: var(--c-mut); margin-top: 3px; }
-.hero-cmt {
-  font-size: 10.5px; color: var(--c-fg2); margin-top: 7px; line-height: 1.6;
-  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-}
-
-.hero-r { flex: 1; padding: 12px 13px; display: flex; flex-direction: column;
-  gap: 8px; justify-content: center; }
 .hero-blk {
-  border: none; background: none; font-family: var(--font); color: inherit;
-  text-align: left; width: 100%; padding: 4px 5px; border-radius: 10px;
-  transition: background .15s;
+  display: block; border: none; background: none; font-family: var(--font);
+  color: inherit; text-align: left; width: 100%; padding: 10px 8px 6px;
+  border-radius: 12px; transition: background .15s; margin-top: 10px;
+  border-top: 1px solid var(--c-div);
 }
 button.hero-blk { cursor: pointer; }
 button.hero-blk:hover { background: var(--c-soft); }
 
-.mini-rings { display: flex; gap: 8px; margin-top: 3px; }
+.mini-rings { display: flex; gap: 10px; margin-top: 7px; }
 .mini-ring { text-align: center; flex: 1; }
-.mini-ring .mr { position: relative; width: 38px; height: 38px; margin: 0 auto; }
+.mini-ring .mr { position: relative; width: 46px; height: 46px; margin: 0 auto; }
 .mini-ring .mr svg { width: 100%; height: 100%; }
 .mini-ring .mn { position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; }
-.mini-ring .mn b { font-family: var(--mono); font-size: 12px; font-weight: 700; line-height: 1; }
-.mini-ring .mn span { font-size: 6px; color: var(--c-mut); }
-.mini-ring p { font-size: 8px; font-weight: 700; margin-top: 2px; }
-.mini-ring em { font-style: normal; font-size: 7.5px; color: var(--c-mut); display: block; }
+.mini-ring .mn b { font-family: var(--mono); font-size: 14px; font-weight: 700; line-height: 1; }
+.mini-ring .mn span { font-size: 6.5px; color: var(--c-mut); }
+.mini-ring p { font-size: 9px; font-weight: 700; margin-top: 3px; }
+.mini-ring em { font-style: normal; font-size: 8.5px; color: var(--c-mut); display: block; }
 
-.mini-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
-.mini-tag { font-size: 9px; font-weight: 700; background: var(--c-soft);
-  border-radius: 999px; padding: 3px 8px; }
+.mini-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.mini-tag { font-size: 10.5px; font-weight: 700; background: var(--c-soft);
+  border-radius: 999px; padding: 4px 10px; }
 .mini-tag.fav { background: var(--c-favbg); }
 .mini-tag.wish { background: var(--c-wishbg); }
-.mini-cnt { font-family: var(--mono); font-size: 10px; font-weight: 700; }
+.mini-cnt { font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
 .mini-cnt.fav { color: var(--sun); }
 .mini-cnt.wish { color: var(--c-acc); }
+
+/* ヘッダーのロゴ */
+.hd-logo { display: inline-flex; align-items: center; gap: 6px; }
+.hd-mark { width: 19px; height: 19px; display: block; flex: none; }
+.hd-mark svg { width: 100%; height: 100%; display: block; }
+.hd-c { color: var(--sun); }
 
 /* =============================================
    詳細セクション
@@ -559,3 +561,38 @@ button.hero-blk:hover { background: var(--c-soft); }
 .report button { font-family: var(--font); font-size: 11px; color: var(--c-mut, var(--stone));
   background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px; }
 .report button:disabled { opacity: .4; }
+
+
+/* =============================================
+   相手との共通点
+   ============================================= */
+.af-score { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+.af-meter {
+  flex: 1; height: 9px; border-radius: 999px; background: var(--c-soft);
+  overflow: hidden; position: relative;
+}
+.af-bar {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--c-acc), var(--sun));
+  transition: width .6s cubic-bezier(.22,.9,.3,1);
+}
+.af-num { flex: none; text-align: right; }
+.af-num b { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; }
+.af-num span { display: block; font-size: 10px; color: var(--c-mut); margin-top: 2px; }
+
+.af-item { padding-top: 13px; border-top: 1px solid var(--c-div); }
+.af-item:first-of-type { padding-top: 0; border-top: none; }
+.af-item + .af-item { margin-top: 13px; }
+.af-t { font-size: 10.5px; font-weight: 900; color: var(--c-acc); margin-bottom: 6px; }
+.af-list { list-style: none; }
+.af-list li {
+  font-size: 12.5px; color: var(--c-fg2); padding: 3px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.af-list b {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  background: var(--c-chip); color: var(--c-chipfg);
+  border-radius: 5px; padding: 1px 6px; flex: none;
+}
+.af-note { font-size: 11px; color: var(--c-mut); margin-top: 6px; }
+.af-none { font-size: 12.5px; color: var(--c-mut); line-height: 1.9; text-align: center; padding: 8px 0; }

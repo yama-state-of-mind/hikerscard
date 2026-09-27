@@ -91,6 +91,93 @@ export const SNS = {
   x:         { label: "X",         bg: "#111111", short: "X",  url: (v) => `https://x.com/${v}` },
 };
 
+// ---------------------------------------------
+// ハイカーズカードのロゴ（山のシルエット）
+// 登山タイプ診断のOGP画像と同じモチーフ
+// ---------------------------------------------
+export const LOGO_MARK = `
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="11" r="7.5" fill="#F2EDE1"/>
+  <path d="M16 6 L27 27 H5 Z" fill="#20463A"/>
+  <path d="M16 6 L20.4 14.4 H11.6 Z" fill="#E0A33B"/>
+  <path d="M5 27 L11 17 L15 22 L19.5 27 Z" fill="#2F5A4A"/>
+</svg>`;
+
+// ---------------------------------------------
+// 動物ごとの足跡
+//
+// 16タイプを、足のつくりで5種類に分けている。
+// カードの背景にうっすら散らして、その人らしさを出す。
+// ---------------------------------------------
+const PAW_SHAPES = {
+  // 鳥：三本指＋後ろ指
+  bird: `<path d="M12 3 L12 17 M12 17 L5 8 M12 17 L19 8 M12 17 L14.5 21"
+           stroke="currentColor" stroke-width="2.2" fill="none"
+           stroke-linecap="round"/>`,
+  // クマ：大きな肉球と5つの指
+  bear: `<ellipse cx="12" cy="15.5" rx="6.4" ry="5.2"/>
+         <circle cx="5.4" cy="8.4" r="2.1"/><circle cx="9.4" cy="5.6" r="2.3"/>
+         <circle cx="14.6" cy="5.6" r="2.3"/><circle cx="18.6" cy="8.4" r="2.1"/>`,
+  // イヌ科：肉球と4つの指
+  canine: `<ellipse cx="12" cy="16" rx="5.4" ry="4.6"/>
+           <ellipse cx="6.2" cy="9.2" rx="2.1" ry="2.6"/>
+           <ellipse cx="10.2" cy="6.4" rx="2.1" ry="2.7"/>
+           <ellipse cx="13.8" cy="6.4" rx="2.1" ry="2.7"/>
+           <ellipse cx="17.8" cy="9.2" rx="2.1" ry="2.6"/>`,
+  // 偶蹄目：割れた蹄
+  hoof: `<path d="M10.6 3.5 C7 8 6.2 14 9.4 20.5 C10.6 21.6 11 21.6 11 20 L11 5z"/>
+         <path d="M13.4 3.5 C17 8 17.8 14 14.6 20.5 C13.4 21.6 13 21.6 13 20 L13 5z"/>`,
+  // 小動物：細長い5本指
+  small: `<ellipse cx="12" cy="16.5" rx="4" ry="3.6"/>
+          <ellipse cx="6" cy="11" rx="1.5" ry="2.4" transform="rotate(-30 6 11)"/>
+          <ellipse cx="9.2" cy="7.6" rx="1.5" ry="2.6"/>
+          <ellipse cx="12.6" cy="6.6" rx="1.5" ry="2.7"/>
+          <ellipse cx="15.8" cy="7.8" rx="1.5" ry="2.6"/>
+          <ellipse cx="18.2" cy="11" rx="1.5" ry="2.4" transform="rotate(30 18.2 11)"/>`,
+};
+
+const PAW_BY_TYPE = {
+  PSLC: "hoof",   // カモシカ
+  PSLA: "bird",   // イヌワシ
+  PSFC: "small",  // オコジョ
+  PSFA: "bear",   // ツキノワグマ
+  PGLC: "bird",   // ライチョウ
+  PGLA: "bird",   // ホシガラス
+  PGFC: "bird",   // イワツバメ
+  PGFA: "small",  // ニホンザル
+  ESLC: "small",  // ヤマネ
+  ESLA: "small",  // ムササビ
+  ESFC: "canine", // ホンドタヌキ
+  ESFA: "canine", // ホンドギツネ
+  EGLC: "hoof",   // ニホンジカ
+  EGLA: "bird",   // ヤマセミ
+  EGFC: "small",  // ニホンリス
+  EGFA: "small",  // ノウサギ
+};
+
+// カードの背景に散らす足跡
+function pawTrail(typeCode) {
+  const shape = PAW_SHAPES[PAW_BY_TYPE[typeCode] ?? "canine"];
+  if (!shape) return "";
+
+  // 斜めに歩いていくように並べる
+  const steps = [
+    [30, 470, -18, 1.5], [62, 424, -14, 1.35], [40, 378, -20, 1.2],
+    [78, 336, -12, 1.1], [56, 292, -18, .95], [96, 252, -10, .85],
+  ];
+  return steps.map(([x, y, rot, sc]) => `
+    <g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc}) translate(-12 -12)"
+       fill="currentColor" opacity=".9">${shape}</g>`).join("");
+}
+
+export const PAW = { PAW_SHAPES, PAW_BY_TYPE };
+
+// 単体の足跡（一覧などで使う）
+export function pawIcon(typeCode) {
+  const shape = PAW_SHAPES[PAW_BY_TYPE[typeCode] ?? "canine"];
+  return `<svg viewBox="0 0 24 24" fill="currentColor">${shape}</svg>`;
+}
+
 const STAR = `<svg class="ic-star" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7 .9-5.2 4.9 1.4 7L12 18l-6.2 3.4 1.4-7L2 9.5l7-.9z"/></svg>`;
 const FLAG = `<svg class="ic-flag" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
 
@@ -136,16 +223,17 @@ function ringSVG(done, color, rad) {
 }
 
 // =============================================
-// ヒーローカード（横長・要約）
+// カード（縦長・要約）
 //
-// 4軸スコアは入れない。詳細は下のセクションで見せる。
-// 右側の各エリアを押すと、対応する詳細へスクロールする。
+// 横長はスマホで文字が小さくなりすぎるため縦長に戻した。
+// ここは要約だけを置き、詳細は下のセクションで見せる。
+// 背景の模様と、動物ごとの足跡を敷く。
 // =============================================
 export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
   const bg = BG[d.card_bg] ? d.card_bg : "contour";
   const ranks = d.ranks ?? {};
-  const linked = opts.linked !== false;   // false ならスクロールさせない（コレクション用）
+  const linked = opts.linked !== false;   // false ならスクロールさせない
 
   const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
 
@@ -153,7 +241,7 @@ export function renderHeroCard(d, opts = {}) {
     const done = Number(ranks[r.key]);
     return `
       <div class="mini-ring">
-        <div class="mr">${ringSVG(done, r.color, 15)}
+        <div class="mr">${ringSVG(done, r.color, 19)}
           <div class="mn"><b>${done}</b><span>/100</span></div></div>
         <p>${r.label}</p><em>${done >= 100 ? "完登" : `あと${100 - done}`}</em>
       </div>`;
@@ -162,48 +250,55 @@ export function renderHeroCard(d, opts = {}) {
   const favN = d.favorites?.length ?? 0;
   const wishN = d.wishlist?.length ?? 0;
   const sampleTags = [
-    ...(d.favorites ?? []).slice(0, 1).map((m) => `<span class="mini-tag fav">${esc(m.name)}</span>`),
-    ...(d.wishlist ?? []).slice(0, 1).map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`),
+    ...(d.favorites ?? []).slice(0, 2).map((m) => `<span class="mini-tag fav">${esc(m.name)}</span>`),
+    ...(d.wishlist ?? []).slice(0, 2).map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`),
   ].join("");
 
-  const tag = (go, inner) => linked
+  const blk = (go, inner) => linked
     ? `<button class="hero-blk" data-go="${go}">${inner}</button>`
     : `<div class="hero-blk">${inner}</div>`;
 
   return `
   <div class="hero t-${bg}">
-    <svg class="hero-bg" viewBox="0 0 380 240" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
+    <svg class="hero-bg" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
+    ${diagnosed ? `
+      <svg class="hero-paw" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">
+        ${pawTrail(d.type_code)}
+      </svg>` : ""}
 
-    <div class="hero-l">
-      <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
-      <div class="hero-chip"></div>
+    <div class="hero-in">
+      <div class="hero-top">
+        <span class="hero-brand">${LOGO_MARK}<span>ハイカーズカード</span></span>
+        <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
+      </div>
+
       <div class="hero-me">
         <div class="hero-av">${diagnosed ? (opts.charSVG ?? "") : SILHOUETTE}</div>
         <p class="hero-name">${esc(d.display_name)}</p>
-      </div>
-      <div class="hero-type">
-        <p class="hero-lbl">登山タイプ</p>
         ${diagnosed ? `
           <div class="hero-trow">
             <span class="hero-code">${esc(d.type_code)}</span>
-            <span class="hero-tn"><b>${esc(opts.animal ?? "")}</b><span>${esc(opts.typeName ?? "")}</span></span>
+            <span class="hero-tn">${esc(opts.animal ?? "")}・${esc(opts.typeName ?? "")}</span>
           </div>` : `<p class="hero-undiag">未診断</p>`}
-        ${d.comment ? `<p class="hero-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>` : ""}
+        ${d.comment ? `<p class="hero-cmt">${escMultiline(d.comment)}</p>` : ""}
       </div>
-    </div>
 
-    <div class="hero-r">
-      ${rings ? tag("section-meizan", `
+      ${rings ? blk("section-meizan", `
         <p class="hero-lbl">名山ハント</p>
         <div class="mini-rings">${rings}</div>`) : ""}
 
-      ${(favN || wishN) ? tag("section-mountains", `
+      ${(favN || wishN) ? blk("section-mountains", `
         <p class="hero-lbl">山リスト
           ${favN ? `<span class="mini-cnt fav">★${favN}</span>` : ""}
           ${wishN ? `<span class="mini-cnt wish">⚑${wishN}</span>` : ""}</p>
         <div class="mini-tags">${sampleTags}</div>`) : ""}
     </div>
   </div>`;
+}
+
+// 改行を保ったまま安全に出す（ひとこと用）
+function escMultiline(s) {
+  return esc(s).replace(/\r?\n/g, "<br>");
 }
 
 // =============================================
@@ -312,7 +407,20 @@ function meizanSection(d) {
 function mountainsSection(d, opts) {
   const fav = d.favorites ?? [];
   const wish = d.wishlist ?? [];
-  if (!fav.length && !wish.length) return "";
+
+  // 自分のカードでは、空でもセクションを出して登録へ誘導する
+  if (!fav.length && !wish.length) {
+    if (!opts.own) return "";
+    return `
+    <section class="det" id="section-mountains">
+      <div class="det-h"><h2>山リスト</h2></div>
+      <div class="hc-empty">
+        <p>行ってよかった山・登ってみたい山を<br>それぞれ5座まで載せられます。</p>
+        <button class="btn ghost" style="margin-top:12px"
+                onclick="location.href='./picks.html'">選ぶ</button>
+      </div>
+    </section>`;
+  }
 
   return `
   <section class="det" id="section-mountains">
@@ -325,6 +433,11 @@ function mountainsSection(d, opts) {
       <p class="d-sub first">登ってみたい山</p>
       <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
     </div>` : ""}
+    ${opts.own && (!fav.length || !wish.length) ? `
+      <p class="af-note" style="text-align:center;margin-top:10px">
+        ${!fav.length ? "行ってよかった山" : "登ってみたい山"}がまだ未登録です。
+        <a href="./picks.html" style="color:var(--c-acc)">選ぶ</a>
+      </p>` : ""}
   </section>`;
 }
 
@@ -395,4 +508,124 @@ export function bindCardInteractions(root = document) {
 export function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// =============================================
+// 相手との共通点
+//
+// 公開ページをログイン済みで見たときに出す。
+// 「同じところ」を具体的に見せて、会話のきっかけにする。
+// =============================================
+const AXIS_COMMENT = {
+  pe: { P: "どちらも頂上を目指すタイプ", E: "どちらも道中を楽しむタイプ" },
+  sg: { S: "どちらも一人の時間を大事にする", G: "どちらも誰かと登るのが好き" },
+  lf: { L: "どちらも計画を立ててから動く", F: "どちらもその日の気分で決める" },
+  ca: { C: "どちらも慎重に判断する", A: "どちらも挑戦を選ぶ" },
+};
+const AXIS_META = {
+  pe: { a: "P", b: "E", title: "目的" },
+  sg: { a: "S", b: "G", title: "仲間" },
+  lf: { a: "L", b: "F", title: "計画" },
+  ca: { a: "C", b: "A", title: "リスク" },
+};
+
+export function buildAffinity(me, other) {
+  if (!me || !other) return null;
+
+  // ---- 4軸の一致 ----
+  const axisHits = [];
+  let axisScore = 0;
+  if (me.axes && other.axes) {
+    for (const k of ["pe", "sg", "lf", "ca"]) {
+      const a = me.axes[k], b = other.axes[k];
+      if (a == null || b == null) continue;
+      const sideA = a >= 50, sideB = b >= 50;
+      if (sideA === sideB) {
+        const letter = sideA ? AXIS_META[k].a : AXIS_META[k].b;
+        axisHits.push({ title: AXIS_META[k].title, letter, text: AXIS_COMMENT[k][letter] });
+        // 寄り具合が近いほど高く（同じ側で最大25点）
+        axisScore += 25 - Math.min(24, Math.abs(a - b) / 2);
+      }
+    }
+  }
+
+  // ---- 山の重なり ----
+  const names = (list) => new Set((list ?? []).map((m) => m.name));
+  const myFav = names(me.favorites), myWish = names(me.wishlist);
+  const myClimbed = names(me.climbed);
+
+  const sameFav  = (other.favorites ?? []).filter((m) => myFav.has(m.name)).map((m) => m.name);
+  const sameWish = (other.wishlist ?? []).filter((m) => myWish.has(m.name)).map((m) => m.name);
+  // 相手が登りたい山を、自分はもう登っている
+  const canTell  = (other.wishlist ?? []).filter((m) => myClimbed.has(m.name)).map((m) => m.name);
+  // 自分が登りたい山を、相手はもう登っている
+  const canAsk   = (me.wishlist ?? []).filter((m) => names(other.climbed).has(m.name)).map((m) => m.name);
+
+  const mtScore = Math.min(100, sameFav.length * 12 + sameWish.length * 10 + canTell.length * 4);
+  const score = Math.round(axisScore * 0.7 + mtScore * 0.3);
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    axisHits, sameFav, sameWish, canTell, canAsk,
+    label: score >= 75 ? "とても近い" : score >= 50 ? "近い" : score >= 25 ? "少し違う" : "かなり違う",
+  };
+}
+
+export function renderAffinity(af, partnerName) {
+  if (!af) return "";
+
+  const items = [];
+
+  if (af.axisHits.length) {
+    items.push(`
+      <div class="af-item">
+        <p class="af-t">登山タイプ</p>
+        <ul class="af-list">
+          ${af.axisHits.map((h) => `<li><b>${h.letter}</b>${esc(h.text)}</li>`).join("")}
+        </ul>
+      </div>`);
+  }
+
+  const mtRow = (label, list, cls) => list.length ? `
+    <div class="af-item">
+      <p class="af-t">${label}</p>
+      <div class="d-tags">${list.map((n) => `<span class="d-tag ${cls}">${esc(n)}</span>`).join("")}</div>
+    </div>` : "";
+
+  items.push(mtRow("同じ山を「よかった」に選んでいます", af.sameFav, "fav"));
+  items.push(mtRow("同じ山に登りたいと思っています", af.sameWish, "wish"));
+
+  if (af.canTell.length) {
+    items.push(`
+      <div class="af-item">
+        <p class="af-t">${esc(partnerName)}さんが登りたい山のうち、あなたが登った山</p>
+        <div class="d-tags">${af.canTell.map((n) => `<span class="d-tag">${esc(n)}</span>`).join("")}</div>
+        <p class="af-note">話を聞かせてあげられそうです。</p>
+      </div>`);
+  }
+  if (af.canAsk.length) {
+    items.push(`
+      <div class="af-item">
+        <p class="af-t">あなたが登りたい山のうち、${esc(partnerName)}さんが登った山</p>
+        <div class="d-tags">${af.canAsk.map((n) => `<span class="d-tag">${esc(n)}</span>`).join("")}</div>
+        <p class="af-note">話を聞いてみるとよさそうです。</p>
+      </div>`);
+  }
+
+  const body = items.filter(Boolean).join("");
+
+  return `
+  <section class="det" id="section-affinity">
+    <div class="det-h"><h2>${esc(partnerName)}さんとの共通点</h2></div>
+    <div class="d-card">
+      <div class="af-score">
+        <div class="af-meter">
+          <div class="af-bar" style="width:${af.score}%"></div>
+        </div>
+        <div class="af-num"><b>${af.score}</b><span>${af.label}</span></div>
+      </div>
+      ${body || `<p class="af-none">まだ共通点が見つかりません。<br>
+        山を登録すると、重なりが見えてきます。</p>`}
+    </div>
+  </section>`;
 }

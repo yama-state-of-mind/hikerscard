@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1E3A31">
@@ -88,9 +96,9 @@
 
     <div class="field">
       <label>ひとこと</label>
-      <input type="text" id="comment" maxlength="50"
-             placeholder="例：先週テント泊デビューしました">
-      <p class="count"><span id="comment-count">0</span> / 50</p>
+      <textarea id="comment" maxlength="120" rows="3"
+                placeholder="例：週末は近郊の低山めぐり。&#10;いつか槍ヶ岳に登りたい。"></textarea>
+      <p class="count"><span id="comment-count">0</span> / 120</p>
     </div>
 
     <!-- 背景デザイン -->

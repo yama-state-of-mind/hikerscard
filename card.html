@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <style>
   .share-url {
@@ -213,6 +221,7 @@ const cardOpts = {
   features: diagnosed ? TYPES[profile.type_code]?.features : "",
   caution:  diagnosed ? TYPES[profile.type_code]?.caution  : "",
   overlaps,
+  own: true,
 };
 
 $("#hero").innerHTML = renderHeroCard(cardData, cardOpts);
