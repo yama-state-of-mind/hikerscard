@@ -93,8 +93,16 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
+import { applyTheme } from "./card.js";
 
 mountHeader(signOut);
+
+// 選んだテーマをページ全体に反映する
+(async () => {
+  const { getMyProfile } = await import("./supabase.js");
+  const p = await getMyProfile();
+  if (p?.card_bg) applyTheme(p.card_bg);
+})();
 import { SILHOUETTE, esc } from "./card.js";
 
 const $ = (s) => document.querySelector(s);

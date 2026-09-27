@@ -23,7 +23,7 @@
   position: relative; margin: 16px auto 0;
   width: 100%; max-width: 330px;
   /* カードの高さ＋重なり分。中身に応じてJSで調整する */
-  min-height: 520px;
+  min-height: 300px;
 }
 .deck-item {
   position: absolute; left: 50%; top: 0; width: 100%;
@@ -31,7 +31,7 @@
   transition: transform .34s cubic-bezier(.22,.9,.3,1), opacity .25s;
   will-change: transform;
 }
-.deck-item .hcard { margin-top: 0; }
+.deck-item .hero { margin-top: 0; }
 
 /* 手前のカードだけ操作できるようにする */
 .deck-item:not(.front) { pointer-events: none; }
@@ -137,11 +137,19 @@ window.addEventListener("unhandledrejection", function (e) {
 
 <script type="module">
 import { supabase, getUser } from "./supabase.js";
-import { renderCard, bindCardToggles } from "./card.js";
+import { renderHeroCard } from "./card.js";
 import { mountHeader } from "./header.js";
+import { applyTheme } from "./card.js";
 import { signOut } from "./supabase.js";
 
 mountHeader(signOut);
+
+// 選んだテーマをページ全体に反映する
+(async () => {
+  const { getMyProfile } = await import("./supabase.js");
+  const p = await getMyProfile();
+  if (p?.card_bg) applyTheme(p.card_bg);
+})();
 
 const $ = (s) => document.querySelector(s);
 
@@ -213,21 +221,19 @@ function drawDeck() {
     const pos = (i - frontIndex + n) % n;   // 0 が手前
     const diagnosed = !!c.type_code;
     return `
-      <div class="deck-item${pos === 0 ? " front" : ""}" data-pos="${pos}">
-        ${renderCard(c, {
+      <div class="deck-item${pos === 0 ? " front" : ""}" data-pos="${pos}"
+           data-uid="${c.public_id}">
+        ${renderHeroCard(c, {
           charSVG: diagnosed ? characterSVG(c.type_code) : "",
           animal:  diagnosed ? CHARACTERS[c.type_code]?.animal : "",
           typeName: diagnosed ? TYPES[c.type_code]?.name : "",
-          features: diagnosed ? TYPES[c.type_code]?.features : "",
-          caution:  diagnosed ? TYPES[c.type_code]?.caution  : "",
-          uid: "c" + i,
+          linked: false,          // コレクションではスクロールさせない
         })}
       </div>`;
   }).join("");
 
   layout();
   bindSwipe();
-  bindCardToggles();
   updateLabels();
 }
 
@@ -236,7 +242,7 @@ function layout() {
   const n = cards.length;
   document.querySelectorAll(".deck-item").forEach((el) => {
     const pos = Number(el.dataset.pos);
-    const y = pos * 16;                      // 下にずらす量
+    const y = pos * 14;                      // 下にずらす量
     const sc = 1 - pos * 0.035;              // 奥ほど小さく
     el.style.transform = `translateX(-50%) translateY(${y}px) scale(${sc})`;
     el.style.zIndex = String(n - pos);
@@ -247,7 +253,7 @@ function layout() {
   // 一番手前のカードの高さに合わせて、枠の高さを決める。
   // 描画が画面に反映されてから測る必要があるので、1フレーム待つ
   requestAnimationFrame(() => {
-    const front = document.querySelector(".deck-item.front .hcard");
+    const front = document.querySelector(".deck-item.front .hero");
     if (front && front.offsetHeight > 0) {
       $("#deck").style.minHeight = front.offsetHeight + 60 + "px";
     }

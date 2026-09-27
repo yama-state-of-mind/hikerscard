@@ -91,149 +91,133 @@ export const SNS = {
   x:         { label: "X",         bg: "#111111", short: "X",  url: (v) => `https://x.com/${v}` },
 };
 
-const STAR = `<svg class="hc-star" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7 .9-5.2 4.9 1.4 7L12 18l-6.2 3.4 1.4-7L2 9.5l7-.9z"/></svg>`;
-const FLAG = `<svg class="hc-flag" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
+const STAR = `<svg class="ic-star" viewBox="0 0 24 24"><path d="M12 2l3 6.6 7 .9-5.2 4.9 1.4 7L12 18l-6.2 3.4 1.4-7L2 9.5l7-.9z"/></svg>`;
+const FLAG = `<svg class="ic-flag" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
+
+const RANKS = [
+  { key: "100", label: "百名山",   color: "#E0A33B" },
+  { key: "200", label: "二百名山", color: "#8CA9BD" },
+  { key: "300", label: "三百名山", color: "#B9C6BD" },
+];
 
 // ---------------------------------------------
-// カード全体
+// テーマをページ全体に効かせる
+//
+// カードの背景を選ぶと、ページの地色や見出しの色も変わる。
+// body にクラスを付けることで、CSS変数が全体に行き渡る。
 // ---------------------------------------------
-export function renderCard(d, opts = {}) {
+export function applyTheme(bg) {
+  const id = BG[bg] ? bg : "contour";
+  document.body.className = document.body.className
+    .replace(/\bt-\w+\b/g, "").trim() + " t-" + id;
+  // スマホの上部バーの色も合わせる
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    const c = getComputedStyle(document.body).getPropertyValue("--c-page").trim();
+    if (c) meta.setAttribute("content", c);
+  }
+  return id;
+}
+
+// ---------------------------------------------
+// 共通のリング
+// ---------------------------------------------
+function ringSVG(done, color, rad) {
+  const C = 2 * Math.PI * rad;
+  const size = rad * 2 + 8;
+  const c = rad + 4;
+  return `
+  <svg viewBox="0 0 ${size} ${size}">
+    <circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="var(--c-soft)" stroke-width="${rad > 18 ? 5 : 3.6}"/>
+    <circle cx="${c}" cy="${c}" r="${rad}" fill="none" stroke="${color}" stroke-width="${rad > 18 ? 5 : 3.6}"
+            stroke-linecap="round" stroke-dasharray="${C}"
+            stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 ${c} ${c})"/>
+  </svg>`;
+}
+
+// =============================================
+// ヒーローカード（横長・要約）
+//
+// 4軸スコアは入れない。詳細は下のセクションで見せる。
+// 右側の各エリアを押すと、対応する詳細へスクロールする。
+// =============================================
+export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
   const bg = BG[d.card_bg] ? d.card_bg : "contour";
-  const uid = opts.uid ?? Math.random().toString(36).slice(2, 8);
+  const ranks = d.ranks ?? {};
+  const linked = opts.linked !== false;   // false ならスクロールさせない（コレクション用）
+
+  const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
+
+  const rings = shown.map((r) => {
+    const done = Number(ranks[r.key]);
+    return `
+      <div class="mini-ring">
+        <div class="mr">${ringSVG(done, r.color, 15)}
+          <div class="mn"><b>${done}</b><span>/100</span></div></div>
+        <p>${r.label}</p><em>${done >= 100 ? "完登" : `あと${100 - done}`}</em>
+      </div>`;
+  }).join("");
+
+  const favN = d.favorites?.length ?? 0;
+  const wishN = d.wishlist?.length ?? 0;
+  const sampleTags = [
+    ...(d.favorites ?? []).slice(0, 1).map((m) => `<span class="mini-tag fav">${esc(m.name)}</span>`),
+    ...(d.wishlist ?? []).slice(0, 1).map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`),
+  ].join("");
+
+  const tag = (go, inner) => linked
+    ? `<button class="hero-blk" data-go="${go}">${inner}</button>`
+    : `<div class="hero-blk">${inner}</div>`;
 
   return `
-  <div class="hcard t-${bg}" data-uid="${uid}">
-    <svg class="card-bg" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
-    <div class="hcard-inner">
+  <div class="hero t-${bg}">
+    <svg class="hero-bg" viewBox="0 0 380 240" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
 
-      <div class="hc-head">
-        <span class="hc-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
-        <div class="hc-avatar">${diagnosed ? (opts.charSVG ?? "") : SILHOUETTE}</div>
-        <p class="hc-name">${esc(d.display_name)}</p>
+    <div class="hero-l">
+      <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
+      <div class="hero-chip"></div>
+      <div class="hero-me">
+        <div class="hero-av">${diagnosed ? (opts.charSVG ?? "") : SILHOUETTE}</div>
+        <p class="hero-name">${esc(d.display_name)}</p>
       </div>
+      <div class="hero-type">
+        <p class="hero-lbl">登山タイプ</p>
+        ${diagnosed ? `
+          <div class="hero-trow">
+            <span class="hero-code">${esc(d.type_code)}</span>
+            <span class="hero-tn"><b>${esc(opts.animal ?? "")}</b><span>${esc(opts.typeName ?? "")}</span></span>
+          </div>` : `<p class="hero-undiag">未診断</p>`}
+        ${d.comment ? `<p class="hero-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>` : ""}
+      </div>
+    </div>
 
-      ${typeBlock(d, uid, opts)}
+    <div class="hero-r">
+      ${rings ? tag("section-meizan", `
+        <p class="hero-lbl">名山ハント</p>
+        <div class="mini-rings">${rings}</div>`) : ""}
 
-      ${d.comment ? `
-      <div class="hc-blk">
-        <p class="hc-blk-t">ひとこと</p>
-        <p class="hc-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>
-      </div>` : ""}
-
-      ${meizanBlock(d, uid)}
-
-      ${tagBlock("行ってよかった山", d.favorites, "fav", STAR, opts.overlaps?.favorites)}
-      ${tagBlock("登ってみたい山", d.wishlist, "wish", FLAG, opts.overlaps?.wishlist)}
-
-      ${snsBlock(d.sns)}
-
+      ${(favN || wishN) ? tag("section-mountains", `
+        <p class="hero-lbl">山リスト
+          ${favN ? `<span class="mini-cnt fav">★${favN}</span>` : ""}
+          ${wishN ? `<span class="mini-cnt wish">⚑${wishN}</span>` : ""}</p>
+        <div class="mini-tags">${sampleTags}</div>`) : ""}
     </div>
   </div>`;
 }
 
-// ---------------------------------------------
-// 登山タイプ
-//
-// 見出しの下にキャラ名とタイプ名を置き、押すと
-// 4軸のスコア・特徴・気をつけたいことが開く。
-// カードの上部が名前だけになり、すっきりする。
-// ---------------------------------------------
-function typeBlock(d, uid, opts) {
-  if (!d.type_code) {
-    return `<div class="hc-blk">
-      <p class="hc-blk-t">登山タイプ</p>
-      <p class="hc-type undiag" style="text-align:left">未診断</p>
-    </div>`;
-  }
-
-  const hasDetail = !!(d.axes || opts.features || opts.caution);
-
-  return `
-  <div class="hc-blk">
-    <p class="hc-blk-t">登山タイプ</p>
-    <button class="ax-row${hasDetail ? "" : " nolist"}" data-uid="${uid}" ${hasDetail ? "" : "disabled"}>
-      <span class="hc-code">${esc(d.type_code)}</span>
-      <span class="type-names">
-        <b>${esc(opts.animal ?? "")}</b>
-        <span>${esc(opts.typeName ?? "")}</span>
-      </span>
-      ${hasDetail ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
-        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
-    </button>
-    ${hasDetail ? `
-    <div class="hy-list" id="ax-list-${uid}">
-      <div class="hy-list-in">
-        ${d.axes ? axesRows(d.axes) : ""}
-        ${opts.features ? `
-          <p class="hc-sub-t" style="margin-top:14px">特徴</p>
-          <p class="hc-desc">${esc(opts.features)}</p>` : ""}
-        ${opts.caution ? `
-          <p class="hc-sub-t" style="margin-top:12px">気をつけたいこと</p>
-          <p class="hc-desc">${esc(opts.caution)}</p>` : ""}
-      </div>
-    </div>` : ""}
-  </div>`;
+// =============================================
+// 詳細セクション（カードの下に並べる）
+// =============================================
+export function renderDetails(d, opts = {}) {
+  return [
+    diagnosisSection(d, opts),
+    meizanSection(d),
+    mountainsSection(d, opts),
+  ].filter(Boolean).join("");
 }
 
-// ---------------------------------------------
-// 折りたたみの開閉を有効にする。カードを描いたあとに呼ぶ
-// ---------------------------------------------
-export function bindCardToggles(root = document) {
-  // 登山タイプの説明
-  root.querySelectorAll(".ax-row").forEach((row) => {
-    if (row.dataset.bound) return;
-    row.dataset.bound = "1";
-    row.addEventListener("click", () => {
-      const list = root.querySelector(`#ax-list-${row.dataset.uid}`);
-      row.classList.toggle("open");
-      if (list) list.classList.toggle("open");
-    });
-  });
-
-  // 名山ハントのリング。押されたものだけを開き、他は閉じる
-  root.querySelectorAll("[data-rank]").forEach((btn) => {
-    if (btn.dataset.bound) return;
-    btn.dataset.bound = "1";
-    btn.addEventListener("click", () => {
-      const { uid, rank } = btn.dataset;
-      const target = root.querySelector(`#mz-${uid}-${rank}`);
-      const wasOpen = btn.classList.contains("open");
-
-      root.querySelectorAll(`[data-uid="${uid}"][data-rank]`)
-          .forEach((b) => b.classList.remove("open"));
-      root.querySelectorAll(`[id^="mz-${uid}-"]`)
-          .forEach((l) => l.classList.remove("open"));
-
-      if (!wasOpen && target) {
-        btn.classList.add("open");
-        target.classList.add("open");
-      }
-    });
-  });
-
-  // 重なりの吹き出しは、タップでも出せるようにする
-  // （スマホにはマウスオーバーが無いため）
-  root.querySelectorAll(".hc-tag.has-ov").forEach((tag) => {
-    if (tag.dataset.bound) return;
-    tag.dataset.bound = "1";
-    tag.addEventListener("click", (e) => {
-      // 吹き出しの中のリンクは、そのまま開かせる
-      if (e.target.closest("a")) return;
-      e.stopPropagation();
-      const open = tag.classList.contains("show-ov");
-      root.querySelectorAll(".hc-tag.show-ov").forEach((t) => t.classList.remove("show-ov"));
-      if (!open) tag.classList.add("show-ov");
-    });
-  });
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".hc-tag.show-ov").forEach((t) => t.classList.remove("show-ov"));
-  });
-}
-
-// ---------------------------------------------
-// 診断の4軸（両端型なので横バーで表す）
-// ---------------------------------------------
+// ---------- 登山タイプ ----------
 const AXIS_DEFS = [
   { key: "pe", title: "目的",   a: "P", b: "E", aName: "ピークハント", bName: "エンジョイ" },
   { key: "sg", title: "仲間",   a: "S", b: "G", aName: "ソロ",         bName: "グループ" },
@@ -241,166 +225,170 @@ const AXIS_DEFS = [
   { key: "ca", title: "リスク", a: "C", b: "A", aName: "慎重",         bName: "挑戦的" },
 ];
 
-function axesRows(axes) {
-  return AXIS_DEFS.map((ax) => {
-    const aPct = axes[ax.key];
+function diagnosisSection(d, opts) {
+  if (!d.type_code) return "";
+
+  const rows = AXIS_DEFS.map((ax) => {
+    const aPct = d.axes?.[ax.key];
     if (aPct === null || aPct === undefined) return "";
     const bPct = 100 - aPct;
     const aWins = aPct >= 50;
     return `
-      <div class="hc-ax">
-        <p class="hc-ax-title">${ax.title}</p>
-        <div class="hc-ax-head">
+      <div class="d-ax">
+        <p class="d-ax-t">${ax.title}</p>
+        <div class="d-ax-h">
           <span class="${aWins ? "w" : "l"}">${ax.a} ${ax.aName} <b>${aPct}</b></span>
           <span class="${aWins ? "l" : "w"}"><b>${bPct}</b> ${ax.bName} ${ax.b}</span>
         </div>
-        <div class="hc-ax-track">
-          <div class="hc-ax-bar ${aWins ? "a" : "b"}" style="width:${aWins ? aPct : bPct}%"></div>
+        <div class="d-ax-track">
+          <i class="${aWins ? "" : "b"}" style="width:${aWins ? aPct : bPct}%"></i>
         </div>
       </div>`;
   }).join("");
+
+  return `
+  <section class="det" id="section-diagnosis">
+    <div class="det-h"><h2>登山タイプ</h2><span class="det-n">${esc(d.type_code)}</span></div>
+    ${rows ? `<div class="d-card">${rows}</div>` : ""}
+    ${(opts.features || opts.caution) ? `
+      <div class="d-card">
+        ${opts.features ? `<p class="d-sub">特徴</p><p class="d-desc">${esc(opts.features)}</p>` : ""}
+        ${opts.caution ? `<p class="d-sub">気をつけたいこと</p><p class="d-desc">${esc(opts.caution)}</p>` : ""}
+      </div>` : ""}
+  </section>`;
 }
 
-// ---------------------------------------------
-// 名山ハント
-//
-// リングを押すと、そのランクの山だけが開く。
-// 全部まとめて出すと数が多すぎて読めないため。
-// 開いた中ではランクが自明なので、バッジは付けない。
-// ---------------------------------------------
-const RANKS = [
-  { key: "100", label: "百名山",   color: "#E0A33B" },
-  { key: "200", label: "二百名山", color: "#8CA9BD" },
-  { key: "300", label: "三百名山", color: "#B9C6BD" },
-];
-
-function meizanBlock(d, uid) {
+// ---------- 名山ハント ----------
+function meizanSection(d) {
   const ranks = d.ranks ?? {};
   const list = d.climbed ?? [];
-
-  const shown = RANKS.filter((r) =>
-    ranks[r.key] !== undefined && ranks[r.key] !== null);
-
+  const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
   if (!shown.length && !list.length) return "";
 
-  const other = Number(ranks.other ?? 0);
+  const total = shown.reduce((n, r) => n + Number(ranks[r.key]), 0);
+  const others = list.filter((m) => !m.rank);
 
-  const rings = shown.map((r) => {
+  const blocks = shown.map((r, i) => {
     const done = Number(ranks[r.key]);
     const inRank = list.filter((m) => String(m.rank) === r.key);
-    const rad = 22, C = 2 * Math.PI * rad;
-
     return `
-      <button class="hc-ring-item${inRank.length ? "" : " nolist"}"
-              data-uid="${uid}" data-rank="${r.key}" ${inRank.length ? "" : "disabled"}>
-        <div class="hc-ring">
-          <svg viewBox="0 0 52 52">
-            <circle cx="26" cy="26" r="${rad}" fill="none" stroke="var(--c-soft)" stroke-width="5"/>
-            <circle cx="26" cy="26" r="${rad}" fill="none" stroke="${r.color}" stroke-width="5"
-                    stroke-linecap="round" stroke-dasharray="${C}"
-                    stroke-dashoffset="${C * (1 - done / 100)}" transform="rotate(-90 26 26)"/>
-          </svg>
-          <div class="hc-ring-num"><b>${done}</b><span>/100</span></div>
-        </div>
-        <p class="hc-ring-label">${r.label}</p>
-        <p class="hc-ring-rest">${done >= 100 ? "完登" : `あと${100 - done}`}</p>
-      </button>`;
+      <button class="mz-row${inRank.length ? "" : " nolist"}" data-mz="${r.key}"
+              ${inRank.length ? "" : "disabled"}>
+        <div class="mz-r">${ringSVG(done, r.color, 22)}
+          <div class="mn"><b>${done}</b><span>/100</span></div></div>
+        <p class="mz-t">${r.label}<em>${done >= 100 ? "完登" : `あと${100 - done}座`}</em></p>
+        ${inRank.length ? `<svg class="mz-car" viewBox="0 0 24 24" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
+      </button>
+      ${inRank.length ? `
+        <div class="mz-list" id="mzl-${r.key}">
+          <div class="mz-in"><div class="d-tags">
+            ${inRank.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
+          </div></div>
+        </div>` : ""}`;
   }).join("");
 
-  // ランクごとの一覧。押されたものだけが開く
-  const lists = shown.map((r) => {
-    const inRank = list.filter((m) => String(m.rank) === r.key);
-    if (!inRank.length) return "";
-    return `
-      <div class="hy-list" id="mz-${uid}-${r.key}">
-        <div class="hy-list-in">
-          <p class="hc-sub-t">${r.label}（${inRank.length}座）</p>
-          <div class="hc-tags">
-            ${inRank.map((m) => `<span class="hc-tag">${esc(m.name)}</span>`).join("")}
-          </div>
-        </div>
-      </div>`;
-  }).join("");
-
-  // 名山でない山
-  const others = list.filter((m) => !m.rank);
-  const otherList = others.length ? `
-    <div class="hy-list" id="mz-${uid}-other">
-      <div class="hy-list-in">
-        <p class="hc-sub-t">そのほか（${others.length}座）</p>
-        <div class="hc-tags">
-          ${others.map((m) => `<span class="hc-tag">${esc(m.name)}</span>`).join("")}
-        </div>
-      </div>
-    </div>` : "";
-
   return `
-  <div class="hc-blk">
-    <p class="hc-blk-t">名山ハント</p>
-    <div class="hc-rings">${rings}</div>
-    ${lists}
-    ${other > 0 ? `
-      <button class="hc-other${others.length ? "" : " nolist"}"
-              data-uid="${uid}" data-rank="other" ${others.length ? "" : "disabled"}>
-        そのほか <b>${other}座</b>
-      </button>` : ""}
-    ${otherList}
-  </div>`;
-}
-
-// ---------------------------------------------
-// 好きな山・登りたい山
-// ---------------------------------------------
-// overlaps: { 山名: [{ name, public_id }] }
-// 交換した相手と同じ山を選んでいたら、吹き出しで知らせる。
-// 名前はその人のカードへのリンクにする。
-function tagBlock(label, list, cls, icon, overlaps) {
-  if (!list?.length) return "";
-
-  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
-
-  return `
-  <div class="hc-blk">
-    <p class="hc-blk-t">${label} <span class="hc-n">${list.length}</span></p>
-    <div class="hc-tags">
-      ${list.map((m) => {
-        const who = overlaps?.[m.name];
-        if (!who?.length) return `<span class="hc-tag ${cls}">${icon}${esc(m.name)}</span>`;
-
-        const links = who.slice(0, 4)
-          .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}</a>`)
-          .join("、");
-        const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
-
-        return `<span class="hc-tag ${cls} has-ov">
-          ${icon}${esc(m.name)}<span class="ov-dot">${who.length}</span>
-          <span class="ov-bubble">${links}${rest}${verb}</span>
-        </span>`;
-      }).join("")}
+  <section class="det" id="section-meizan">
+    <div class="det-h"><h2>名山ハント</h2><span class="det-n">${total} / 300</span></div>
+    <div class="d-card">
+      ${blocks}
+      ${others.length ? `
+        <button class="mz-row mz-other" data-mz="other">
+          <p class="mz-t">そのほかの山<em>${others.length}座</em></p>
+          <svg class="mz-car" viewBox="0 0 24 24" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="mz-list" id="mzl-other">
+          <div class="mz-in"><div class="d-tags">
+            ${others.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
+          </div></div>
+        </div>` : ""}
     </div>
-  </div>`;
+  </section>`;
 }
 
-// ---------------------------------------------
-// SNSリンク
-// ---------------------------------------------
-function snsBlock(sns) {
-  if (!sns) return "";
-  const items = Object.entries(sns)
-    .filter(([k, v]) => SNS[k] && v)
-    .map(([k, v]) => {
-      const s = SNS[k];
-      const inner = s.icon === "mt"
-        ? `<svg viewBox="0 0 24 24" fill="#fff"><path d="M3 19l6.2-11 3.4 6 2.4-4L21 19z"/></svg>`
-        : s.short;
-      return `<a href="${s.url(encodeURIComponent(v))}" target="_blank" rel="noopener noreferrer">
-        <span class="ic" style="background:${s.bg}">${inner}</span>${esc(v)}
-      </a>`;
-    });
+// ---------- 山リスト ----------
+function mountainsSection(d, opts) {
+  const fav = d.favorites ?? [];
+  const wish = d.wishlist ?? [];
+  if (!fav.length && !wish.length) return "";
 
-  if (!items.length) return "";
-  return `<div class="hc-blk"><p class="hc-blk-t">リンク</p>
-    <div class="hc-sns">${items.join("")}</div></div>`;
+  return `
+  <section class="det" id="section-mountains">
+    <div class="det-h"><h2>山リスト</h2></div>
+    ${fav.length ? `<div class="d-card">
+      <p class="d-sub first">行ってよかった山</p>
+      <div class="d-tags">${tags(fav, "fav", STAR, opts.overlaps?.favorites)}</div>
+    </div>` : ""}
+    ${wish.length ? `<div class="d-card">
+      <p class="d-sub first">登ってみたい山</p>
+      <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
+    </div>` : ""}
+  </section>`;
+}
+
+// overlaps: { 山名: [{ name, public_id }] }
+function tags(list, cls, icon, overlaps) {
+  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
+  return list.map((m) => {
+    const who = overlaps?.[m.name];
+    if (!who?.length) return `<span class="d-tag ${cls}">${icon}${esc(m.name)}</span>`;
+    const links = who.slice(0, 4)
+      .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}</a>`)
+      .join("、");
+    const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
+    return `<span class="d-tag ${cls} has-ov">
+      ${icon}${esc(m.name)}<span class="ov-dot">${who.length}</span>
+      <span class="ov-bubble">${links}${rest}${verb}</span>
+    </span>`;
+  }).join("");
+}
+
+// =============================================
+// 操作を有効にする
+//   ・ヒーローカード → 詳細へスムーズスクロール
+//   ・名山ハントの折りたたみ
+//   ・重なりの吹き出し
+// =============================================
+export function bindCardInteractions(root = document) {
+  root.querySelectorAll("[data-go]").forEach((b) => {
+    if (b.dataset.bound) return;
+    b.dataset.bound = "1";
+    b.addEventListener("click", () => {
+      const el = document.getElementById(b.dataset.go);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  // 名山は1つずつ開く
+  root.querySelectorAll("[data-mz]").forEach((b) => {
+    if (b.dataset.bound) return;
+    b.dataset.bound = "1";
+    b.addEventListener("click", () => {
+      const target = root.querySelector(`#mzl-${b.dataset.mz}`);
+      const wasOpen = b.classList.contains("open");
+      root.querySelectorAll("[data-mz]").forEach((x) => x.classList.remove("open"));
+      root.querySelectorAll(".mz-list").forEach((x) => x.classList.remove("open"));
+      if (!wasOpen && target) { b.classList.add("open"); target.classList.add("open"); }
+    });
+  });
+
+  // 吹き出しはタップでも開く（スマホにはマウスオーバーが無いため）
+  root.querySelectorAll(".d-tag.has-ov").forEach((t) => {
+    if (t.dataset.bound) return;
+    t.dataset.bound = "1";
+    t.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      e.stopPropagation();
+      const open = t.classList.contains("show-ov");
+      root.querySelectorAll(".d-tag.show-ov").forEach((x) => x.classList.remove("show-ov"));
+      if (!open) t.classList.add("show-ov");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".d-tag.show-ov").forEach((x) => x.classList.remove("show-ov"));
+  });
 }
 
 // ---------------------------------------------

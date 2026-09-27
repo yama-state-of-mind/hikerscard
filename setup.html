@@ -147,7 +147,7 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, getMyProfile, signOut, baseUrl } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { BG, THEMES, SILHOUETTE, SNS } from "./card.js";
+import { BG, THEMES, SILHOUETTE, SNS, applyTheme } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -188,6 +188,7 @@ nameInput.value = profile.display_name ?? "";
 commentInput.value = profile.comment ?? "";
 
 let bg = profile.card_bg ?? "contour";
+applyTheme(bg);
 
 // 名山ランクごとの公開設定
 const vis = {
@@ -240,6 +241,7 @@ $("#bgs").addEventListener("click", (e) => {
   const b = e.target.closest(".bg-chip");
   if (!b) return;
   bg = b.dataset.id;
+  applyTheme(bg);     // 選んだ瞬間に画面全体で試せる
   drawBgs();
 });
 

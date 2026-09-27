@@ -177,8 +177,16 @@ import qrcode from "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/+esm";
 import jsQR from "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm";
 import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
+import { applyTheme } from "./card.js";
 
 mountHeader(signOut);
+
+// 選んだテーマをページ全体に反映する
+(async () => {
+  const { getMyProfile } = await import("./supabase.js");
+  const p = await getMyProfile();
+  if (p?.card_bg) applyTheme(p.card_bg);
+})();
 
 const $ = (s) => document.querySelector(s);
 
