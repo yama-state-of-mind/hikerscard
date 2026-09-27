@@ -334,6 +334,11 @@ const MOUNTAINS = mtRes.data ?? [];
 const original = new Set((myRes.data ?? []).map((r) => r.mountain_id));
 const selected = new Set(original);
 
+// ここで画面を出す。
+// 読み込み中の表示を消さないと「読み込んでいます…」のまま止まって見える
+$("#loading").hidden = true;
+$("#main").hidden = false;
+
 // ---------------------------------------------
 // フィルタの定義
 //
@@ -703,6 +708,9 @@ function updateCount() {
 // ---------------------------------------------
 // 保存（差分だけを書き込む）
 // ---------------------------------------------
+// ---------------------------------------------
+// 保存（差分だけを書き込む）
+// ---------------------------------------------
 $("#save").onclick = async () => {
   const toAdd    = [...selected].filter((id) => !original.has(id));
   const toRemove = [...original].filter((id) => !selected.has(id));
@@ -743,6 +751,17 @@ $("#save").onclick = async () => {
     msg.textContent = "保存できませんでした：" + err.message;
   }
 };
+
+// ---------------------------------------------
+// 最初の描画
+//
+// いちばん最後に呼ぶ。
+// render() は updateCount() → RING_DEFS を使うが、
+// const は宣言した行を通るまで使えないため、
+// 途中で呼ぶと「初期化前に参照した」エラーになる。
+// ---------------------------------------------
+drawChips();
+render();
 </script>
 </body>
 </html>
