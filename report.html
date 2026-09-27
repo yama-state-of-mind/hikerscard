@@ -162,6 +162,7 @@ window.addEventListener("unhandledrejection", (e) =>
 
 <script type="module">
 import { supabase, getUser } from "/supabase.js";
+import { SILHOUETTE } from "/card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -290,14 +291,6 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-const SILHOUETTE = `
-<svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="80" cy="80" r="78" fill="#EDF3EF"/>
-  <circle cx="80" cy="64" r="26" fill="#C3D0C8"/>
-  <path d="M80 96 C52 96 34 116 32 146 L128 146 C126 116 108 96 80 96 Z" fill="#C3D0C8"/>
-  <path d="M104 40 L116 22 L128 40 Z" fill="#DCE4DF"/>
-  <path d="M120 40 L132 26 L142 40 Z" fill="#DCE4DF"/>
-</svg>`;
 </script>
 </body>
 </html>
