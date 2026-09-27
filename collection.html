@@ -218,6 +218,8 @@ function drawDeck() {
           charSVG: diagnosed ? characterSVG(c.type_code) : "",
           animal:  diagnosed ? CHARACTERS[c.type_code]?.animal : "",
           typeName: diagnosed ? TYPES[c.type_code]?.name : "",
+          features: diagnosed ? TYPES[c.type_code]?.features : "",
+          caution:  diagnosed ? TYPES[c.type_code]?.caution  : "",
           uid: "c" + i,
         })}
       </div>`;

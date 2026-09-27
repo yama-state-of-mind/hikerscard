@@ -90,8 +90,20 @@
 }
 
 /* エリアタグ */
-.areas { display: flex; gap: 6px; overflow-x: auto; padding: 9px 18px 2px; margin: 0 -18px; }
-.areas::-webkit-scrollbar { display: none; }
+.areas {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 9px 18px 2px; margin: 0 -18px;
+  max-height: 34px;              /* 既定は1行分だけ見せる */
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+.areas.open { max-height: 260px; }
+.areas-more {
+  display: block; width: 100%; margin-top: 7px;
+  font-family: var(--font); font-size: 11px; font-weight: 700;
+  color: var(--fjord); background: none; border: none; cursor: pointer;
+  text-align: center; padding: 3px;
+}
 .area-chip {
   flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700;
   border: 1.4px solid var(--line); border-radius: 999px;
@@ -197,6 +209,7 @@
       </div>
 
       <div class="areas" id="areas"></div>
+      <button class="areas-more" id="areas-more">エリアをすべて表示 ▾</button>
     </div>
 
     <div class="mt-list" id="list"></div>
@@ -347,6 +360,12 @@ function drawAreas() {
       `<button class="area-chip ${area === a ? "on" : ""}" data-area="${a}">${a}</button>`
     ).join("");
 }
+
+$("#areas-more").onclick = () => {
+  const el = $("#areas");
+  const open = el.classList.toggle("open");
+  $("#areas-more").textContent = open ? "閉じる ▴" : "エリアをすべて表示 ▾";
+};
 
 $("#areas").addEventListener("click", (e) => {
   const b = e.target.closest(".area-chip");

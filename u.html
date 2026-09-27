@@ -112,6 +112,8 @@ if (!publicId) {
       charSVG: diagnosed ? characterSVG(data.type_code) : "",
       animal:  diagnosed ? CHARACTERS[data.type_code]?.animal : "",
       typeName: diagnosed ? TYPES[data.type_code]?.name : "",
+      features: diagnosed ? TYPES[data.type_code]?.features : "",
+      caution:  diagnosed ? TYPES[data.type_code]?.caution  : "",
       uid: "pub",
     });
     bindCardToggles();

@@ -115,7 +115,7 @@ profile = await applyPendingDiagnosis(profile);
 const justExchanged = await applyPendingExchange();
 
 // 登った山・好きな山・登りたい山
-const [climbedRes, wishRes, cntRes] = await Promise.all([
+const [climbedRes, wishRes, cntRes, colRes] = await Promise.all([
   supabase.from("climbed_mountains")
           .select("is_favorite, mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
@@ -123,6 +123,7 @@ const [climbedRes, wishRes, cntRes] = await Promise.all([
           .select("mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
   supabase.rpc("meizan_counts", { p_user: user.id }),
+  supabase.rpc("get_my_collection"),
 ]);
 
 // クエリが失敗していたら、黙って空にせず画面に出す
@@ -176,12 +177,31 @@ const cardData = {
   },
 };
 
+// 交換した相手と同じ山を選んでいるかを調べる
+// { 山名: ["たくみ", "green_mt"] } の形にする
+function buildOverlaps(key) {
+  const map = {};
+  for (const c of (colRes.data ?? [])) {
+    for (const m of (c[key] ?? [])) {
+      (map[m.name] ??= []).push(c.display_name);
+    }
+  }
+  return map;
+}
+const overlaps = {
+  favorites: buildOverlaps("favorites"),
+  wishlist:  buildOverlaps("wishlist"),
+};
+
 const diagnosed = !!profile.type_code;
 
 $("#card-area").innerHTML = renderCard(cardData, {
   charSVG: diagnosed ? characterSVG(profile.type_code) : "",
   animal:  diagnosed ? CHARACTERS[profile.type_code]?.animal : "",
   typeName: diagnosed ? TYPES[profile.type_code]?.name : "",
+  features: diagnosed ? TYPES[profile.type_code]?.features : "",
+  caution:  diagnosed ? TYPES[profile.type_code]?.caution  : "",
+  overlaps,
   uid: "me",
 });
 bindCardToggles();

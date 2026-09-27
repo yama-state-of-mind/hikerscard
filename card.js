@@ -82,8 +82,11 @@ export const SILHOUETTE = `
 // SNSの定義
 // ---------------------------------------------
 export const SNS = {
-  yamap:     { label: "YAMAP",     bg: "#2BA24C", short: "Y",  url: (v) => `https://yamap.com/users/${v}` },
-  yamareco:  { label: "ヤマレコ",   bg: "#1F6FB2", short: "ヤ", url: (v) => `https://www.yamareco.com/modules/yamareco/userinfo-${v}.html` },
+  // 他社のロゴをそのまま使うのは商標上の問題があるため、
+  // 色だけ寄せた自作のアイコンにしている。
+  // 正式にロゴを使う場合は、各社の利用条件を確認すること。
+  yamap:     { label: "YAMAP",     bg: "#D93A2B", icon: "mt", url: (v) => `https://yamap.com/users/${v}` },
+  yamareco:  { label: "ヤマレコ",   bg: "#1F6FB2", icon: "mt", url: (v) => `https://www.yamareco.com/modules/yamareco/userinfo-${v}.html` },
   instagram: { label: "Instagram", bg: "#C13584", short: "in", url: (v) => `https://instagram.com/${v}` },
   x:         { label: "X",         bg: "#111111", short: "X",  url: (v) => `https://x.com/${v}` },
 };
@@ -116,16 +119,16 @@ export function renderCard(d, opts = {}) {
 
       ${d.comment ? `
       <div class="hc-blk">
-        <p class="hc-blk-t">COMMENT</p>
+        <p class="hc-blk-t">ひとこと</p>
         <p class="hc-cmt">&ldquo;${esc(d.comment)}&rdquo;</p>
       </div>` : ""}
 
-      ${diagnosed && d.axes ? axesBlock(d.axes) : ""}
+      ${diagnosed && d.axes ? axesBlock(d.axes, uid, opts) : ""}
 
       ${meizanBlock(d, uid)}
 
-      ${tagBlock("FAVORITE", d.favorites, "fav", STAR)}
-      ${tagBlock("WISHLIST", d.wishlist,  "wish", FLAG)}
+      ${tagBlock("行ってよかった山", d.favorites, "fav", STAR, opts.overlaps?.favorites)}
+      ${tagBlock("登ってみたい山", d.wishlist, "wish", FLAG, opts.overlaps?.wishlist)}
 
       ${snsBlock(d.sns)}
 
@@ -137,14 +140,33 @@ export function renderCard(d, opts = {}) {
 // 折りたたみの開閉を有効にする。カードを描いたあとに呼ぶ
 // ---------------------------------------------
 export function bindCardToggles(root = document) {
-  root.querySelectorAll(".hy-row").forEach((row) => {
-    if (row.dataset.bound) return;
-    row.dataset.bound = "1";
-    row.addEventListener("click", () => {
-      const list = root.querySelector(`#hy-list-${row.dataset.uid}`);
-      row.classList.toggle("open");
-      if (list) list.classList.toggle("open");
+  // 名山の一覧（hy-row）と、登山タイプの説明（ax-row）
+  [["hy-row", "hy-list"], ["ax-row", "ax-list"]].forEach(([rowCls, listId]) => {
+    root.querySelectorAll("." + rowCls).forEach((row) => {
+      if (row.dataset.bound) return;
+      row.dataset.bound = "1";
+      row.addEventListener("click", () => {
+        const list = root.querySelector(`#${listId}-${row.dataset.uid}`);
+        row.classList.toggle("open");
+        if (list) list.classList.toggle("open");
+      });
     });
+  });
+
+  // 重なりの吹き出しは、タップでも出せるようにする
+  // （スマホにはマウスオーバーが無いため）
+  root.querySelectorAll(".hc-tag.has-ov").forEach((tag) => {
+    if (tag.dataset.bound) return;
+    tag.dataset.bound = "1";
+    tag.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = tag.classList.contains("show-ov");
+      root.querySelectorAll(".hc-tag.show-ov").forEach((t) => t.classList.remove("show-ov"));
+      if (!open) tag.classList.add("show-ov");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".hc-tag.show-ov").forEach((t) => t.classList.remove("show-ov"));
   });
 }
 
@@ -158,7 +180,7 @@ const AXIS_DEFS = [
   { key: "ca", title: "リスク", a: "C", b: "A", aName: "慎重",         bName: "挑戦的" },
 ];
 
-function axesBlock(axes) {
+function axesBlock(axes, uid, opts = {}) {
   const rows = AXIS_DEFS.map((ax) => {
     const aPct = axes[ax.key];
     if (aPct === null || aPct === undefined) return "";
@@ -178,7 +200,30 @@ function axesBlock(axes) {
   }).join("");
 
   if (!rows.trim()) return "";
-  return `<div class="hc-blk"><p class="hc-blk-t">TYPE AXES</p>${rows}</div>`;
+
+  // 押すと4軸の下に「特徴」「気をつけたいこと」が開く
+  const hasText = !!(opts.features || opts.caution);
+
+  return `
+  <div class="hc-blk">
+    <p class="hc-blk-t">登山タイプ</p>
+    <button class="ax-row${hasText ? "" : " nolist"}" data-uid="${uid}" ${hasText ? "" : "disabled"}>
+      <div class="ax-rows">${rows}</div>
+      ${hasText ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
+    </button>
+    ${hasText ? `
+    <div class="hy-list" id="ax-list-${uid}">
+      <div class="hy-list-in">
+        ${opts.features ? `
+          <p class="hc-sub-t">特徴</p>
+          <p class="hc-desc">${esc(opts.features)}</p>` : ""}
+        ${opts.caution ? `
+          <p class="hc-sub-t" style="margin-top:12px">気をつけたいこと</p>
+          <p class="hc-desc">${esc(opts.caution)}</p>` : ""}
+      </div>
+    </div>` : ""}
+  </div>`;
 }
 
 // ---------------------------------------------
@@ -209,7 +254,7 @@ function meizanBlock(d, uid) {
 
   return `
   <div class="hc-blk">
-    <p class="hc-blk-t">MEIZAN</p>
+    <p class="hc-blk-t">名山ハント</p>
     <button class="hy-row${hasList ? "" : " nolist"}" data-uid="${uid}" ${hasList ? "" : "disabled"}>
       <div class="hc-rings">${rings.join("")}</div>
       ${hasList ? `<svg class="hy-caret" viewBox="0 0 24 24" fill="none"
@@ -253,13 +298,27 @@ function ring(done, r) {
 // ---------------------------------------------
 // 好きな山・登りたい山
 // ---------------------------------------------
-function tagBlock(label, list, cls, icon) {
+// overlaps: { 山名: ["たくみ", "green_mt"] }
+// 交換した相手と同じ山を選んでいたら、吹き出しで知らせる
+function tagBlock(label, list, cls, icon, overlaps) {
   if (!list?.length) return "";
+
+  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
+
   return `
   <div class="hc-blk">
     <p class="hc-blk-t">${label} <span class="hc-n">${list.length}</span></p>
     <div class="hc-tags">
-      ${list.map((m) => `<span class="hc-tag ${cls}">${icon}${esc(m.name)}</span>`).join("")}
+      ${list.map((m) => {
+        const who = overlaps?.[m.name];
+        if (!who?.length) return `<span class="hc-tag ${cls}">${icon}${esc(m.name)}</span>`;
+        const names = who.slice(0, 3).map(esc).join("、")
+          + (who.length > 3 ? ` ほか${who.length - 3}人` : "");
+        return `<span class="hc-tag ${cls} has-ov">
+          ${icon}${esc(m.name)}<span class="ov-dot">${who.length}</span>
+          <span class="ov-bubble">${names}${verb}</span>
+        </span>`;
+      }).join("")}
     </div>
   </div>`;
 }
@@ -273,13 +332,16 @@ function snsBlock(sns) {
     .filter(([k, v]) => SNS[k] && v)
     .map(([k, v]) => {
       const s = SNS[k];
+      const inner = s.icon === "mt"
+        ? `<svg viewBox="0 0 24 24" fill="#fff"><path d="M3 19l6.2-11 3.4 6 2.4-4L21 19z"/></svg>`
+        : s.short;
       return `<a href="${s.url(encodeURIComponent(v))}" target="_blank" rel="noopener noreferrer">
-        <span class="ic" style="background:${s.bg}">${s.short}</span>${esc(v)}
+        <span class="ic" style="background:${s.bg}">${inner}</span>${esc(v)}
       </a>`;
     });
 
   if (!items.length) return "";
-  return `<div class="hc-blk"><p class="hc-blk-t">LINKS</p>
+  return `<div class="hc-blk"><p class="hc-blk-t">リンク</p>
     <div class="hc-sns">${items.join("")}</div></div>`;
 }
 
