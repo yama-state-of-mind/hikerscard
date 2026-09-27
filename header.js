@@ -27,22 +27,33 @@ const ICON = {
 // メニューは3つのまとまりにする。
 //   ①ふだん使うもの ②カードを整えるもの ③設定
 // 山の登録などは「カードを編集する」の中にまとめた
-const MENU = [
-  { href: "./card.html",       icon: "card", label: "マイカード" },
-  { href: "./collection.html", icon: "deck", label: "コレクション" },
-  { href: "./exchange.html",   icon: "qr",   label: "カードを交換する" },
+// リンクは絶対パスにする。
+// /u/x7k2p9 のような階層のあるパスから開いても正しく飛べるようにするため
+const MENU_IN = [
+  { href: "/card.html",       icon: "card", label: "マイカード" },
+  { href: "/collection.html", icon: "deck", label: "コレクション" },
+  { href: "/exchange.html",   icon: "qr",   label: "カードを交換する" },
   { sep: true },
-  { href: "./edit.html",       icon: "pen",  label: "カードを編集する" },
+  { href: "/edit.html",       icon: "pen",  label: "カードを編集する" },
   { sep: true },
-  { href: "./blocks.html",     icon: "ban",  label: "ブロック中のユーザー", mut: true },
-  { act: "logout",             icon: "out",  label: "ログアウト", mut: true },
+  { href: "/blocks.html",     icon: "ban",  label: "ブロック中のユーザー", mut: true },
+  { act: "logout",            icon: "out",  label: "ログアウト", mut: true },
 ];
 
-export function mountHeader(onLogout) {
+// 未ログインの人に出すメニュー。
+// 他人のカードを見ている場合などに使う
+const MENU_OUT = [
+  { href: "/login.html", icon: "card", label: "カードを作る" },
+  { href: "/",           icon: "qr",   label: "登山タイプ診断について" },
+];
+
+export function mountHeader(onLogout, opts = {}) {
   // すでにあるなら何もしない
   if (document.getElementById("hd")) return;
 
-  const links = MENU.map((m) => {
+  const menu = opts.loggedIn === false ? MENU_OUT : MENU_IN;
+
+  const links = menu.map((m) => {
     if (m.sep) return `<div class="sep"></div>`;
     const cls = m.mut ? ' class="mut"' : "";
     const href = m.act ? `href="#" data-act="${m.act}"` : `href="${m.href}"`;
@@ -89,7 +100,7 @@ export function mountHeader(onLogout) {
   };
 
   document.getElementById("hd-logo").onclick = () => {
-    location.href = "./card.html";
+    location.href = opts.loggedIn === false ? "/" : "/card.html";
   };
 
   drawer.querySelectorAll("[data-act]").forEach((a) => {

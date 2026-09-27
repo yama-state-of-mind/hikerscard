@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="/style.css">
 <style>
   .target {
@@ -88,14 +96,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
     <h1>このカードを通報する</h1>
     <p class="sub">
       いただいた内容は運営が確認します。<br>
@@ -161,7 +168,8 @@ window.addEventListener("unhandledrejection", (e) =>
 </script>
 
 <script type="module">
-import { supabase, getUser } from "/supabase.js";
+import { supabase, getUser, signOut } from "/supabase.js";
+import { mountHeader } from "/header.js";
 import { SILHOUETTE } from "/card.js";
 
 const $ = (s) => document.querySelector(s);
@@ -177,6 +185,9 @@ const REASONS = [
     d: "交換後にしつこく連絡が来るなど" },
   { id: "other", t: "その他", d: "" },
 ];
+
+const viewer = await getUser();
+mountHeader(signOut, { loggedIn: !!viewer });
 
 const targetId = new URLSearchParams(location.search).get("id");
 
@@ -195,7 +206,7 @@ if (!card) {
   throw new Error("not found");
 }
 
-const me = await getUser();
+const me = viewer;
 const diagnosed = !!card.type_code;
 
 $("#target").innerHTML = `

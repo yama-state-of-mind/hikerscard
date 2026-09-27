@@ -50,14 +50,13 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>読み込んでいます…</p>
   </div>
 
   <div id="main" hidden>
-    <p class="brand">ハイカーズ<span>カード</span></p>
     <div id="hero"></div>
     <div id="affinity"></div>
     <div id="details"></div>
@@ -82,9 +81,10 @@
 <script src="/characters.js"></script>
 
 <script type="module">
-import { supabase, getUser } from "/supabase.js";
+import { supabase, getUser, signOut } from "/supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions, applyTheme,
          buildAffinity, renderAffinity, esc } from "/card.js";
+import { mountHeader } from "/header.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -99,6 +99,10 @@ function readPublicId() {
   const m = location.pathname.match(/\/u\/([^/?#]+)/);
   return m ? m[1] : null;
 }
+
+// ヘッダーは未ログインでも出す（中身が変わる）
+const viewer = await getUser();
+mountHeader(signOut, { loggedIn: !!viewer });
 
 const publicId = readPublicId();
 
@@ -118,7 +122,7 @@ if (!publicId) {
     $("#notfound").hidden = false;
   } else {
     const diagnosed = !!data.type_code;
-    const me = await getUser();
+    const me = viewer;
 
     document.title = `${data.display_name}さんのカード｜ハイカーズカード`;
 

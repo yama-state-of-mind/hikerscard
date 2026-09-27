@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<meta property="og:title" content="ハイカーズカード">
+<meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="/style.css">
 <style>
   .center { text-align: center; }
@@ -33,7 +41,7 @@
 </head>
 <body>
 
-<div class="wrap">
+<div class="wrap has-hd">
   <div id="loading" class="loading">
     <div class="spinner"></div>
     <p>交換しています…</p>
@@ -46,7 +54,8 @@
 <script src="/characters.js"></script>
 
 <script type="module">
-import { supabase, getUser, getMyProfile } from "/supabase.js";
+import { supabase, getUser, getMyProfile, signOut } from "/supabase.js";
+import { mountHeader } from "/header.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -55,6 +64,9 @@ const $ = (s) => document.querySelector(s);
 //   /x/AbCd1234...      … vercel.json のリライト経由
 //   /x.html?t=AbCd...   … 直接開いた場合
 // ---------------------------------------------
+const viewer = await getUser();
+mountHeader(signOut, { loggedIn: !!viewer });
+
 function readToken() {
   const q = new URLSearchParams(location.search).get("t");
   if (q) return q;
@@ -71,7 +83,7 @@ if (!token) {
     <p class="sub">URLをもう一度ご確認ください。</p>
     <button class="btn ghost" onclick="location.href='/'">トップへ</button>`);
 } else {
-  const user = await getUser();
+  const user = viewer;
 
   if (!user) {
     // 未ログイン。トークンを預かってログインへ送り、戻ってきたら交換する
