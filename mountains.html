@@ -28,27 +28,6 @@
 }
 .head-in { padding: 0 18px; }
 
-/* カテゴリのタブ */
-.cats {
-  display: flex; gap: 5px; background: #E2E9E4;
-  border-radius: 999px; padding: 3px;
-}
-.cat {
-  flex: 1; font-family: var(--font); font-size: 11.5px; font-weight: 700;
-  border: none; background: transparent; color: var(--stone);
-  border-radius: 999px; padding: 7px 0; cursor: pointer; white-space: nowrap;
-}
-.cat {
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-}
-.cat.on { background: var(--paper); color: var(--pine); box-shadow: var(--shadow-card); }
-.cat .box {
-  width: 14px; height: 14px; border-radius: 4px; flex: none;
-  border: 1.6px solid #C3D0C8; background: var(--paper);
-  display: flex; align-items: center; justify-content: center;
-}
-.cat .box svg { width: 9px; height: 9px; stroke: #fff; fill: none; stroke-width: 3.4; opacity: 0; }
-.cat.on .box svg { opacity: 1; }
 
 /* 達成率 */
 .count-row {
@@ -89,29 +68,6 @@
   font-size: 13px; line-height: 1; font-family: var(--font);
 }
 
-/* エリアタグ */
-.areas {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 9px 18px 2px; margin: 0 -18px;
-  max-height: 34px;              /* 既定は1行分だけ見せる */
-  overflow: hidden;
-  transition: max-height .25s ease;
-}
-.areas.open { max-height: 260px; }
-.areas-more {
-  display: block; width: 100%; margin-top: 7px;
-  font-family: var(--font); font-size: 11px; font-weight: 700;
-  color: var(--fjord); background: none; border: none; cursor: pointer;
-  text-align: center; padding: 3px;
-}
-.area-chip {
-  flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700;
-  border: 1.4px solid var(--line); border-radius: 999px;
-  padding: 5px 12px; cursor: pointer; background: var(--paper); color: #45564e;
-}
-.area-chip.on { background: var(--pine); color: #fff; border-color: var(--pine); }
-.area-chip.sel { border-color: var(--sun); color: #96701E; background: #FCF6EA; }
-.area-chip.sel.on { background: var(--sun); color: #fff; border-color: var(--sun); }
 
 /* ---------- 山のリスト（コンパクト） ---------- */
 .mt-list { margin-top: 10px; }
@@ -158,6 +114,94 @@
   padding: 14px 20px 4px; line-height: 1.9;
 }
 
+/* ---------- 検索とフィルタ ---------- */
+.tool-row { display: flex; gap: 8px; margin-top: 11px; }
+.search-wrap { flex: 1; }
+.filter-btn {
+  flex: none; display: flex; align-items: center; gap: 5px;
+  font-family: var(--font); font-size: 12.5px; font-weight: 700;
+  color: var(--pine); background: var(--paper);
+  border: 1.6px solid var(--line); border-radius: 999px;
+  padding: 0 15px; cursor: pointer;
+}
+.filter-btn svg { width: 15px; height: 15px; stroke: var(--pine); stroke-width: 2; }
+.fb-n {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  background: var(--sun); color: #fff; border-radius: 999px;
+  min-width: 16px; padding: 1px 5px; text-align: center;
+}
+
+/* ---------- 適用中のフィルタ ---------- */
+.chips-row { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 9px; }
+.chip {
+  font-family: var(--font); font-size: 11.5px; font-weight: 700;
+  border: 1.4px solid var(--line); border-radius: 999px;
+  padding: 5px 11px; cursor: pointer; background: var(--paper); color: #45564e;
+}
+.chip.on { background: var(--pine); color: #fff; border-color: var(--pine); }
+.chip .x { margin-left: 3px; opacity: .7; }
+.chip.sel { border-color: var(--sun); color: #96701E; background: #FCF6EA; }
+.chip.sel.on { background: var(--sun); color: #fff; border-color: var(--sun); }
+.chip.clear-all { color: var(--stone); border-style: dashed; }
+
+/* ---------- フィルタのポップアップ ---------- */
+.sheet {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(30,58,49,.42);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.sheet-in {
+  background: var(--birch); width: 100%; max-width: 430px;
+  border-radius: 22px 22px 0 0; max-height: 86vh;
+  display: flex; flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: slideUp .26s cubic-bezier(.22,.9,.3,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } }
+
+.sheet-head {
+  display: flex; align-items: center; padding: 16px 20px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-t { font-size: 15px; font-weight: 900; flex: 1; }
+.sheet-x {
+  width: 30px; height: 30px; border: none; background: #EDF3EF;
+  border-radius: 50%; color: var(--stone); font-size: 18px;
+  line-height: 1; cursor: pointer; font-family: var(--font);
+}
+
+.sheet-body { flex: 1; overflow-y: auto; padding: 4px 20px 16px; }
+.f-group { margin-top: 18px; }
+.f-title {
+  font-size: 11px; font-weight: 900; color: var(--stone);
+  letter-spacing: 1px; margin-bottom: 7px;
+}
+.f-opts { display: flex; flex-direction: column; gap: 5px; }
+.f-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--paper); border: 1.6px solid transparent;
+  border-radius: 12px; padding: 10px 13px; cursor: pointer;
+  font-family: var(--font); text-align: left; box-shadow: var(--shadow-card);
+}
+.f-opt.on { border-color: var(--sun); background: #FCF6EA; }
+.f-box {
+  width: 19px; height: 19px; border-radius: 6px; flex: none;
+  border: 2px solid var(--line); background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+}
+.f-opt.on .f-box { background: var(--sun); border-color: var(--sun); }
+.f-box svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3.2; opacity: 0; }
+.f-opt.on .f-box svg { opacity: 1; }
+.f-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--pine); }
+.f-n { font-family: var(--mono); font-size: 11px; color: var(--stone); flex: none; }
+
+.sheet-foot {
+  display: flex; gap: 9px; padding: 12px 20px 16px;
+  border-top: 1px solid var(--line); background: var(--birch);
+}
+.sheet-foot .btn { flex: 1; }
+.sheet-foot .btn.ghost { flex: 0 0 38%; }
+
 /* ---------- エリアの見出し ---------- */
 .area-head {
   font-size: 11px; font-weight: 900; color: var(--stone);
@@ -194,22 +238,27 @@
   <div id="main" hidden>
     <div class="head-bar">
       <div class="head-in">
-        <div class="cats" id="cats"></div>
-
         <div class="count-row" id="count-row"></div>
 
-        <div class="search-wrap">
-          <svg class="ic" viewBox="0 0 24 24" stroke-linecap="round">
-            <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
-          </svg>
-          <input type="text" id="q" placeholder="山名・よみで探す（例：やり）"
-                 autocomplete="off" inputmode="search">
-          <button class="clear" id="clear" hidden>×</button>
+        <div class="tool-row">
+          <div class="search-wrap">
+            <svg class="ic" viewBox="0 0 24 24" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
+            </svg>
+            <input type="text" id="q" placeholder="山名・よみで探す"
+                   autocomplete="off" inputmode="search">
+            <button class="clear" id="clear" hidden>×</button>
+          </div>
+          <button class="filter-btn" id="filter-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 5h18M6 12h12M10 19h4"/>
+            </svg>
+            フィルタ<span class="fb-n" id="fb-n" hidden>0</span>
+          </button>
         </div>
-      </div>
 
-      <div class="areas" id="areas"></div>
-      <button class="areas-more" id="areas-more">エリアをすべて表示 ▾</button>
+        <div class="chips-row" id="chips"></div>
+      </div>
     </div>
 
     <div class="mt-list" id="list"></div>
@@ -218,6 +267,23 @@
       <p class="save-note" id="save-note"></p>
       <button class="btn sun" id="save">保存する</button>
       <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- フィルタのポップアップ -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-in">
+      <div class="sheet-head">
+        <p class="sheet-t">フィルタ</p>
+        <button class="sheet-x" id="sheet-x" aria-label="閉じる">&times;</button>
+      </div>
+      <div class="sheet-body" id="sheet-body"></div>
+      <div class="sheet-foot">
+        <button class="btn ghost" id="f-reset" style="margin-top:0">すべて解除</button>
+        <button class="btn sun"   id="f-apply" style="margin-top:0">
+          <span id="f-count"></span>件を表示
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -252,7 +318,7 @@ if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 // ---------------------------------------------
 const [mtRes, myRes] = await Promise.all([
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, meizan_rank")
+          .select("id, name, kana, elevation, area, pref, region, meizan_rank, is_popular")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id")
@@ -269,116 +335,190 @@ const original = new Set((myRes.data ?? []).map((r) => r.mountain_id));
 const selected = new Set(original);
 
 // ---------------------------------------------
-// カテゴリ
+// フィルタの定義
+//
+// 名山・エリア・人気・標高の4つ。すべてAND条件で、
+// 同じ区分の中で複数選んだときはOR条件になる。
+// 何も選ばれていない区分は「絞り込まない」扱い。
 // ---------------------------------------------
-const CATS = [
-  { id: "100",   label: "百名山",   rank: 100,  total: 100, color: "#E0A33B" },
-  { id: "200",   label: "二百名山", rank: 200,  total: 100, color: "#8CA9BD" },
-  { id: "300",   label: "三百名山", rank: 300,  total: 100, color: "#B9C6BD" },
-  { id: "other", label: "その他",   rank: null, total: null, color: "#9CB0A3" },
+const FILTERS = [
+  {
+    id: "rank", title: "名山",
+    opts: [
+      { v: "100",   label: "百名山" },
+      { v: "200",   label: "二百名山" },
+      { v: "300",   label: "三百名山" },
+      { v: "other", label: "リスト外" },
+    ],
+    match: (m, v) => v === "other" ? m.meizan_rank === null : String(m.meizan_rank) === v,
+  },
+  {
+    id: "region", title: "エリア",
+    opts: [
+      { v: "north",       label: "北海道・東北" },
+      { v: "kita_alps",   label: "北アルプス" },
+      { v: "minami_alps", label: "南・中央アルプス" },
+      { v: "koshin",      label: "八ヶ岳・奥秩父・甲信" },
+      { v: "kanto",       label: "関東・上信越・日光" },
+      { v: "tokai",       label: "東海・近畿・北陸" },
+      { v: "west",        label: "中国・四国・九州・沖縄" },
+    ],
+    match: (m, v) => m.region === v,
+  },
+  {
+    id: "popular", title: "人気の山",
+    opts: [{ v: "1", label: "人気の山だけ表示" }],
+    match: (m) => !!m.is_popular,
+  },
+  {
+    id: "band", title: "標高",
+    opts: [
+      { v: "low",  label: "〜1500m（低山・近郊）" },
+      { v: "mid",  label: "1500〜2500m（中高山）" },
+      { v: "high", label: "2500m〜（高山・アルプス）" },
+    ],
+    match: (m, v) => {
+      const e = m.elevation ?? 0;
+      return v === "low" ? e < 1500 : v === "mid" ? e >= 1500 && e < 2500 : e >= 2500;
+    },
+  },
 ];
 
-// 複数選択できる。最低1つは必ず選ばれている状態を保つ
-const cats = new Set(["100"]);
+// 選択状態。下書き（ポップアップの中）と確定を分ける
+const active = {};
+let draft = {};
+FILTERS.forEach((f) => (active[f.id] = new Set()));
 
-// エリアの並び（北から南）。
-// 標高順だけだと山域がばらけて、繋がりが見えにくいため。
-const AREA_ORDER = [
-  "北海道", "東北", "上信越", "北関東", "関東", "奥秩父",
-  "北アルプス", "八ヶ岳周辺", "中央アルプス", "南アルプス",
-  "富士山", "伊豆", "北陸", "中部", "近畿", "中国", "四国", "九州",
-];
-const areaRank = (a) => {
-  const i = AREA_ORDER.indexOf(a);
-  return i === -1 ? 999 : i;    // 未知のエリアは末尾に
-};
-let area = null;          // null なら「すべて」
-let onlySelected = false; // 「選択中」タグ
+// 「選択中だけ」はフィルタとは別扱い
+let onlySelected = false;
 let keyword = "";
 
-$("#loading").hidden = true;
-$("#main").hidden = false;
-
-drawCats();
-drawAreas();
-render();
-
 // ---------------------------------------------
-// カテゴリのタブ
+// 絞り込み
 // ---------------------------------------------
-function drawCats() {
-  $("#cats").innerHTML = CATS.map((c) => {
-    const on = cats.has(c.id);
-    return `
-      <button class="cat ${on ? "on" : ""}" data-id="${c.id}">
-        <span class="box" style="${on ? `background:${c.color};border-color:${c.color}` : ""}">
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12l6 6L20 6"/>
-          </svg>
-        </span>${c.label}
-      </button>`;
-  }).join("");
-}
-
-$("#cats").addEventListener("click", (e) => {
-  const b = e.target.closest(".cat");
-  if (!b) return;
-  const id = b.dataset.id;
-
-  if (cats.has(id)) {
-    // 最後の1つは外せない（何も表示されなくなるのを防ぐ）
-    if (cats.size === 1) return;
-    cats.delete(id);
-  } else {
-    cats.add(id);
+function passFilters(m, state = active) {
+  for (const f of FILTERS) {
+    const set = state[f.id];
+    if (!set || !set.size) continue;          // 未選択なら絞らない
+    if (![...set].some((v) => f.match(m, v))) return false;
   }
-
-  area = null;
-  onlySelected = false;
-  drawCats();
-  drawAreas();
-  render();
-});
-
-// ---------------------------------------------
-// エリアのタグ
-// カテゴリごとに、実際に山があるエリアだけを出す
-// ---------------------------------------------
-function inCat(m) {
-  if (m.meizan_rank === null) return cats.has("other");
-  return cats.has(String(m.meizan_rank));
+  return true;
 }
 
-function drawAreas() {
-  const areas = [...new Set(MOUNTAINS.filter(inCat).map((m) => m.area).filter(Boolean))];
-  const selCount = MOUNTAINS.filter((m) => inCat(m) && selected.has(m.id)).length;
-
-  $("#areas").innerHTML =
-    `<button class="area-chip ${!area && !onlySelected ? "on" : ""}" data-area="">すべて</button>` +
-    `<button class="area-chip sel ${onlySelected ? "on" : ""}" data-sel="1">選択中 (${selCount})</button>` +
-    areas.map((a) =>
-      `<button class="area-chip ${area === a ? "on" : ""}" data-area="${a}">${a}</button>`
-    ).join("");
+function countWith(state) {
+  return MOUNTAINS.filter((m) => passFilters(m, state)).length;
 }
 
-$("#areas-more").onclick = () => {
-  const el = $("#areas");
-  const open = el.classList.toggle("open");
-  $("#areas-more").textContent = open ? "閉じる ▴" : "エリアをすべて表示 ▾";
+function activeCount() {
+  return FILTERS.reduce((n, f) => n + active[f.id].size, 0);
+}
+
+// ---------------------------------------------
+// ポップアップ
+// ---------------------------------------------
+$("#filter-btn").onclick = () => {
+  // いまの状態を下書きにコピーしてから開く
+  draft = {};
+  FILTERS.forEach((f) => (draft[f.id] = new Set(active[f.id])));
+  drawSheet();
+  $("#sheet").hidden = false;
+  document.body.style.overflow = "hidden";
 };
 
-$("#areas").addEventListener("click", (e) => {
-  const b = e.target.closest(".area-chip");
+function closeSheet() {
+  $("#sheet").hidden = true;
+  document.body.style.overflow = "";
+}
+$("#sheet-x").onclick = closeSheet;
+$("#sheet").onclick = (e) => { if (e.target === $("#sheet")) closeSheet(); };
+
+function drawSheet() {
+  $("#sheet-body").innerHTML = FILTERS.map((f) => `
+    <div class="f-group">
+      <p class="f-title">${f.title}</p>
+      <div class="f-opts">
+        ${f.opts.map((o) => {
+          const on = draft[f.id].has(o.v);
+          const n = MOUNTAINS.filter((m) => f.match(m, o.v)).length;
+          return `
+            <button class="f-opt ${on ? "on" : ""}" data-f="${f.id}" data-v="${o.v}">
+              <span class="f-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12l6 6L20 6"/>
+                </svg>
+              </span>
+              <span class="f-label">${o.label}</span>
+              <span class="f-n">${n}</span>
+            </button>`;
+        }).join("")}
+      </div>
+    </div>`).join("");
+
+  $("#f-count").textContent = countWith(draft);
+}
+
+$("#sheet-body").addEventListener("click", (e) => {
+  const b = e.target.closest(".f-opt");
+  if (!b) return;
+  const set = draft[b.dataset.f];
+  if (set.has(b.dataset.v)) set.delete(b.dataset.v);
+  else set.add(b.dataset.v);
+  drawSheet();
+});
+
+$("#f-reset").onclick = () => {
+  FILTERS.forEach((f) => draft[f.id].clear());
+  drawSheet();
+};
+
+$("#f-apply").onclick = () => {
+  FILTERS.forEach((f) => (active[f.id] = new Set(draft[f.id])));
+  onlySelected = false;
+  closeSheet();
+  drawChips();
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+// ---------------------------------------------
+// 適用中のフィルタを、押せるチップで見せる
+// ---------------------------------------------
+function drawChips() {
+  const chips = [];
+  const selCount = MOUNTAINS.filter((m) => passFilters(m) && selected.has(m.id)).length;
+
+  chips.push(`<button class="chip sel ${onlySelected ? "on" : ""}" data-sel="1">
+    選択中 (${selCount})</button>`);
+
+  FILTERS.forEach((f) => {
+    [...active[f.id]].forEach((v) => {
+      const o = f.opts.find((x) => x.v === v);
+      chips.push(`<button class="chip on" data-f="${f.id}" data-v="${v}">
+        ${o?.label ?? v} <span class="x">×</span></button>`);
+    });
+  });
+
+  if (activeCount()) {
+    chips.push(`<button class="chip clear-all" data-clear="1">すべて解除</button>`);
+  }
+
+  $("#chips").innerHTML = chips.join("");
+  $("#fb-n").hidden = !activeCount();
+  $("#fb-n").textContent = activeCount();
+}
+
+$("#chips").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip");
   if (!b) return;
 
   if (b.dataset.sel) {
     onlySelected = !onlySelected;
-    area = null;
-  } else {
-    area = b.dataset.area || null;
-    onlySelected = false;
+  } else if (b.dataset.clear) {
+    FILTERS.forEach((f) => active[f.id].clear());
+  } else if (b.dataset.f) {
+    active[b.dataset.f].delete(b.dataset.v);
   }
-  drawAreas();
+  drawChips();
   render();
 });
 
@@ -407,8 +547,7 @@ function render() {
   const kw = normalize(keyword);
 
   const list = MOUNTAINS.filter((m) => {
-    if (!inCat(m)) return false;
-    if (area && m.area !== area) return false;
+    if (!passFilters(m)) return false;
     if (onlySelected && !selected.has(m.id)) return false;
     if (!kw) return true;
     return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw);
@@ -417,7 +556,8 @@ function render() {
   // エリアで絞っていないときは、エリア別（北から南）に並べる。
   // 標高順だけだと山域がばらけて、繋がりが見えにくいため。
   // 同じエリアの中は標高の高い順（元の並び）を保つ。
-  const grouped = !area;
+  // エリアを1つだけに絞っているときは見出しが不要
+  const grouped = active.region.size !== 1;
   if (grouped) {
     list.sort((a, b) =>
       areaRank(a.area) - areaRank(b.area) ||
@@ -473,7 +613,7 @@ function itemHtml(m) {
       </div>
       <div class="mt-body">
         <p class="mt-name">${m.name}${badge}</p>
-        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.area ? ` ・ ${m.area}` : ""}</p>
+        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.pref ? ` ・ ${m.pref}` : ""}</p>
       </div>
     </div>`;
 }
@@ -503,16 +643,27 @@ $("#list").addEventListener("click", (e) => {
     if (!$("#list").querySelector(".mt-item")) render();
   }
 
-  drawAreas();
+  drawChips();
   updateCount();
 });
 
 // ---------------------------------------------
 // 達成率の表示
 // ---------------------------------------------
+const RING_DEFS = [
+  { id: "100", label: "百名山",   rank: 100,  total: 100, color: "#E0A33B" },
+  { id: "200", label: "二百名山", rank: 200,  total: 100, color: "#8CA9BD" },
+  { id: "300", label: "三百名山", rank: 300,  total: 100, color: "#B9C6BD" },
+  { id: "other", label: "その他", rank: null, total: null, color: "#9CB0A3" },
+];
+
 function updateCount() {
-  // 選ばれているカテゴリの数だけリングを並べる
-  const rings = CATS.filter((c) => cats.has(c.id)).map((c) => {
+  // 名山のフィルタが効いているときは、そのランクだけを出す
+  const picked = active.rank.size
+    ? RING_DEFS.filter((c) => active.rank.has(c.id))
+    : RING_DEFS;
+
+  const rings = picked.map((c) => {
     const inThis = (m) => c.rank === null
       ? m.meizan_rank === null
       : m.meizan_rank === c.rank;
