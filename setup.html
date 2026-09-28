@@ -6,7 +6,7 @@
 <title>プロフィール編集｜ハイカーズカード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta property="og:title" content="ハイカーズカード">
 <meta property="og:description" content="登山者の人となりを1枚のカードに。山で会った人とQRで交換できます。">
 <meta property="og:image" content="/og.png">
@@ -192,7 +192,7 @@ nameInput.value = profile.display_name ?? "";
 commentInput.value = profile.comment ?? "";
 
 let bg = profile.card_bg ?? "contour";
-applyTheme(bg);
+applyTheme(bg, { page: true });
 
 // 名山ランクごとの公開設定
 const vis = {
@@ -247,7 +247,7 @@ $("#bgs").addEventListener("click", (e) => {
   const b = e.target.closest(".bg-chip");
   if (!b) return;
   bg = b.dataset.id;
-  applyTheme(bg);     // 選んだ瞬間に画面全体で試せる
+  applyTheme(bg, { page: true });     // 選んだ瞬間に画面全体で試せる
   drawBgs();
 });
 

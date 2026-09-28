@@ -15,9 +15,10 @@
   --radius-card: 18px;
   --shadow-card: 0 2px 10px rgba(30, 58, 49, .07);
 
-  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN",
-          "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  --mono: "Outfit", monospace;
+  /* Step 17：丸ゴシックをやめ、角ゴシック＋欧文はInterにして落ち着いた印象に */
+  --font: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+          "Yu Gothic", "Noto Sans CJK JP", sans-serif;
+  --mono: "Inter", "Noto Sans JP", "Hiragino Sans", "Noto Sans CJK JP", sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -259,36 +260,37 @@ h1 {
    テーマ
    body に付けると、ページ全体の色味が変わる
    ============================================= */
+/* 彩度を抑え、文字色1色＋アクセント1色を基本にする。
+   --c-page / --c-page2 はページ背景のグラデーション（上→下） */
 .t-contour {
-  --c-page:#E7ECE8; --c-bg:#FFFFFF; --c-fg:#1E3A31; --c-fg2:#45564e; --c-mut:#7C8A83;
-  --c-acc:#46708F; --c-div:rgba(30,58,49,.10); --c-soft:#EDF3EF;
-  --c-chip:#1E3A31; --c-chipfg:#fff; --c-bar:#1E3A31; --c-bar2:#46708F;
-  --c-favbg:#F8F0E0; --c-wishbg:#E9F0F5; --c-head:rgba(255,255,255,.92);
+  --c-page:#F1F3F1; --c-page2:#E1E7E3; --c-bg:#FFFFFF; --c-fg:#16211C; --c-fg2:#3E4944; --c-mut:#848E89;
+  --c-acc:#16211C; --c-div:rgba(22,33,28,.10); --c-soft:#F2F4F2;
+  --c-chip:#16211C; --c-chipfg:#fff; --c-bar:#16211C; --c-bar2:#A3ACA8;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(241,243,241,.82);
 }
 .t-ridge {
-  --c-page:#E3EDE6; --c-bg:#F9FCFA; --c-fg:#1E3A31; --c-fg2:#45564e; --c-mut:#7C8A83;
-  --c-acc:#46708F; --c-div:rgba(30,58,49,.10); --c-soft:#E6EFE9;
-  --c-chip:#1E3A31; --c-chipfg:#fff; --c-bar:#1E3A31; --c-bar2:#46708F;
-  --c-favbg:#F8F0E0; --c-wishbg:#E4EDF3; --c-head:rgba(249,252,250,.93);
+  --c-page:#EEF3F1; --c-page2:#D5E1DC; --c-bg:#FFFFFF; --c-fg:#17262A; --c-fg2:#3F4F53; --c-mut:#83918F;
+  --c-acc:#2F5566; --c-div:rgba(23,38,42,.10); --c-soft:#F0F4F3;
+  --c-chip:#17262A; --c-chipfg:#fff; --c-bar:#17262A; --c-bar2:#9DB0B4;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(238,243,241,.82);
 }
 .t-mist {
-  --c-page:#F0E6DC; --c-bg:#FBF6F1; --c-fg:#4A3B32; --c-fg2:#6B5A4E; --c-mut:#A08D7E;
-  --c-acc:#C1804A; --c-div:rgba(74,59,50,.12); --c-soft:#F3E9DF;
-  --c-chip:#7A5B43; --c-chipfg:#fff; --c-bar:#7A5B43; --c-bar2:#C1804A;
-  --c-favbg:#F5E5CE; --c-wishbg:#EDE4DC; --c-head:rgba(251,246,241,.93);
+  --c-page:#F8F1EA; --c-page2:#EADBCD; --c-bg:#FFFDFB; --c-fg:#2E241E; --c-fg2:#5A4B41; --c-mut:#A08F82;
+  --c-acc:#9A6238; --c-div:rgba(46,36,30,.10); --c-soft:#F6EFE8;
+  --c-chip:#2E241E; --c-chipfg:#fff; --c-bar:#2E241E; --c-bar2:#C9B2A0;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(248,241,234,.82);
 }
 .t-forest {
-  --c-page:#DFEBE2; --c-bg:#F4F9F4; --c-fg:#22412C; --c-fg2:#3F5A47; --c-mut:#7B9182;
-  --c-acc:#4F8A5B; --c-div:rgba(34,65,44,.12); --c-soft:#E2EFE4;
-  --c-chip:#22412C; --c-chipfg:#fff; --c-bar:#22412C; --c-bar2:#4F8A5B;
-  --c-favbg:#F5EDD8; --c-wishbg:#E0EDE6; --c-head:rgba(244,249,244,.93);
+  --c-page:#EBF1EC; --c-page2:#D2E0D5; --c-bg:#FFFFFF; --c-fg:#15291C; --c-fg2:#3A4E41; --c-mut:#7E9384;
+  --c-acc:#2F6B40; --c-div:rgba(21,41,28,.10); --c-soft:#EFF4F0;
+  --c-chip:#15291C; --c-chipfg:#fff; --c-bar:#15291C; --c-bar2:#9DB3A3;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(235,241,236,.82);
 }
 .t-night {
-  --c-page:#172530; --c-bg:#20303B; --c-fg:#E8F0F4; --c-fg2:#BCCCD6; --c-mut:#7E96A5;
-  --c-acc:#7FB5D4; --c-div:rgba(255,255,255,.13); --c-soft:rgba(255,255,255,.1);
-  --c-chip:#E0A33B; --c-chipfg:#20303B; --c-bar:#7FB5D4; --c-bar2:#E0A33B;
-  --c-favbg:rgba(224,163,59,.2); --c-wishbg:rgba(127,181,212,.16);
-  --c-head:rgba(23,37,48,.93);
+  --c-page:#10171C; --c-page2:#06090C; --c-bg:#1D2931; --c-fg:#EEF2F4; --c-fg2:#C2CBD0; --c-mut:#7D8A92;
+  --c-acc:#EEF2F4; --c-div:rgba(255,255,255,.12); --c-soft:rgba(255,255,255,.06);
+  --c-chip:#EEF2F4; --c-chipfg:#0F1519; --c-bar:#EEF2F4; --c-bar2:#56646C;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(20,28,34,.82);
 }
 
 /* テーマが付いた body はページごと色が変わる */
@@ -730,3 +732,105 @@ body.t-night .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14);
   .ob-btns .ob-btn span { display: none; }        /* とても狭い画面ではアイコンだけにする */
   .ob-btns .ob-btn { padding: 7px; }
 }
+
+/* =============================================
+   Step 17：デザインの刷新（Linktree風）
+   要素を減らし、余白と文字の太さの差で見せる
+   ============================================= */
+body { font-feature-settings: "palt"; letter-spacing: .02em; -webkit-font-smoothing: antialiased; }
+
+/* ヒーローカード：装飾を減らし、余白と文字で見せる */
+.hero { border-radius: 28px; border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 20px 50px -12px rgba(0,0,0,.18); }
+.hero-bg { opacity: .55; }
+.hero-paw { display: none; }
+.hero-in { padding: 20px 22px 24px; }
+.hero-brand { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .12em; color: var(--c-mut); }
+.hero-no { font-weight: 500; letter-spacing: .08em; font-size: 10px; }
+.hero-me { margin-top: 18px; }
+.hero-av { width: 104px; height: 104px; border: none; box-shadow: none; margin-bottom: 14px; }
+.hero-name { font-size: 24px; font-weight: 700; letter-spacing: .04em; }
+.hero-trow { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.hero-code { background: none; color: var(--c-fg); padding: 0; font-size: 11px; font-weight: 600; letter-spacing: .18em; }
+.hero-code::after { content: "—"; margin-left: 8px; color: var(--c-mut); letter-spacing: 0; }
+.hero-tn { color: var(--c-mut); font-weight: 500; font-size: 12px; }
+.hero-cmt { background: none; text-align: center; padding: 0 6px; margin-top: 14px;
+  font-size: 13px; line-height: 1.9; color: var(--c-fg2); }
+
+.hero-blk { border-top: 1px solid var(--c-div); margin-top: 18px; padding: 16px 2px 2px; }
+button.hero-blk:hover { background: none; }
+.hero-lbl { font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--c-mut); }
+.hero-lbl .ic-star, .hero-lbl .ic-flag { display: none; }
+
+/* 踏破状況：細いリング・数字を主役に */
+.mini-rings { margin-top: 12px; }
+.mini-ring svg circle { stroke-width: 2.2; }
+.mini-ring .mn b { font-weight: 600; font-size: 15px; }
+.mini-ring .mr-other { border-width: 2.2px; }
+.mini-ring p { font-weight: 500; font-size: 9.5px; color: var(--c-fg2); margin-top: 5px; }
+
+/* よかった山：色つきバッジをやめ、番号つきのリストに */
+.hero-favs { flex-direction: column; gap: 0; margin-top: 8px; }
+.hero-favs li { background: none; border-radius: 0; padding: 7px 0; font-size: 13px; font-weight: 500;
+  border-bottom: 1px solid var(--c-div); gap: 12px; }
+.hero-favs li:last-child { border-bottom: none; }
+.pos, .pos-1, .pos-2, .pos-3 { background: none; color: var(--c-mut); width: auto; height: auto;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .05em; }
+.pos::before { content: "0"; }
+.pos-1 { color: var(--sun); }
+
+/* 登りたい山：枠線だけのピル */
+.mini-tags { gap: 6px; margin-top: 10px; }
+.mini-tag, .mini-tag.wish { background: none; border: 1px solid var(--c-div); font-weight: 500;
+  font-size: 11.5px; padding: 5px 12px; }
+
+/* 詳細セクション */
+.det { border-top: none; padding-top: 0; margin-top: 36px; }
+.det-h h2 { font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--c-mut); }
+.det-n { background: none; font-weight: 500; padding: 0; }
+.d-tag, .d-tag.fav, .d-tag.wish { background: none; border: 1px solid var(--c-div); font-weight: 500; }
+.d-tag .pos { margin-left: 0; }
+.d-sub { color: var(--c-fg); font-weight: 600; font-size: 12px; }
+.d-type { color: var(--c-fg); font-weight: 600; }
+.d-ax-track { height: 3px; }
+.mz-r svg circle { stroke-width: 3; }
+
+/* SNS：Linktreeの全幅ボタン */
+.sns-links { gap: 10px; }
+.sns-link { justify-content: center; position: relative; padding: 15px 50px;
+  background: var(--c-bg); border-radius: 999px; box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 14px rgba(0,0,0,.05); }
+.sns-link:active { transform: scale(.98); }
+.sns-link .sns-ic { position: absolute; left: 8px; width: 34px; height: 34px; border-radius: 50%; }
+.sns-t { align-items: center; flex: none; }
+.sns-t b { font-size: 13.5px; font-weight: 600; }
+.sns-go { display: none; }
+
+/* 自分のカードのバー */
+.owner-bar { border: none; border-left: none; background: none; padding: 0 2px; margin-bottom: 14px; }
+.ob-ic { display: none; }
+.ob-t b { font-size: 12px; letter-spacing: .1em; }
+.owner-bar.mine .ob-t b::before { content: "●"; color: var(--sun); margin-right: 6px; font-size: 8px; vertical-align: 2px; }
+.ob-btn { background: var(--c-bg); color: var(--c-fg); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+
+/* ヘッダー */
+.hd { border-bottom: none; }
+.hd-logo { font-weight: 700; letter-spacing: .06em; font-size: 13px; }
+.hd-share, .hd-menu { background: none; }
+
+/* 重なりの人数：どのテーマでも読めるように */
+.ov-dot { background: var(--c-chip); color: var(--c-chipfg); }
+
+/* =============================================
+   ページ全体の背景（Linktree風）
+   applyTheme(bg, { page: true }) で body 直下に敷く。
+   模様は背景に移すので、カード側の模様は消して無地のカードとして浮かせる
+   ============================================= */
+body.has-page-bg { background: linear-gradient(180deg, var(--c-page), var(--c-page2)) fixed; }
+.page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.page-bg svg { width: 100%; height: 100%; display: block; }
+.page-bg svg * { vector-effect: non-scaling-stroke; }   /* 大きな画面でも線が太らないように */
+body.has-page-bg .hero .hero-bg { display: none; }
+/* 背景の上に直接のる文字は、少しだけ濃くして読みやすく */
+body.has-page-bg .det-h h2, body.has-page-bg .hero-lbl { color: var(--c-fg2); }
+/* 夜空は影が見えないので、細い縁でカードを浮かせる */
+body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -12px rgba(0,0,0,.6); }
