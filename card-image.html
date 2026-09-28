@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>カードの画像｜ハイカーズカード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/style.css">
+<meta name="theme-color" content="#1E3A31">
+<meta name="robots" content="noindex">
+<style>
+  .img-head { display: flex; align-items: center; gap: 10px; }
+  .img-head h1 { flex: 1; font-size: 17px; }
+  .img-x {
+    width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--c-soft, #EDF3EF); color: var(--c-mut, var(--stone));
+    font-size: 19px; line-height: 1; font-family: var(--font);
+  }
+
+  /* できあがった画像 */
+  .img-box { margin-top: 16px; text-align: center; }
+  .img-box img {
+    width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto;
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(20,40,32,.25);
+    -webkit-touch-callout: default;   /* iPhoneで長押し保存できるように */
+  }
+  .img-note { font-size: 11px; color: var(--c-mut, var(--stone)); margin-top: 12px; line-height: 1.8; text-align: center; }
+
+  /* 画像にする元の見た目（画面外に置く） */
+  .stage { position: fixed; left: -10000px; top: 0; }
+  .frame {
+    width: 380px; padding: 22px 20px 16px;
+    background: var(--c-page, #E7ECE8); color: var(--c-fg, var(--pine));
+  }
+  /* html2canvas は内側の影（inset）を塗りつぶしの四角として描いてしまうため、
+     画像にするときは外側の影だけにする */
+  .frame .hero { margin-top: 0; box-shadow: 0 8px 24px rgba(20,40,32,.22); }
+  .frame-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 12px; padding: 0 4px;
+    font-size: 10.5px; color: var(--c-mut, var(--stone));
+  }
+  .frame-foot b { font-weight: 900; color: var(--c-fg, var(--pine)); }
+  .frame-foot span { font-family: var(--mono); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="img-head">
+    <h1>カードの画像</h1>
+    <button class="img-x" id="close" aria-label="閉じる">&times;</button>
+  </div>
+  <p class="sub">SNSに載せたり、友だちに送ったりできます。</p>
+
+  <div id="loading" class="loading" style="min-height:40vh">
+    <div class="spinner"></div>
+    <p id="loading-t">画像を作っています…</p>
+  </div>
+
+  <div id="result" hidden>
+    <div class="img-box"><img id="img" alt="あなたのハイカーズカード"></div>
+    <p class="img-note" id="note"></p>
+
+    <button class="btn sun" id="share" hidden>シェアする</button>
+    <a class="btn ghost" id="save" style="text-decoration:none">画像を保存する</a>
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
+<!-- 画像にする元（画面外） -->
+<div class="stage" aria-hidden="true"><div class="frame" id="frame"></div></div>
+
+<script src="/data.js"></script>
+<script src="/characters.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script type="module">
+import { supabase, getUser, getMyProfile } from "/supabase.js";
+import { renderHeroCard, applyTheme, esc } from "/card.js";
+
+const $ = (s) => document.querySelector(s);
+
+function fail(text) {
+  $("#loading").innerHTML = `<p class="msg error">${esc(text)}</p>
+    <button class="btn ghost" onclick="location.href='/card.html'">マイカードへ</button>`;
+}
+
+// 別のタブで開いているので、閉じるときはタブを閉じる。
+// 閉じられない（直接開いた）場合はマイカードへ戻る
+$("#close").onclick = () => {
+  window.close();
+  setTimeout(() => { location.href = "/card.html"; }, 150);
+};
+
+const user = await getUser();
+if (!user) { location.replace("/login.html"); throw new Error("redirect"); }
+
+const profile = await getMyProfile();
+if (!profile?.public_id) { fail("プロフィールを読み込めませんでした。"); throw new Error("no profile"); }
+
+// 公開ページと同じ内容で描く。
+// 非公開にした踏破状況などが画像に写り込まないようにするため
+const { data, error } = await supabase.rpc("get_public_card", { p_public_id: profile.public_id });
+if (error || !data) { fail("カードを読み込めませんでした。表示名が未設定の可能性があります。"); throw error; }
+
+applyTheme(data.card_bg);
+
+const diagnosed = !!data.type_code;
+const url = `${location.origin}/u/${data.public_id}`;
+
+$("#frame").innerHTML = `
+  ${renderHeroCard(data, {
+    charSVG: diagnosed ? characterSVG(data.type_code) : "",
+    animal:  diagnosed ? CHARACTERS[data.type_code]?.animal : "",
+    typeName: diagnosed ? TYPES[data.type_code]?.name : "",
+    linked: false,
+  })}
+  <div class="frame-foot">
+    <b>#ハイカーズカード</b>
+    <span>${esc(url.replace(/^https?:\/\//, ""))}</span>
+  </div>`;
+
+// ---------------------------------------------
+// 画像にする前の下ごしらえ
+//
+// html2canvas はSVGを「単独の画像」として描くため、
+// CSSで付けた色（class や var(--…)、currentColor）が効かなくなる。
+// そこで、いま画面で計算されている色をSVGの属性に書き写しておく。
+// ---------------------------------------------
+function inlineSvgStyles(root) {
+  root.querySelectorAll("svg").forEach((svg) => {
+    const r = svg.getBoundingClientRect();
+    if (r.width && r.height) {
+      svg.setAttribute("width", r.width);
+      svg.setAttribute("height", r.height);
+    }
+    [svg, ...svg.querySelectorAll("*")].forEach((el) => {
+      const cs = getComputedStyle(el);
+      for (const prop of ["fill", "stroke", "stroke-width", "opacity", "stop-color", "stop-opacity"]) {
+        const v = cs.getPropertyValue(prop);
+        if (v && v !== "normal") el.setAttribute(prop, v);
+      }
+    });
+  });
+}
+
+try {
+  // 文字の形（Webフォント）が読み込まれてから描かないと、別の書体で写ってしまう
+  await document.fonts.ready;
+  inlineSvgStyles($("#frame"));
+
+  const canvas = await window.html2canvas($("#frame"), {
+    scale: 3,                 // SNSで見ても粗くならない大きさ（約1140px幅）
+    backgroundColor: null,
+    useCORS: true,
+    logging: false,
+  });
+
+  const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+  if (!blob) throw new Error("画像を作れませんでした");
+
+  const objUrl = URL.createObjectURL(blob);
+  const fileName = `hikerscard-${data.public_id}.png`;
+  const file = new File([blob], fileName, { type: "image/png" });
+
+  $("#img").src = objUrl;
+  $("#save").href = objUrl;
+  $("#save").download = fileName;
+
+  // 端末の共有機能で画像ごと送れるなら「シェアする」を出す（主にスマホ）
+  const canShareFile = navigator.canShare?.({ files: [file] });
+  $("#share").hidden = !canShareFile;
+  $("#note").innerHTML = canShareFile
+    ? "「シェアする」でLINEやInstagramなどに送れます。<br>画像を長押ししても保存できます。"
+    : "画像を保存してから、SNSに投稿してください。";
+
+  $("#share").onclick = async () => {
+    try {
+      await navigator.share({
+        files: [file],
+        title: "ハイカーズカード",
+        text: `わたしのハイカーズカードです #ハイカーズカード\n${url}`,
+      });
+    } catch (e) {
+      // キャンセルは何もしない。それ以外は保存に誘導する
+      if (e?.name !== "AbortError") {
+        $("#msg").className = "msg error";
+        $("#msg").textContent = "シェアできませんでした。画像を保存してから送ってください。";
+      }
+    }
+  };
+
+  $("#loading").hidden = true;
+  $("#result").hidden = false;
+} catch (e) {
+  console.error(e);
+  fail("画像を作れませんでした：" + (e.message ?? e));
+}
+</script>
+</body>
+</html>

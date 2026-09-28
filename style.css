@@ -387,7 +387,7 @@ body[class*="t-"] textarea { background: var(--c-bg); color: var(--c-fg); border
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 10px; font-weight: 900; letter-spacing: .3px; color: var(--c-mut);
 }
-.hero-brand svg { width: 16px; height: 16px; display: block; }
+.hero-brand { font-size: 10.5px; letter-spacing: .4px; }
 .hero-no { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: var(--c-mut); }
 
 .hero-me { text-align: center; margin-top: 10px; }
@@ -717,3 +717,16 @@ body.t-night .share-url button { background: var(--sun); color: #20303B; }
 .ob-badge.done { color: #2E6B4A; background: #EAF3EC; border-color: transparent; }
 body.t-night .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14); }
 .ob-badge svg { width: 12px; height: 12px; stroke-width: 2.6; }
+
+/* マイカードのバー：ボタンが3つ並ぶので詰める */
+.ob-btns { display: flex; gap: 5px; flex: none; }
+.ob-btns .ob-btn { padding: 6px 9px; }
+@media (max-width: 380px) {
+  .owner-bar.mine .ob-t span { display: none; }   /* 狭い画面では補足とアイコンを省く */
+  .owner-bar.mine .ob-ic { display: none; }       /* 左端の太陽色で自分のカードと分かる */
+  .ob-btns .ob-btn { padding: 6px 8px; gap: 3px; }
+}
+@media (max-width: 340px) {
+  .ob-btns .ob-btn span { display: none; }        /* とても狭い画面ではアイコンだけにする */
+  .ob-btns .ob-btn { padding: 7px; }
+}
