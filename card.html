@@ -64,6 +64,9 @@
 
     <div id="msg" class="msg"></div>
 
+    <!-- 誰のカードか -->
+    <div id="owner"></div>
+
     <!-- ヒーローカード -->
     <div id="hero"></div>
 
@@ -81,7 +84,7 @@
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
          applyPendingExchange, signOut } from "./supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions,
-         applyTheme, esc } from "./card.js";
+         renderOwnerBar, applyTheme, esc } from "./card.js";
 import { mountHeader } from "./header.js";
 
 const $ = (s) => document.querySelector(s);
@@ -202,6 +205,7 @@ const cardOpts = {
   own: true,
 };
 
+$("#owner").innerHTML = renderOwnerBar("own", cardData);
 $("#hero").innerHTML = renderHeroCard(cardData, cardOpts);
 $("#details").innerHTML = renderDetails(cardData, cardOpts);
 bindCardInteractions();

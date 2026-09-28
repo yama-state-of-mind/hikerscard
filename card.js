@@ -325,6 +325,64 @@ export function renderHeroCard(d, opts = {}) {
   </div>`;
 }
 
+// =============================================
+// 「誰のカードか」を示すバー（ヒーローカードの上に置く）
+//
+//   own        … マイカード（card.html）
+//   own-public … 自分の公開ページを自分で見ている（/u/自分のID）
+//   other      … 他人のカード（ログイン中）。交換済みかどうかも出す
+//   guest      … 他人のカード（未ログイン）
+//
+// 自分のカードは太陽色、他人のカードはテーマのアクセント色にして、
+// ひと目で区別できるようにする。
+// =============================================
+const IC_BAR = {
+  me:   `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`,
+  card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
+  eye:  `<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  pen:  `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
+  back: `<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>`,
+  ok:   `<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>`,
+};
+
+export function renderOwnerBar(kind, d = {}) {
+  const name = esc(d.display_name);
+  const btn = (href, icon, label) =>
+    `<a class="ob-btn" href="${href}">${IC_BAR[icon]}<span>${label}</span></a>`;
+
+  if (kind === "own") {
+    return `
+    <div class="owner-bar mine">
+      <span class="ob-ic">${IC_BAR.me}</span>
+      <p class="ob-t"><b>マイカード</b><span>あなたのカードです</span></p>
+      ${btn(`/u/${encodeURIComponent(d.public_id)}`, "eye", "見え方")}
+      ${btn("/edit.html", "pen", "編集")}
+    </div>`;
+  }
+
+  if (kind === "own-public") {
+    return `
+    <div class="owner-bar mine">
+      <span class="ob-ic">${IC_BAR.eye}</span>
+      <p class="ob-t"><b>あなたのカード</b><span>公開ページ：ほかの人にはこう見えます</span></p>
+      ${btn("/card.html", "back", "マイカード")}
+    </div>`;
+  }
+
+  const badge = kind === "other"
+    ? (d.exchanged
+        ? `<span class="ob-badge done">${IC_BAR.ok}交換済み</span>`
+        : `<span class="ob-badge">未交換</span>`)
+    : "";
+
+  return `
+  <div class="owner-bar">
+    <span class="ob-ic">${IC_BAR.card}</span>
+    <p class="ob-t"><b>${name}さんのカード</b><span>No.${String(d.card_no ?? 0).padStart(4, "0")}</span></p>
+    ${badge}
+  </div>`;
+}
+
 // 改行を保ったまま安全に出す（ひとこと用）
 function escMultiline(s) {
   return esc(s).replace(/\r?\n/g, "<br>");

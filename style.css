@@ -686,3 +686,34 @@ body.t-night .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border
   border: none; background: var(--pine); color: #fff; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
 body.t-night .share-url button { background: var(--sun); color: #20303B; }
 .share-in .msg { margin-top: 10px; }
+
+/* =============================================
+   誰のカードかを示すバー
+   ============================================= */
+.owner-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin: 2px 0 12px; padding: 9px 10px 9px 12px;
+  border-radius: 14px; background: var(--c-bg);
+  border: 1px solid var(--c-div); border-left: 4px solid var(--c-acc);
+}
+.owner-bar.mine { border-left-color: var(--sun); }
+.ob-ic { width: 30px; height: 30px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-soft); color: var(--c-acc); }
+.owner-bar.mine .ob-ic { background: var(--sun); color: #fff; }
+.ob-ic svg, .ob-btn svg, .ob-badge svg { fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
+.ob-ic svg { width: 16px; height: 16px; }
+.ob-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.35; }
+.ob-t b { font-size: 13px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-t span { font-size: 10.5px; color: var(--c-mut); font-family: var(--font); }
+.ob-btn { display: inline-flex; align-items: center; gap: 4px; flex: none;
+  font-size: 11px; font-weight: 700; color: var(--c-acc); text-decoration: none;
+  background: var(--c-soft); border-radius: 999px; padding: 6px 10px; }
+.ob-btn svg { width: 13px; height: 13px; }
+.ob-badge { display: inline-flex; align-items: center; gap: 3px; flex: none;
+  font-size: 10.5px; font-weight: 700; color: var(--c-mut);
+  border: 1px solid var(--c-div); border-radius: 999px; padding: 4px 9px; }
+.ob-badge.done { color: #2E6B4A; background: #EAF3EC; border-color: transparent; }
+body.t-night .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14); }
+.ob-badge svg { width: 12px; height: 12px; stroke-width: 2.6; }

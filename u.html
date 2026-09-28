@@ -58,6 +58,7 @@
   </div>
 
   <div id="main" hidden>
+    <div id="owner"></div>
     <div id="hero"></div>
     <div id="affinity"></div>
     <div id="details"></div>
@@ -84,7 +85,7 @@
 <script type="module">
 import { supabase, getUser, signOut } from "/supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions, applyTheme,
-         buildAffinity, renderAffinity, esc } from "/card.js";
+         buildAffinity, renderAffinity, renderOwnerBar, esc } from "/card.js";
 import { mountHeader } from "/header.js";
 
 const $ = (s) => document.querySelector(s);
@@ -125,7 +126,13 @@ if (!publicId) {
     const diagnosed = !!data.type_code;
     const me = viewer;
 
-    document.title = `${data.display_name}さんのカード｜ハイカーズカード`;
+    // ログインしていれば自分のカードも取っておく（本人判定と共通点に使う）
+    const mine = me ? (await supabase.rpc("get_my_card")).data : null;
+    const isOwn = !!mine && mine.public_id === data.public_id;
+
+    document.title = isOwn
+      ? "あなたのカード（公開ページ）｜ハイカーズカード"
+      : `${data.display_name}さんのカード｜ハイカーズカード`;
 
     // 相手が選んだテーマを、このページ全体に反映する
     applyTheme(data.card_bg);
@@ -138,22 +145,26 @@ if (!publicId) {
       caution:  diagnosed ? TYPES[data.type_code]?.caution  : "",
     };
 
+    $("#owner").innerHTML = renderOwnerBar(isOwn ? "own-public" : me ? "other" : "guest", data);
     $("#hero").innerHTML = renderHeroCard(data, opts);
     $("#details").innerHTML = renderDetails(data, opts);
 
-    // ログインしていれば、自分との共通点を出す
-    if (me) {
-      const { data: mine } = await supabase.rpc("get_my_card");
-      if (mine) {
-        const af = buildAffinity(mine, data);
-        $("#affinity").innerHTML = renderAffinity(af, data.display_name);
-      }
+    // 他人のカードなら、自分との共通点を出す（自分のカードでは出さない）
+    if (mine && !isOwn) {
+      const af = buildAffinity(mine, data);
+      $("#affinity").innerHTML = renderAffinity(af, data.display_name);
     }
 
     bindCardInteractions();
 
     let below = "";
-    if (!me) {
+    if (isOwn) {
+      below = `
+        <div class="cta-box">
+          <p>URLを送ると、このページを見てもらえます。<br>
+             カードの交換は、会ったときにQRコードで行います。</p>
+        </div>`;
+    } else if (!me) {
       below = `
         <div class="cta-box">
           <p>あなたも自分のカードを作れます。<br>
@@ -175,7 +186,8 @@ if (!publicId) {
         </div>`;
     }
 
-    below += `
+    // 自分のカードには通報・ブロックを出さない
+    if (!isOwn) below += `
       <div class="report">
         <button data-act="report">このカードを通報する</button>
         ${me ? `<span style="color:var(--line);margin:0 8px">|</span>
