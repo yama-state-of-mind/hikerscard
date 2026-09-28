@@ -38,7 +38,7 @@ body {
 
 /* ---------- レイアウト ---------- */
 .wrap {
-  max-width: 420px;
+  max-width: 624px;   /* PCでの幅。中身は約580px（Linktreeと同じくらい）。スマホは画面幅いっぱい */
   margin: 0 auto;
   padding: 32px 22px 60px;
 }
@@ -261,33 +261,33 @@ h1 {
    body に付けると、ページ全体の色味が変わる
    ============================================= */
 /* 彩度を抑え、文字色1色＋アクセント1色を基本にする。
-   --c-page / --c-page2 はページ背景のグラデーション（上→下） */
+   --c-page はページの無地（カードと同系色で少し深い色） */
 .t-contour {
-  --c-page:#F1F3F1; --c-page2:#E1E7E3; --c-bg:#FFFFFF; --c-fg:#16211C; --c-fg2:#3E4944; --c-mut:#848E89;
+  --c-page:#E3E8E5; --c-bg:#FFFFFF; --c-fg:#16211C; --c-fg2:#3E4944; --c-mut:#848E89;
   --c-acc:#16211C; --c-div:rgba(22,33,28,.10); --c-soft:#F2F4F2;
   --c-chip:#16211C; --c-chipfg:#fff; --c-bar:#16211C; --c-bar2:#A3ACA8;
   --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(241,243,241,.82);
 }
 .t-ridge {
-  --c-page:#EEF3F1; --c-page2:#D5E1DC; --c-bg:#FFFFFF; --c-fg:#17262A; --c-fg2:#3F4F53; --c-mut:#83918F;
+  --c-page:#DCE6E2; --c-bg:#FFFFFF; --c-fg:#17262A; --c-fg2:#3F4F53; --c-mut:#83918F;
   --c-acc:#2F5566; --c-div:rgba(23,38,42,.10); --c-soft:#F0F4F3;
   --c-chip:#17262A; --c-chipfg:#fff; --c-bar:#17262A; --c-bar2:#9DB0B4;
   --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(238,243,241,.82);
 }
 .t-mist {
-  --c-page:#F8F1EA; --c-page2:#EADBCD; --c-bg:#FFFDFB; --c-fg:#2E241E; --c-fg2:#5A4B41; --c-mut:#A08F82;
+  --c-page:#EFE3D8; --c-bg:#FFFDFB; --c-fg:#2E241E; --c-fg2:#5A4B41; --c-mut:#A08F82;
   --c-acc:#9A6238; --c-div:rgba(46,36,30,.10); --c-soft:#F6EFE8;
   --c-chip:#2E241E; --c-chipfg:#fff; --c-bar:#2E241E; --c-bar2:#C9B2A0;
   --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(248,241,234,.82);
 }
 .t-forest {
-  --c-page:#EBF1EC; --c-page2:#D2E0D5; --c-bg:#FFFFFF; --c-fg:#15291C; --c-fg2:#3A4E41; --c-mut:#7E9384;
+  --c-page:#DBE6DD; --c-bg:#FFFFFF; --c-fg:#15291C; --c-fg2:#3A4E41; --c-mut:#7E9384;
   --c-acc:#2F6B40; --c-div:rgba(21,41,28,.10); --c-soft:#EFF4F0;
   --c-chip:#15291C; --c-chipfg:#fff; --c-bar:#15291C; --c-bar2:#9DB3A3;
   --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(235,241,236,.82);
 }
 .t-night {
-  --c-page:#10171C; --c-page2:#06090C; --c-bg:#1D2931; --c-fg:#EEF2F4; --c-fg2:#C2CBD0; --c-mut:#7D8A92;
+  --c-page:#0C1216; --c-bg:#1D2931; --c-fg:#EEF2F4; --c-fg2:#C2CBD0; --c-mut:#7D8A92;
   --c-acc:#EEF2F4; --c-div:rgba(255,255,255,.12); --c-soft:rgba(255,255,255,.06);
   --c-chip:#EEF2F4; --c-chipfg:#0F1519; --c-bar:#EEF2F4; --c-bar2:#56646C;
   --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(20,28,34,.82);
@@ -319,7 +319,7 @@ body[class*="t-"] textarea { background: var(--c-bg); color: var(--c-fg); border
 }
 .hd.up { transform: translateY(-110%); }
 .hd-in {
-  max-width: 430px; margin: 0 auto; padding: 11px 16px;
+  max-width: 624px; margin: 0 auto; padding: 11px 22px;
   display: flex; align-items: center; gap: 10px;
 }
 .hd-logo {
@@ -742,7 +742,7 @@ body { font-feature-settings: "palt"; letter-spacing: .02em; -webkit-font-smooth
 /* ヒーローカード：装飾を減らし、余白と文字で見せる */
 .hero { border-radius: 28px; border: none;
   box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 20px 50px -12px rgba(0,0,0,.18); }
-.hero-bg { opacity: .55; }
+.hero-bg { opacity: 1; }
 .hero-paw { display: none; }
 .hero-in { padding: 20px 22px 24px; }
 .hero-brand { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .12em; color: var(--c-mut); }
@@ -820,17 +820,10 @@ button.hero-blk:hover { background: none; }
 /* 重なりの人数：どのテーマでも読めるように */
 .ov-dot { background: var(--c-chip); color: var(--c-chipfg); }
 
-/* =============================================
-   ページ全体の背景（Linktree風）
-   applyTheme(bg, { page: true }) で body 直下に敷く。
-   模様は背景に移すので、カード側の模様は消して無地のカードとして浮かせる
-   ============================================= */
-body.has-page-bg { background: linear-gradient(180deg, var(--c-page), var(--c-page2)) fixed; }
-.page-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-.page-bg svg { width: 100%; height: 100%; display: block; }
-.page-bg svg * { vector-effect: non-scaling-stroke; }   /* 大きな画面でも線が太らないように */
-body.has-page-bg .hero .hero-bg { display: none; }
-/* 背景の上に直接のる文字は、少しだけ濃くして読みやすく */
-body.has-page-bg .det-h h2, body.has-page-bg .hero-lbl { color: var(--c-fg2); }
 /* 夜空は影が見えないので、細い縁でカードを浮かせる */
 body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -12px rgba(0,0,0,.6); }
+
+/* 背景の模様はカードの中だけ。ページにのる文字は、同系色の無地の上で読みやすい濃さに */
+.det-h h2 { color: var(--c-fg2); }
+/* PCの広いカードでも、踏破状況のリングは間延びさせずに中央へ寄せる */
+.mini-rings { max-width: 420px; margin-left: auto; margin-right: auto; }

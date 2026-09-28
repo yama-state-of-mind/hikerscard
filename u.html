@@ -135,7 +135,7 @@ if (!publicId) {
       : `${data.display_name}さんのカード｜ハイカーズカード`;
 
     // 相手が選んだテーマを、このページ全体に反映する
-    applyTheme(data.card_bg, { page: true });
+    applyTheme(data.card_bg);
 
     const opts = {
       charSVG: diagnosed ? characterSVG(data.type_code) : "",

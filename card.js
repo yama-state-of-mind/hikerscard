@@ -201,32 +201,15 @@ export function snsIcon(key) {
 // ---------------------------------------------
 // テーマをページ全体に効かせる
 //
-// 模様（等高線など）はヒーローカードだけに敷く。
-// ページの地色・文字色は、カードと同系色でそろえてカードを引き立てる。
+// 模様（等高線など）はヒーローカードだけに敷く（Linktreeのパネルと同じ考え方）。
+// ページはカードと同系色の無地にして、カードを引き立てる。
 // body にクラスを付けることで、CSS変数が全体に行き渡る。
 // ---------------------------------------------
-export function applyTheme(bg, opts = {}) {
+export function applyTheme(bg) {
   const id = BG[bg] ? bg : "contour";
   document.body.className = document.body.className
     .replace(/\bt-\w+\b/g, "").trim() + " t-" + id;
 
-  // page: true のときは、模様をページ全体の背景に敷く（Linktree風）。
-  // カードの模様は CSS で消し、背景の上に無地のカードを浮かせる
-  let layer = document.getElementById("page-bg");
-  if (opts.page) {
-    if (!layer) {
-      layer = document.createElement("div");
-      layer.id = "page-bg";
-      layer.className = "page-bg";
-      layer.setAttribute("aria-hidden", "true");
-      document.body.prepend(layer);
-    }
-    layer.innerHTML = pageBgSVG(id);
-    document.body.classList.add("has-page-bg");
-  } else {
-    layer?.remove();
-    document.body.classList.remove("has-page-bg");
-  }
   // スマホの上部バーの色も合わせる
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
@@ -237,18 +220,19 @@ export function applyTheme(bg, opts = {}) {
 }
 
 // ---------------------------------------------
-// ページ背景用の模様
+// ヒーローカードの模様
 //
-// 模様はもともとカードの上にうっすら重ねる濃さなので、
-// ページ全体に敷くと薄すぎる。同じ模様を重ねて濃さを上げる。
+// Linktreeのパネルのように、模様がはっきり見える濃さにする。
+// 元の模様は薄めなので、同じものを重ねて濃さを上げる
+// （夜空は星が文字に重なって読みにくくなるので重ねない）。
 // ---------------------------------------------
-const PAGE_BG_STRENGTH = { contour: 3, ridge: 3, forest: 3, mist: 2, night: 1 };   // 夜空は星が本文に重なるので重ねない
+const PATTERN_STRENGTH = { contour: 2, ridge: 2, forest: 2, mist: 1, night: 1 };
 
-export function pageBgSVG(id) {
+export function patternSVG(id, cls = "hero-bg") {
   const key = BG[id] ? id : "contour";
   const layer = BG[key]();
-  const n = PAGE_BG_STRENGTH[key] ?? 2;
-  return `<svg viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${
+  const n = PATTERN_STRENGTH[key] ?? 1;
+  return `<svg class="${cls}" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${
     Array.from({ length: n }, () => `<g>${layer}</g>`).join("")}</svg>`;
 }
 
@@ -317,7 +301,7 @@ export function renderHeroCard(d, opts = {}) {
 
   return `
   <div class="hero t-${bg}">
-    <svg class="hero-bg" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[bg]()}</svg>
+    ${patternSVG(bg)}
     ${diagnosed ? `
       <svg class="hero-paw" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">
         ${pawTrail(d.type_code)}

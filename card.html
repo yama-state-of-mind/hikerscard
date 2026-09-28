@@ -193,7 +193,7 @@ const overlaps = {
 const diagnosed = !!profile.type_code;
 
 // テーマをページ全体に反映してから描く
-applyTheme(profile.card_bg, { page: true });
+applyTheme(profile.card_bg);
 
 const cardOpts = {
   charSVG: diagnosed ? characterSVG(profile.type_code) : "",

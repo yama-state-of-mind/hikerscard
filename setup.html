@@ -192,7 +192,7 @@ nameInput.value = profile.display_name ?? "";
 commentInput.value = profile.comment ?? "";
 
 let bg = profile.card_bg ?? "contour";
-applyTheme(bg, { page: true });
+applyTheme(bg);
 
 // 名山ランクごとの公開設定
 const vis = {
@@ -247,7 +247,7 @@ $("#bgs").addEventListener("click", (e) => {
   const b = e.target.closest(".bg-chip");
   if (!b) return;
   bg = b.dataset.id;
-  applyTheme(bg, { page: true });     // 選んだ瞬間に画面全体で試せる
+  applyTheme(bg);     // 選んだ瞬間に画面全体で試せる
   drawBgs();
 });
 
