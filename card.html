@@ -14,23 +14,10 @@
 <meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <style>
-  .share-url {
-    display: flex; align-items: center; gap: 8px;
-    background: #EDF3EF; border-radius: 12px; padding: 10px 14px; margin-top: 16px;
-  }
-  .share-url .u {
-    flex: 1; font-family: var(--mono); font-size: 12px; font-weight: 700;
-    color: var(--pine); word-break: break-all; line-height: 1.5;
-  }
-  .share-url button {
-    flex: none; font-family: var(--font); font-size: 11px; font-weight: 700;
-    border: 1.4px solid var(--line); background: var(--paper); color: var(--fjord);
-    border-radius: 999px; padding: 6px 13px; cursor: pointer;
-  }
-
   .a2hs {
     background: var(--paper); border-radius: var(--radius-card);
     box-shadow: var(--shadow-card); padding: 14px 16px; margin-top: 16px;
@@ -75,28 +62,15 @@
   <div id="main" hidden>
     <div id="a2hs" class="a2hs" hidden></div>
 
-    <!-- 横長のヒーローカード -->
+    <div id="msg" class="msg"></div>
+
+    <!-- ヒーローカード -->
     <div id="hero"></div>
 
     <div id="tips"></div>
 
-    <!-- 詳細セクション -->
+    <!-- 詳細セクション（山リスト → 踏破状況 → 登山タイプ診断 → SNS） -->
     <div id="details"></div>
-
-    <!-- アクション -->
-    <section class="det" id="section-actions">
-      <div class="det-h"><h2>アクション</h2></div>
-
-      <div class="share-url">
-        <span class="u" id="url"></span>
-        <button id="copy">コピー</button>
-      </div>
-      <div id="msg" class="msg"></div>
-
-      <button class="btn sun"   id="go-exchange">カードを交換する</button>
-      <button class="btn ghost" id="go-collection">コレクション</button>
-      <button class="btn ghost" id="go-edit">カードを編集する</button>
-    </section>
   </div>
 </div>
 
@@ -110,8 +84,6 @@ import { renderHeroCard, renderDetails, bindCardInteractions,
          applyTheme, esc } from "./card.js";
 import { mountHeader } from "./header.js";
 
-mountHeader(signOut);
-
 const $ = (s) => document.querySelector(s);
 
 const user = await getUser();
@@ -124,6 +96,9 @@ if (!profile) {
 }
 if (!profile.display_name) location.replace("./setup.html");
 
+// シェアボタンが自分のURLをすぐ出せるよう、公開IDを渡しておく
+mountHeader(signOut, { shareId: profile.public_id });
+
 // 未ログインのまま受けた診断結果があれば反映
 profile = await applyPendingDiagnosis(profile);
 
@@ -133,7 +108,7 @@ const justExchanged = await applyPendingExchange();
 // 登った山・好きな山・登りたい山
 const [climbedRes, wishRes, cntRes, colRes] = await Promise.all([
   supabase.from("climbed_mountains")
-          .select("is_favorite, mountains(name, meizan_rank, elevation)")
+          .select("is_favorite, favorite_rank, mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
   supabase.from("wishlist_mountains")
           .select("mountains(name, meizan_rank, elevation)")
@@ -157,8 +132,10 @@ const toTag = (m) => ({ name: m.name, rank: m.meizan_rank });
 
 const climbedRows = (climbedRes.data ?? []).filter((r) => r.mountains);
 const climbed = climbedRows.map((r) => r.mountains).sort(byElev).map(toTag);
+// 行ってよかった山は順位順（1位〜5位）
 const favorites = climbedRows.filter((r) => r.is_favorite)
-                             .map((r) => r.mountains).sort(byElev).map(toTag);
+  .map((r) => ({ ...toTag(r.mountains), pos: r.favorite_rank, elevation: r.mountains.elevation }))
+  .sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99) || byElev(a, b));
 const wishlist = (wishRes.data ?? []).map((r) => r.mountains)
                              .filter(Boolean).sort(byElev).map(toTag);
 
@@ -166,10 +143,11 @@ const wishlist = (wishRes.data ?? []).map((r) => r.mountains)
 const counts = cntRes.data ?? { "100": 0, "200": 0, "300": 0, other: 0 };
 
 // 公開設定がオンのランクだけカードに載せる
-const ranks = { other: counts.other };
+const ranks = {};
 if (profile.vis_rank_100) ranks["100"] = counts["100"];
 if (profile.vis_rank_200) ranks["200"] = counts["200"];
 if (profile.vis_rank_300) ranks["300"] = counts["300"];
+if (profile.vis_rank_other !== false) ranks.other = counts.other;
 
 // カードに渡す形に整える
 const cardData = {
@@ -242,38 +220,11 @@ if (!climbed.length) {
     <button class="btn ghost" style="margin-top:12px" data-go="./mountains.html">山を登録する</button>
   </div>`);
 }
-if (climbed.length && !favorites.length && !wishlist.length) {
-  tips.push(`<div class="hc-empty">
-    <p>好きな山・これから登りたい山を<br>それぞれ5座まで載せられます。</p>
-    <button class="btn ghost" style="margin-top:12px" data-go="./picks.html">選ぶ</button>
-  </div>`);
-}
 $("#tips").innerHTML = tips.join("");
 $("#tips").addEventListener("click", (e) => {
   const b = e.target.closest("[data-go]");
   if (b) location.href = b.dataset.go;
 });
-
-// 公開URL
-const shareUrl = `${location.origin}/u/${profile.public_id}`;
-$("#url").textContent = shareUrl;
-
-$("#copy").onclick = async () => {
-  const msg = $("#msg");
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    msg.className = "msg success";
-    msg.textContent = "URLをコピーしました。";
-  } catch {
-    msg.className = "msg error";
-    msg.textContent = "コピーできませんでした。URLを長押しして選択してください。";
-  }
-  setTimeout(() => { msg.textContent = ""; msg.className = "msg"; }, 2600);
-};
-
-$("#go-exchange").onclick   = () => location.href = "./exchange.html";
-$("#go-collection").onclick = () => location.href = "./collection.html";
-$("#go-edit").onclick       = () => location.href = "./edit.html";
 
 // ログイン直後に交換が成立していたら知らせる
 if (justExchanged) {

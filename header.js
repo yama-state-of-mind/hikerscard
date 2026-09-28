@@ -3,6 +3,8 @@
 //
 // ・下にスクロールすると隠れ、上に戻すと現れる
 // ・右上のアイコンでメニュー（ドロワー）が開く
+// ・ログイン中は、メニューの左にシェアボタンを出す
+//   （自分のカードのURLをポップアップでコピーできる）
 //
 // 使い方：
 //   import { mountHeader } from "./header.js";
@@ -10,7 +12,8 @@
 //   .wrap に has-hd クラスを付けると、高さぶん下がる
 // =============================================
 
-import { LOGO_MARK } from "./card.js";
+import { LOGO_MARK, esc } from "./card.js";
+import { getMyProfile } from "./supabase.js";
 
 const ICON = {
   card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
@@ -21,6 +24,7 @@ const ICON = {
   redo: `<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`,
   pen:  `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
   ban:  `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>`,
+  share:`<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7.5 7.5L12 3l4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>`,
   out:  `<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>`,
 };
 
@@ -51,7 +55,8 @@ export function mountHeader(onLogout, opts = {}) {
   // すでにあるなら何もしない
   if (document.getElementById("hd")) return;
 
-  const menu = opts.loggedIn === false ? MENU_OUT : MENU_IN;
+  const loggedIn = opts.loggedIn !== false;
+  const menu = loggedIn ? MENU_IN : MENU_OUT;
 
   const links = menu.map((m) => {
     if (m.sep) return `<div class="sep"></div>`;
@@ -66,6 +71,7 @@ export function mountHeader(onLogout, opts = {}) {
       <button class="hd-logo" id="hd-logo">
         <span class="hd-mark">${LOGO_MARK}</span>ハイカーズ<span class="hd-c">カード</span>
       </button>
+      ${loggedIn ? `<button class="hd-share" id="hd-share" aria-label="自分のカードをシェア">${ICON.share}</button>` : ""}
       <button class="hd-menu" id="hd-menu" aria-label="メニュー">
         <i></i><i></i><i></i>
       </button>
@@ -103,10 +109,88 @@ export function mountHeader(onLogout, opts = {}) {
     location.href = opts.loggedIn === false ? "/" : "/card.html";
   };
 
+  const share = document.getElementById("hd-share");
+  if (share) share.onclick = () => openShare(opts.shareId);
+
   drawer.querySelectorAll("[data-act]").forEach((a) => {
     a.onclick = (e) => {
       e.preventDefault();
       if (a.dataset.act === "logout" && onLogout) onLogout();
     };
   });
+}
+
+// =============================================
+// シェアのポップアップ
+//
+// 自分のカードの公開URLを出してコピーできるようにする。
+// 端末の共有機能（LINEなどに送る）が使える場合はボタンも出す。
+// =============================================
+let myPublicId = null;
+
+async function openShare(knownId) {
+  if (!myPublicId) myPublicId = knownId ?? (await getMyProfile())?.public_id ?? null;
+  if (!myPublicId) return;
+
+  const url = `${location.origin}/u/${myPublicId}`;
+  const canNative = typeof navigator.share === "function";
+
+  const wrap = document.createElement("div");
+  wrap.className = "share-pop";
+  wrap.innerHTML = `
+    <div class="share-in" role="dialog" aria-modal="true" aria-label="カードをシェア">
+      <div class="share-h">
+        <p>カードをシェア</p>
+        <button class="share-x" aria-label="閉じる">&times;</button>
+      </div>
+      <p class="share-d">このURLを送ると、あなたのカードを見てもらえます。<br>
+        交換（コレクションへの追加）は、会ったときのQRで行います。</p>
+      <div class="share-url">
+        <input type="text" readonly value="${esc(url)}" aria-label="カードのURL">
+        <button data-act="copy">コピー</button>
+      </div>
+      ${canNative ? `<button class="btn ghost" data-act="native">ほかのアプリで送る</button>` : ""}
+      <div class="msg" data-msg></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  document.body.style.overflow = "hidden";
+
+  const close = () => {
+    wrap.remove();
+    document.body.style.overflow = "";
+    removeEventListener("keydown", onKey);
+  };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  addEventListener("keydown", onKey);
+
+  const input = wrap.querySelector("input");
+  const msg = wrap.querySelector("[data-msg]");
+  const say = (kind, text) => { msg.className = "msg " + kind; msg.textContent = text; };
+
+  wrap.addEventListener("click", async (e) => {
+    if (e.target === wrap || e.target.closest(".share-x")) return close();
+
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+
+    if (b.dataset.act === "copy") {
+      try {
+        await navigator.clipboard.writeText(url);
+        say("success", "URLをコピーしました。");
+      } catch {
+        // クリップボードが使えない環境では、選択状態にして手動コピーしてもらう
+        input.focus();
+        input.select();
+        say("error", "コピーできませんでした。選択されたURLを長押ししてコピーしてください。");
+      }
+    }
+
+    if (b.dataset.act === "native") {
+      try {
+        await navigator.share({ title: "ハイカーズカード", text: "わたしのハイカーズカードです", url });
+      } catch { /* キャンセルされた場合は何もしない */ }
+    }
+  });
+
+  input.addEventListener("focus", () => input.select());
 }

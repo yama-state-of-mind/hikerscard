@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>登った山｜ハイカーズカード</title>
+<title>山の登録｜ハイカーズカード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -14,6 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="./style.css">
 <link rel="manifest" href="/manifest.json">
@@ -30,7 +31,7 @@
 /* ---------- 上部（カテゴリ＋達成率＋検索＋タグ） ---------- */
 .head-bar {
   position: sticky; top: 0; z-index: 30;
-  background: var(--birch);
+  background: var(--c-page, var(--birch));
   padding: 10px 0 8px;
   margin: 0 -18px;              /* wrap の余白を打ち消して全幅に */
 }
@@ -59,7 +60,7 @@
 .search-wrap { position: relative; margin-top: 10px; }
 .search-wrap input {
   width: 100%; font-family: var(--font); font-size: 15px;
-  background: var(--paper); border: 1.6px solid var(--line);
+  background: var(--c-bg, var(--paper)); border: 1.6px solid var(--line);
   border-radius: 999px; padding: 10px 40px 10px 40px; outline: none;
 }
 .search-wrap input:focus {
@@ -81,7 +82,7 @@
 .mt-list { margin-top: 10px; }
 .mt-item {
   display: flex; align-items: center; gap: 10px;
-  background: var(--paper); border-radius: 12px;
+  background: var(--c-bg, var(--paper)); border-radius: 12px;
   box-shadow: var(--shadow-card); padding: 8px 12px; margin-bottom: 5px;
   cursor: pointer; border: 1.6px solid transparent;
   transition: background .12s;
@@ -90,7 +91,7 @@
 
 .mt-check {
   width: 20px; height: 20px; border-radius: 6px; flex: none;
-  border: 2px solid var(--line); background: var(--paper);
+  border: 2px solid var(--line); background: var(--c-bg, var(--paper));
   display: flex; align-items: center; justify-content: center;
 }
 .mt-item.on .mt-check { background: var(--sun); border-color: var(--sun); }
@@ -128,11 +129,11 @@
 .filter-btn {
   flex: none; display: flex; align-items: center; gap: 5px;
   font-family: var(--font); font-size: 12.5px; font-weight: 700;
-  color: var(--pine); background: var(--paper);
+  color: var(--c-fg, var(--pine)); background: var(--c-bg, var(--paper));
   border: 1.6px solid var(--line); border-radius: 999px;
   padding: 0 15px; cursor: pointer;
 }
-.filter-btn svg { width: 15px; height: 15px; stroke: var(--pine); stroke-width: 2; }
+.filter-btn svg { width: 15px; height: 15px; stroke: var(--c-fg, var(--pine)); stroke-width: 2; }
 .fb-n {
   font-family: var(--mono); font-size: 10px; font-weight: 700;
   background: var(--sun); color: #fff; border-radius: 999px;
@@ -144,9 +145,9 @@
 .chip {
   font-family: var(--font); font-size: 11.5px; font-weight: 700;
   border: 1.4px solid var(--line); border-radius: 999px;
-  padding: 5px 11px; cursor: pointer; background: var(--paper); color: #45564e;
+  padding: 5px 11px; cursor: pointer; background: var(--c-bg, var(--paper)); color: #45564e;
 }
-.chip.on { background: var(--pine); color: #fff; border-color: var(--pine); }
+.chip.on { background: var(--pine); color: #fff; border-color: var(--c-fg, var(--pine)); }
 .chip .x { margin-left: 3px; opacity: .7; }
 .chip.sel { border-color: var(--sun); color: #96701E; background: #FCF6EA; }
 .chip.sel.on { background: var(--sun); color: #fff; border-color: var(--sun); }
@@ -159,7 +160,7 @@
   display: flex; align-items: flex-end; justify-content: center;
 }
 .sheet-in {
-  background: var(--birch); width: 100%; max-width: 430px;
+  background: var(--c-page, var(--birch)); width: 100%; max-width: 430px;
   border-radius: 22px 22px 0 0; max-height: 86vh;
   display: flex; flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -187,25 +188,25 @@
 .f-opts { display: flex; flex-direction: column; gap: 5px; }
 .f-opt {
   display: flex; align-items: center; gap: 10px; width: 100%;
-  background: var(--paper); border: 1.6px solid transparent;
+  background: var(--c-bg, var(--paper)); border: 1.6px solid transparent;
   border-radius: 12px; padding: 10px 13px; cursor: pointer;
   font-family: var(--font); text-align: left; box-shadow: var(--shadow-card);
 }
 .f-opt.on { border-color: var(--sun); background: #FCF6EA; }
 .f-box {
   width: 19px; height: 19px; border-radius: 6px; flex: none;
-  border: 2px solid var(--line); background: var(--paper);
+  border: 2px solid var(--line); background: var(--c-bg, var(--paper));
   display: flex; align-items: center; justify-content: center;
 }
 .f-opt.on .f-box { background: var(--sun); border-color: var(--sun); }
 .f-box svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 3.2; opacity: 0; }
 .f-opt.on .f-box svg { opacity: 1; }
-.f-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--pine); }
+.f-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--c-fg, var(--pine)); }
 .f-n { font-family: var(--mono); font-size: 11px; color: var(--stone); flex: none; }
 
 .sheet-foot {
   display: flex; gap: 9px; padding: 12px 20px 16px;
-  border-top: 1px solid var(--line); background: var(--birch);
+  border-top: 1px solid var(--line); background: var(--c-page, var(--birch));
 }
 .sheet-foot .btn { flex: 1; }
 .sheet-foot .btn.ghost { flex: 0 0 38%; }
@@ -228,11 +229,95 @@
 /* ---------- 保存バー ---------- */
 .save-bar {
   position: sticky; bottom: 0; z-index: 20;
-  background: linear-gradient(to top, var(--birch) 72%, transparent);
+  background: linear-gradient(to top, var(--c-page, var(--birch)) 72%, transparent);
   padding: 14px 0 16px; margin-top: 6px;
 }
 .save-bar .btn { margin-top: 0; }
 .save-note { font-size: 11px; color: var(--stone); text-align: center; margin-bottom: 8px; }
+
+/* =============================================
+   Step 17：3つの登録を1ページに
+   ============================================= */
+.page-h { display: flex; align-items: baseline; gap: 10px; }
+.page-h h1 { font-size: 18px; }
+
+/* タブ */
+.tabs {
+  display: flex; gap: 4px; background: var(--c-soft, #E2E9E4);
+  border-radius: 14px; padding: 4px;
+}
+.tab {
+  flex: 1; font-family: var(--font); font-size: 11.5px; font-weight: 700;
+  border: none; background: none; color: var(--c-mut, var(--stone));
+  border-radius: 11px; padding: 8px 4px 7px; cursor: pointer; line-height: 1.35;
+}
+.tab b { display: block; font-family: var(--mono); font-size: 11px; margin-top: 1px; }
+.tab.on { background: var(--c-bg, var(--paper)); color: var(--c-fg, var(--pine));
+  box-shadow: 0 1px 4px rgba(30,58,49,.12); }
+.tab.on b { color: var(--sun); }
+
+/* タブごとの説明 */
+.lead { font-size: 11.5px; color: var(--c-mut, var(--stone)); line-height: 1.8; margin-top: 14px; }
+
+/* ---------- 行ってよかった山：順位のトレイ ---------- */
+.podium { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.slot {
+  display: flex; align-items: center; gap: 10px; min-height: 46px;
+  background: var(--c-bg, var(--paper)); border-radius: 12px; padding: 6px 8px 6px 10px;
+  box-shadow: var(--shadow-card); transition: transform .18s, background .18s;
+}
+.slot.empty { background: transparent; box-shadow: none;
+  border: 1.6px dashed var(--c-div, var(--line)); }
+.slot.flash { background: #FCF6EA; }
+.slot .pos { width: 26px; height: 26px; font-size: 12px; }
+.slot.empty .pos { background: var(--c-soft, #E7EEE9); color: var(--c-mut, var(--stone)); }
+.slot-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; line-height: 1.35; }
+.slot-name small { display: block; font-size: 10px; font-weight: 400; color: var(--c-mut, var(--stone)); }
+.slot.empty .slot-name { font-weight: 400; font-size: 11.5px; color: var(--c-mut, var(--stone)); }
+.slot-btn {
+  width: 32px; height: 32px; border-radius: 10px; border: none; flex: none; cursor: pointer;
+  background: var(--c-soft, #EDF3EF); display: flex; align-items: center; justify-content: center;
+}
+.slot-btn svg { width: 15px; height: 15px; stroke: var(--c-fg, var(--pine)); fill: none;
+  stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.slot-btn:disabled { opacity: .3; cursor: default; }
+.slot-btn.x svg { stroke: var(--c-mut, var(--stone)); }
+
+/* ---------- 登ってみたい山：選択中のトレイ ---------- */
+.wish-tray { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 34px; }
+.wish-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font);
+  font-size: 12px; font-weight: 700; color: var(--c-fg, var(--pine));
+  background: var(--c-wishbg, #E9F0F5); border: none; border-radius: 999px;
+  padding: 6px 8px 6px 12px; cursor: pointer;
+}
+.wish-chip i { font-style: normal; color: var(--c-mut, var(--stone)); font-size: 13px; line-height: 1; }
+.wish-empty { font-size: 11.5px; color: var(--c-mut, var(--stone));
+  border: 1.6px dashed var(--c-div, var(--line)); border-radius: 12px; padding: 9px 12px; width: 100%; }
+.cap-n { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--c-mut, var(--stone)); }
+.cap-n.full { color: var(--sun); }
+
+/* ---------- リストの印（タブで変わる） ---------- */
+.mt-item.dim { opacity: .45; }
+.mt-mark { width: 22px; height: 22px; flex: none; display: flex; align-items: center; justify-content: center; }
+.mt-mark svg { width: 20px; height: 20px; fill: none; stroke: var(--c-div, var(--line)); stroke-width: 2; }
+.mt-item.on .mt-mark svg.star { fill: var(--sun); stroke: var(--sun); }
+.mt-item.on .mt-mark svg.flag { stroke: var(--c-acc, var(--fjord)); }
+.mt-item .pos { width: 22px; height: 22px; font-size: 11px; }
+.mt-item.fav.on  { border-color: var(--sun); background: #FCF6EA; }
+.mt-item.wish.on { border-color: var(--c-acc, var(--fjord)); background: var(--c-wishbg, #E9F0F5); }
+body.t-night .mt-item.on, body.t-night .mt-item.fav.on { background: rgba(224,163,59,.14); }
+body.t-night .mt-item.wish.on { background: rgba(127,181,212,.14); }
+
+/* 保存前の変更を知らせるトースト */
+.toast {
+  position: fixed; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom, 0px)); z-index: 120;
+  transform: translateX(-50%); background: var(--pine); color: #fff;
+  font-size: 11.5px; line-height: 1.6; border-radius: 12px; padding: 9px 14px;
+  box-shadow: 0 6px 18px rgba(20,40,32,.3); width: max-content; max-width: calc(100% - 32px);
+  animation: toastIn .2s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } }
 </style>
 </head>
 <body>
@@ -244,8 +329,17 @@
   </div>
 
   <div id="main" hidden>
+    <div class="page-h"><h1>山の登録</h1></div>
+
     <div class="head-bar">
       <div class="head-in">
+        <div class="tabs" role="tablist">
+          <button class="tab" data-tab="climbed" role="tab">登った山<b id="tn-climbed">0</b></button>
+          <button class="tab" data-tab="fav"     role="tab">行ってよかった山<b id="tn-fav">0/5</b></button>
+          <button class="tab" data-tab="wish"    role="tab">登ってみたい山<b id="tn-wish">0/5</b></button>
+        </div>
+
+        <!-- 登った山のタブだけ、達成率のリングを出す -->
         <div class="count-row" id="count-row"></div>
 
         <div class="tool-row">
@@ -268,6 +362,9 @@
         <div class="chips-row" id="chips"></div>
       </div>
     </div>
+
+    <!-- タブごとの説明と、選んだ山のトレイ -->
+    <div id="panel"></div>
 
     <div class="mt-list" id="list"></div>
 
@@ -311,61 +408,70 @@ window.addEventListener("unhandledrejection", (e) =>
 </script>
 
 <script type="module">
-import { supabase, getUser, signOut } from "./supabase.js";
+import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme } from "./card.js";
+import { applyTheme, esc } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
-
-mountHeader(signOut);
-
-// 選んだテーマをページ全体に反映する
-(async () => {
-  const { getMyProfile } = await import("./supabase.js");
-  const p = await getMyProfile();
-  if (p?.card_bg) applyTheme(p.card_bg);
-})();
+const MAX = 5;
 
 const user = await getUser();
 if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 
 // ---------------------------------------------
-// 山マスタと、登録済みの山
+// 山マスタと、登録済みの3種類
 // ---------------------------------------------
-const [mtRes, myRes] = await Promise.all([
+const [profile, mtRes, climbedRes, wishRes] = await Promise.all([
+  getMyProfile(),
   supabase.from("mountains")
           .select("id, name, kana, elevation, area, prefs, region, meizan_rank, is_popular")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
+          .select("mountain_id, is_favorite, favorite_rank")
+          .eq("user_id", user.id),
+  supabase.from("wishlist_mountains")
           .select("mountain_id")
           .eq("user_id", user.id),
 ]);
 
-if (mtRes.error) {
-  window.__showFatal("山のデータを読み込めませんでした", mtRes.error.message);
-  throw mtRes.error;
-}
-// ここが失敗すると「登録済み」が空になり、
-// すでにある行をもう一度入れようとして重複エラーになる
-if (myRes.error) {
-  window.__showFatal("登録済みの山を読み込めませんでした", myRes.error.message);
-  throw myRes.error;
+mountHeader(signOut, { shareId: profile?.public_id });
+if (profile?.card_bg) applyTheme(profile.card_bg);
+
+// どれか1つでも失敗したら止める。
+// 空のまま保存すると、登録済みの山を消してしまうため
+for (const [res, label] of [[mtRes, "山のデータ"], [climbedRes, "登った山"], [wishRes, "登ってみたい山"]]) {
+  if (res.error) {
+    window.__showFatal(`${label}を読み込めませんでした`, res.error.message);
+    throw res.error;
+  }
 }
 
 const MOUNTAINS = mtRes.data ?? [];
-const original = new Set((myRes.data ?? []).map((r) => r.mountain_id));
-const selected = new Set(original);
+const byId = new Map(MOUNTAINS.map((m) => [m.id, m]));
 
-// ここで画面を出す。
-// 読み込み中の表示を消さないと「読み込んでいます…」のまま止まって見える
+// 保存前の元の状態（変更の数え上げに使う）
+const orig = {
+  climbed: new Set((climbedRes.data ?? []).map((r) => r.mountain_id)),
+  fav: (climbedRes.data ?? []).filter((r) => r.is_favorite)
+        .sort((a, b) => (a.favorite_rank ?? 99) - (b.favorite_rank ?? 99)
+                     || (byId.get(b.mountain_id)?.elevation ?? 0) - (byId.get(a.mountain_id)?.elevation ?? 0))
+        .map((r) => r.mountain_id),
+  wish: new Set((wishRes.data ?? []).map((r) => r.mountain_id)),
+};
+
+// いま画面で選んでいる状態
+const climbed = new Set(orig.climbed);
+let   fav     = [...orig.fav].slice(0, MAX);     // 順番がそのまま1位〜5位
+const wish    = new Set(orig.wish);
+
+const TABS = ["climbed", "fav", "wish"];
+let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "climbed";
+
 $("#loading").hidden = true;
 $("#main").hidden = false;
 
 // ---------------------------------------------
 // 一覧の並び順（北から南）
-//
-// 見出しは細かい山域名（area）で出すので、その並びを定義する。
-// 標高順だけだと山域がばらけて、繋がりが見えにくいため。
 // ---------------------------------------------
 const AREA_ORDER = [
   "北海道", "東北", "上信越", "北関東", "関東", "奥秩父",
@@ -374,14 +480,13 @@ const AREA_ORDER = [
 ];
 const areaRank = (a) => {
   const i = AREA_ORDER.indexOf(a);
-  return i === -1 ? 999 : i;    // 未知のエリアは末尾に
+  return i === -1 ? 999 : i;
 };
 
 // ---------------------------------------------
-// フィルタの定義
+// フィルタの定義（3つのタブで共通）
 //
-// 名山・エリア・人気・標高の4つ。すべてAND条件で、
-// 同じ区分の中で複数選んだときはOR条件になる。
+// 同じ区分の中で複数選ぶとOR、区分をまたぐとAND。
 // 何も選ばれていない区分は「絞り込まない」扱い。
 // ---------------------------------------------
 const FILTERS = [
@@ -391,7 +496,7 @@ const FILTERS = [
       { v: "100",   label: "百名山" },
       { v: "200",   label: "二百名山" },
       { v: "300",   label: "三百名山" },
-      { v: "other", label: "リスト外" },
+      { v: "other", label: "その他" },
     ],
     match: (m, v) => v === "other" ? m.meizan_rank === null : String(m.meizan_rank) === v,
   },
@@ -427,40 +532,70 @@ const FILTERS = [
   },
 ];
 
-// 選択状態。下書き（ポップアップの中）と確定を分ける
 const active = {};
 let draft = {};
 FILTERS.forEach((f) => (active[f.id] = new Set()));
 
-// 「選択中だけ」はフィルタとは別扱い
 let onlySelected = false;
 let keyword = "";
 
 // ---------------------------------------------
-// 絞り込み
+// タブごとの「選べる山」と「選択中か」
 // ---------------------------------------------
+function baseList() {
+  if (tab === "fav")  return MOUNTAINS.filter((m) => climbed.has(m.id));   // 登った山からだけ
+  if (tab === "wish") return MOUNTAINS.filter((m) => !climbed.has(m.id));  // まだ登っていない山からだけ
+  return MOUNTAINS;
+}
+function isSel(id) {
+  if (tab === "fav")  return fav.includes(id);
+  if (tab === "wish") return wish.has(id);
+  return climbed.has(id);
+}
+
 function passFilters(m, state = active) {
   for (const f of FILTERS) {
     const set = state[f.id];
-    if (!set || !set.size) continue;          // 未選択なら絞らない
+    if (!set || !set.size) continue;
     if (![...set].some((v) => f.match(m, v))) return false;
   }
   return true;
 }
+const countWith = (state) => baseList().filter((m) => passFilters(m, state)).length;
+const activeCount = () => FILTERS.reduce((n, f) => n + active[f.id].size, 0);
 
-function countWith(state) {
-  return MOUNTAINS.filter((m) => passFilters(m, state)).length;
+// ---------------------------------------------
+// タブ
+// ---------------------------------------------
+function setTab(t) {
+  tab = t;
+  history.replaceState(null, "", "#" + t);
+  onlySelected = false;
+  document.querySelectorAll(".tab").forEach((x) => {
+    x.classList.toggle("on", x.dataset.tab === t);
+    x.setAttribute("aria-selected", x.dataset.tab === t);
+  });
+  drawAll();
 }
 
-function activeCount() {
-  return FILTERS.reduce((n, f) => n + active[f.id].size, 0);
+document.querySelector(".tabs").addEventListener("click", (e) => {
+  const t = e.target.closest(".tab");
+  if (t && t.dataset.tab !== tab) {
+    setTab(t.dataset.tab);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+});
+
+function drawTabCounts() {
+  $("#tn-climbed").textContent = climbed.size;
+  $("#tn-fav").textContent = `${fav.length}/${MAX}`;
+  $("#tn-wish").textContent = `${wish.size}/${MAX}`;
 }
 
 // ---------------------------------------------
-// ポップアップ
+// フィルタのポップアップ
 // ---------------------------------------------
 $("#filter-btn").onclick = () => {
-  // いまの状態を下書きにコピーしてから開く
   draft = {};
   FILTERS.forEach((f) => (draft[f.id] = new Set(active[f.id])));
   drawSheet();
@@ -476,13 +611,14 @@ $("#sheet-x").onclick = closeSheet;
 $("#sheet").onclick = (e) => { if (e.target === $("#sheet")) closeSheet(); };
 
 function drawSheet() {
+  const base = baseList();
   $("#sheet-body").innerHTML = FILTERS.map((f) => `
     <div class="f-group">
       <p class="f-title">${f.title}</p>
       <div class="f-opts">
         ${f.opts.map((o) => {
           const on = draft[f.id].has(o.v);
-          const n = MOUNTAINS.filter((m) => f.match(m, o.v)).length;
+          const n = base.filter((m) => f.match(m, o.v)).length;
           return `
             <button class="f-opt ${on ? "on" : ""}" data-f="${f.id}" data-v="${o.v}">
               <span class="f-box">
@@ -496,7 +632,6 @@ function drawSheet() {
         }).join("")}
       </div>
     </div>`).join("");
-
   $("#f-count").textContent = countWith(draft);
 }
 
@@ -509,10 +644,7 @@ $("#sheet-body").addEventListener("click", (e) => {
   drawSheet();
 });
 
-$("#f-reset").onclick = () => {
-  FILTERS.forEach((f) => draft[f.id].clear());
-  drawSheet();
-};
+$("#f-reset").onclick = () => { FILTERS.forEach((f) => draft[f.id].clear()); drawSheet(); };
 
 $("#f-apply").onclick = () => {
   FILTERS.forEach((f) => (active[f.id] = new Set(draft[f.id])));
@@ -524,11 +656,11 @@ $("#f-apply").onclick = () => {
 };
 
 // ---------------------------------------------
-// 適用中のフィルタを、押せるチップで見せる
+// 適用中のフィルタ
 // ---------------------------------------------
 function drawChips() {
   const chips = [];
-  const selCount = MOUNTAINS.filter((m) => passFilters(m) && selected.has(m.id)).length;
+  const selCount = baseList().filter((m) => passFilters(m) && isSel(m.id)).length;
 
   chips.push(`<button class="chip sel ${onlySelected ? "on" : ""}" data-sel="1">
     選択中 (${selCount})</button>`);
@@ -541,9 +673,7 @@ function drawChips() {
     });
   });
 
-  if (activeCount()) {
-    chips.push(`<button class="chip clear-all" data-clear="1">すべて解除</button>`);
-  }
+  if (activeCount()) chips.push(`<button class="chip clear-all" data-clear="1">すべて解除</button>`);
 
   $("#chips").innerHTML = chips.join("");
   $("#fb-n").hidden = !activeCount();
@@ -553,14 +683,9 @@ function drawChips() {
 $("#chips").addEventListener("click", (e) => {
   const b = e.target.closest(".chip");
   if (!b) return;
-
-  if (b.dataset.sel) {
-    onlySelected = !onlySelected;
-  } else if (b.dataset.clear) {
-    FILTERS.forEach((f) => active[f.id].clear());
-  } else if (b.dataset.f) {
-    active[b.dataset.f].delete(b.dataset.v);
-  }
+  if (b.dataset.sel) onlySelected = !onlySelected;
+  else if (b.dataset.clear) FILTERS.forEach((f) => active[f.id].clear());
+  else if (b.dataset.f) active[b.dataset.f].delete(b.dataset.v);
   drawChips();
   render();
 });
@@ -573,7 +698,6 @@ $("#q").addEventListener("input", (e) => {
   $("#clear").hidden = !keyword;
   render();
 });
-
 $("#clear").onclick = () => {
   keyword = "";
   $("#q").value = "";
@@ -583,23 +707,110 @@ $("#clear").onclick = () => {
 };
 
 // ---------------------------------------------
+// タブごとの説明・トレイ
+// ---------------------------------------------
+const IC = {
+  up:   `<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>`,
+  down: `<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>`,
+  x:    `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+};
+const posBadge = (p) => `<span class="pos pos-${p <= 3 ? p : "n"}">${p}</span>`;
+
+function drawPanel() {
+  if (tab === "climbed") {
+    $("#panel").innerHTML = `<p class="lead">登ったことのある山を選んでください。踏破状況のリングに反映されます。</p>`;
+    return;
+  }
+
+  if (tab === "fav") {
+    const slots = Array.from({ length: MAX }, (_, i) => {
+      const id = fav[i];
+      const m = id ? byId.get(id) : null;
+      if (!m) {
+        return `<div class="slot empty">${posBadge(i + 1)}
+          <span class="slot-name">${i === fav.length ? "下のリストから選ぶ" : ""}</span></div>`;
+      }
+      return `
+        <div class="slot" data-i="${i}">
+          ${posBadge(i + 1)}
+          <span class="slot-name">${esc(m.name)}<small>${esc(m.kana)}${m.elevation ? `・${m.elevation}m` : ""}</small></span>
+          <button class="slot-btn" data-mv="-1" aria-label="${esc(m.name)}の順位を上げる" ${i === 0 ? "disabled" : ""}>${IC.up}</button>
+          <button class="slot-btn" data-mv="1"  aria-label="${esc(m.name)}の順位を下げる" ${i === fav.length - 1 ? "disabled" : ""}>${IC.down}</button>
+          <button class="slot-btn x" data-rm="1" aria-label="${esc(m.name)}を外す">${IC.x}</button>
+        </div>`;
+    }).join("");
+
+    $("#panel").innerHTML = `
+      <p class="lead">登った山の中から、よかった山を5座まで選べます。<br>
+        選んだ順に順位が付きます。矢印で並べ替えられます。</p>
+      <div class="podium" id="podium">${slots}</div>`;
+    return;
+  }
+
+  // 登ってみたい山
+  const chips = [...wish].map((id) => byId.get(id)).filter(Boolean)
+    .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0))
+    .map((m) => `<button class="wish-chip" data-rm-wish="${m.id}" aria-label="${esc(m.name)}を外す">
+        ${esc(m.name)}<i>×</i></button>`).join("");
+  $("#panel").innerHTML = `
+    <p class="lead">まだ登っていない山から、5座まで選べます。
+      <span class="cap-n ${wish.size >= MAX ? "full" : ""}">${wish.size} / ${MAX}</span></p>
+    <div class="wish-tray">${chips || `<p class="wish-empty">下のリストから選んでください。</p>`}</div>`;
+}
+
+$("#panel").addEventListener("click", (e) => {
+  // よかった山の並べ替え・外す
+  const slot = e.target.closest(".slot[data-i]");
+  const btn = e.target.closest(".slot-btn");
+  if (slot && btn && !btn.disabled) {
+    const i = Number(slot.dataset.i);
+    if (btn.dataset.rm) {
+      fav.splice(i, 1);
+    } else {
+      const j = i + Number(btn.dataset.mv);
+      if (j < 0 || j >= fav.length) return;
+      [fav[i], fav[j]] = [fav[j], fav[i]];
+      afterChange();
+      // 動かした山が分かるように、移動先を一瞬光らせる
+      const moved = document.querySelector(`.slot[data-i="${j}"]`);
+      if (moved) { moved.classList.add("flash"); setTimeout(() => moved.classList.remove("flash"), 450); }
+      return;
+    }
+    afterChange();
+    return;
+  }
+
+  // 登ってみたい山を外す
+  const chip = e.target.closest("[data-rm-wish]");
+  if (chip) {
+    wish.delete(Number(chip.dataset.rmWish));
+    afterChange();
+  }
+});
+
+// ---------------------------------------------
 // リストの描画
-// カテゴリ ＋ エリア ＋ 選択中 ＋ 検索 をすべてAND条件で絞る
 // ---------------------------------------------
 function render() {
   const kw = normalize(keyword);
+  const base = baseList();
 
-  const list = MOUNTAINS.filter((m) => {
+  // よかった山は、登った山が無いと選べない
+  if (tab === "fav" && !base.length) {
+    $("#list").innerHTML = `<div class="mt-empty">
+      登った山がまだ登録されていません。<br>先に「登った山」から選んでください。
+      <button class="btn ghost" data-goto="climbed" style="margin-top:12px">登った山を選ぶ</button></div>`;
+    updateCount();
+    return;
+  }
+
+  const list = base.filter((m) => {
     if (!passFilters(m)) return false;
-    if (onlySelected && !selected.has(m.id)) return false;
+    if (onlySelected && !isSel(m.id)) return false;
     if (!kw) return true;
     return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw);
   });
 
-  // エリアで絞っていないときは、エリア別（北から南）に並べる。
-  // 標高順だけだと山域がばらけて、繋がりが見えにくいため。
-  // 同じエリアの中は標高の高い順（元の並び）を保つ。
-  // エリアを1つだけに絞っているときは見出しが不要
   const grouped = active.region.size !== 1;
   if (grouped) {
     list.sort((a, b) =>
@@ -615,7 +826,7 @@ function render() {
     ? renderList(shown, grouped) +
       (limited
         ? `<p class="more-note">ほか ${list.length - shown.length}座。<br>
-             エリアや検索で絞り込めます。</p>`
+             フィルタや検索で絞り込めます。</p>`
         : "")
     : `<p class="mt-empty">${onlySelected
         ? "選択中の山はありません。"
@@ -624,39 +835,44 @@ function render() {
   updateCount();
 }
 
-// エリアごとに見出しを挟んで並べる
 function renderList(list, grouped) {
   if (!grouped) return list.map(itemHtml).join("");
-
   let html = "";
-  let lastArea = null;
+  let lastArea;
   for (const m of list) {
     if (m.area !== lastArea) {
       lastArea = m.area;
       const n = list.filter((x) => x.area === lastArea).length;
-      html += `<p class="area-head">${lastArea ?? "その他"}<span>${n}</span></p>`;
+      html += `<p class="area-head">${esc(lastArea ?? "その他")}<span>${n}</span></p>`;
     }
     html += itemHtml(m);
   }
   return html;
 }
 
+const CHECK = `<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l6 6L20 6"/></svg>`;
+const STAR  = `<svg class="star" viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 3l2.7 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.4 6.5 20.4l1.1-6.3L3 9.7l6.3-.9z"/></svg>`;
+const FLAGI = `<svg class="flag" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 5h12l-2 4 2 4H5"/></svg>`;
+
 function itemHtml(m) {
-  const on = selected.has(m.id);
+  const on = isSel(m.id);
+  const full = !on && ((tab === "fav" && fav.length >= MAX) || (tab === "wish" && wish.size >= MAX));
+
+  let mark;
+  if (tab === "climbed") mark = `<div class="mt-check">${CHECK}</div>`;
+  else if (tab === "fav") mark = `<div class="mt-mark">${on ? posBadge(fav.indexOf(m.id) + 1) : STAR}</div>`;
+  else mark = `<div class="mt-mark">${FLAGI}</div>`;
+
   const badge = m.meizan_rank
     ? `<span class="rank-badge rank-${m.meizan_rank}">${
         m.meizan_rank === 100 ? "百" : m.meizan_rank === 200 ? "二百" : "三百"}</span>`
     : "";
   return `
-    <div class="mt-item${on ? " on" : ""}" data-id="${m.id}">
-      <div class="mt-check">
-        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 12l6 6L20 6"/>
-        </svg>
-      </div>
+    <div class="mt-item ${tab}${on ? " on" : ""}${full ? " dim" : ""}" data-id="${m.id}">
+      ${mark}
       <div class="mt-body">
-        <p class="mt-name">${m.name}${badge}</p>
-        <p class="mt-meta">${m.kana}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.prefs?.length ? ` ・ ${m.prefs.join("・")}` : ""}</p>
+        <p class="mt-name">${esc(m.name)}${badge}</p>
+        <p class="mt-meta">${esc(m.kana)}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.prefs?.length ? ` ・ ${esc(m.prefs.join("・"))}` : ""}</p>
       </div>
     </div>`;
 }
@@ -673,25 +889,60 @@ function normalize(s) {
 // 選択の切り替え
 // ---------------------------------------------
 $("#list").addEventListener("click", (e) => {
+  const go = e.target.closest("[data-goto]");
+  if (go) { setTab(go.dataset.goto); return; }
+
   const item = e.target.closest(".mt-item");
   if (!item) return;
   const id = Number(item.dataset.id);
+  const m = byId.get(id);
 
-  if (selected.has(id)) { selected.delete(id); item.classList.remove("on"); }
-  else                  { selected.add(id);    item.classList.add("on"); }
-
-  // 「選択中」で絞っている最中に外したら、その場から消す
-  if (onlySelected && !selected.has(id)) {
-    item.remove();
-    if (!$("#list").querySelector(".mt-item")) render();
+  if (tab === "climbed") {
+    if (climbed.has(id)) {
+      climbed.delete(id);
+      // 登った山から外したら、よかった山からも外す
+      if (fav.includes(id)) {
+        fav = fav.filter((x) => x !== id);
+        toast(`${m.name}を「行ってよかった山」からも外しました。`);
+      }
+    } else {
+      climbed.add(id);
+      // 登った山に入れたら、登ってみたい山からは外す
+      if (wish.has(id)) {
+        wish.delete(id);
+        toast(`${m.name}を「登ってみたい山」から外しました。登頂おめでとうございます！`);
+      }
+    }
+  } else if (tab === "fav") {
+    if (fav.includes(id)) fav = fav.filter((x) => x !== id);
+    else if (fav.length >= MAX) return toast(`選べるのは${MAX}座までです。どれかを外してください。`);
+    else fav.push(id);
+  } else {
+    if (wish.has(id)) wish.delete(id);
+    else if (wish.size >= MAX) return toast(`選べるのは${MAX}座までです。どれかを外してください。`);
+    else wish.add(id);
   }
 
-  drawChips();
-  updateCount();
+  // 「選択中」で絞っている最中は、外した山がその場から消える
+  afterChange();
 });
 
+function afterChange() {
+  // スクロール位置を保ったまま描き直す
+  const y = scrollY;
+  drawAll();
+  window.scrollTo(0, y);
+}
+
+function drawAll() {
+  drawTabCounts();
+  drawPanel();
+  drawChips();
+  render();
+}
+
 // ---------------------------------------------
-// 達成率の表示
+// 達成率のリング（登った山のタブだけ）と、変更の件数
 // ---------------------------------------------
 const RING_DEFS = [
   { id: "100", label: "百名山",   rank: 100,  total: 100, color: "#E0A33B" },
@@ -701,108 +952,106 @@ const RING_DEFS = [
 ];
 
 function updateCount() {
-  // 名山のフィルタが効いているときは、そのランクだけを出す
-  const picked = active.rank.size
-    ? RING_DEFS.filter((c) => active.rank.has(c.id))
-    : RING_DEFS;
+  const row = $("#count-row");
+  row.hidden = tab !== "climbed";
 
-  const rings = picked.map((c) => {
-    const inThis = (m) => c.rank === null
-      ? m.meizan_rank === null
-      : m.meizan_rank === c.rank;
+  if (tab === "climbed") {
+    const picked = active.rank.size ? RING_DEFS.filter((c) => active.rank.has(c.id)) : RING_DEFS;
+    row.innerHTML = picked.map((c) => {
+      const inThis = (m) => c.rank === null ? m.meizan_rank === null : m.meizan_rank === c.rank;
+      const done  = MOUNTAINS.filter((m) => inThis(m) && climbed.has(m.id)).length;
+      const total = c.total ?? MOUNTAINS.filter(inThis).length;
+      const R = 22, C = 2 * Math.PI * R;
+      return `
+        <div class="ring-item">
+          <div class="ring">
+            <svg viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="${R}" fill="none" stroke="var(--c-soft, #E7EEE9)" stroke-width="5"/>
+              <circle cx="26" cy="26" r="${R}" fill="none" stroke="${c.color}" stroke-width="5"
+                      stroke-linecap="round" stroke-dasharray="${C}"
+                      stroke-dashoffset="${total ? C * (1 - done / total) : C}"
+                      transform="rotate(-90 26 26)"/>
+            </svg>
+            <div class="ring-num"><b>${done}</b><span>/${total}</span></div>
+          </div>
+          <p class="ring-label">${c.label}</p>
+          <p class="ring-rest">${total && done >= total ? "完登" : total ? `あと${total - done}` : ""}</p>
+        </div>`;
+    }).join("");
+  }
 
-    const done  = MOUNTAINS.filter((m) => inThis(m) && selected.has(m.id)).length;
-    const total = c.total ?? MOUNTAINS.filter(inThis).length;
-    const R = 22, C = 2 * Math.PI * R;
+  const n = changeCount();
+  $("#save-note").textContent = n ? `${n}件の変更（3つまとめて保存されます）` : "変更はありません";
+}
 
-    return `
-      <div class="ring-item">
-        <div class="ring">
-          <svg viewBox="0 0 52 52">
-            <circle cx="26" cy="26" r="${R}" fill="none" stroke="#E7EEE9" stroke-width="5"/>
-            <circle cx="26" cy="26" r="${R}" fill="none" stroke="${c.color}" stroke-width="5"
-                    stroke-linecap="round" stroke-dasharray="${C}"
-                    stroke-dashoffset="${total ? C * (1 - done / total) : C}"
-                    transform="rotate(-90 26 26)"/>
-          </svg>
-          <div class="ring-num"><b>${done}</b><span>/${total}</span></div>
-        </div>
-        <p class="ring-label">${c.label}</p>
-        <p class="ring-rest">${
-          total && done >= total ? "完登" : total ? `あと${total - done}` : ""}</p>
-      </div>`;
-  });
-
-  $("#count-row").innerHTML = rings.join("");
-
-  const added = [...selected].filter((id) => !original.has(id)).length;
-  const removed = [...original].filter((id) => !selected.has(id)).length;
-  $("#save-note").textContent =
-    added || removed
-      ? `${added ? `+${added}座` : ""}${added && removed ? " / " : ""}${removed ? `−${removed}座` : ""} の変更`
-      : "変更はありません";
+function changeCount() {
+  const setDiff = (a, b) => [...a].filter((x) => !b.has(x)).length + [...b].filter((x) => !a.has(x)).length;
+  const favChanged = fav.length !== orig.fav.length || fav.some((id, i) => orig.fav[i] !== id);
+  return setDiff(climbed, orig.climbed) + setDiff(wish, orig.wish) + (favChanged ? 1 : 0);
 }
 
 // ---------------------------------------------
-// 保存（差分だけを書き込む）
+// トースト（保存前の自動調整を知らせる）
 // ---------------------------------------------
-// ---------------------------------------------
-// 保存（差分だけを書き込む）
-// ---------------------------------------------
-$("#save").onclick = async () => {
-  const toAdd    = [...selected].filter((id) => !original.has(id));
-  const toRemove = [...original].filter((id) => !selected.has(id));
+let toastTimer;
+function toast(text) {
+  document.querySelector(".toast")?.remove();
+  clearTimeout(toastTimer);
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => t.remove(), 2800);
+}
 
+// ---------------------------------------------
+// 保存：3つをまとめて1回で書き込む（途中で失敗しても半端な状態にならない）
+// ---------------------------------------------
+let saving = false;
+
+$("#save").onclick = async () => {
   const msg = $("#msg");
   msg.className = "msg";
   msg.textContent = "";
 
-  if (!toAdd.length && !toRemove.length) {
-    location.href = "./card.html";
-    return;
-  }
+  if (!changeCount()) { location.href = "./card.html"; return; }
 
   const btn = $("#save");
   btn.disabled = true;
   btn.textContent = "保存しています…";
+  saving = true;
 
-  try {
-    if (toRemove.length) {
-      const { error } = await supabase
-        .from("climbed_mountains")
-        .delete()
-        .eq("user_id", user.id)
-        .in("mountain_id", toRemove);
-      if (error) throw error;
-    }
-    if (toAdd.length) {
-      // insert ではなく upsert にして、すでにある行は黙って無視する。
-      // 二重送信や画面のズレで重複エラーが出るのを防ぐ
-      const { error } = await supabase
-        .from("climbed_mountains")
-        .upsert(toAdd.map((mountain_id) => ({ user_id: user.id, mountain_id })),
-                { onConflict: "user_id,mountain_id", ignoreDuplicates: true });
-      if (error) throw error;
-    }
-    location.href = "./card.html";
-  } catch (err) {
+  const { data, error } = await supabase.rpc("save_my_mountains", {
+    p_climbed: [...climbed],
+    p_favorites: fav,
+    p_wishlist: [...wish],
+  });
+
+  if (error || !data?.ok) {
+    saving = false;
     btn.disabled = false;
     btn.textContent = "保存する";
+    const m = String(error?.message ?? "");
     msg.className = "msg error";
-    msg.textContent = "保存できませんでした：" + err.message;
+    msg.textContent =
+      m.includes("favorite_limit") || m.includes("wishlist_limit") ? `選べるのは${MAX}座までです。`
+      : m.includes("favorite_not_climbed") ? "行ってよかった山は、登った山から選んでください。"
+      : "保存できませんでした：" + (m || "不明なエラー");
+    return;
   }
+
+  location.href = "./card.html";
 };
 
+// 保存せずにページを離れようとしたら確認する
+addEventListener("beforeunload", (e) => {
+  if (!saving && changeCount()) { e.preventDefault(); e.returnValue = ""; }
+});
+
 // ---------------------------------------------
-// 最初の描画
-//
-// いちばん最後に呼ぶ。
-// render() は updateCount() → RING_DEFS を使うが、
-// const は宣言した行を通るまで使えないため、
-// 途中で呼ぶと「初期化前に参照した」エラーになる。
+// 最初の描画（RING_DEFS などの宣言より後で呼ぶ）
 // ---------------------------------------------
-drawChips();
-render();
+setTab(tab);
 </script>
 </body>
 </html>

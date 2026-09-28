@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>カードを編集する｜ハイカーズカード</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -94,13 +96,6 @@ const $ = (s) => document.querySelector(s);
 
 mountHeader(signOut);
 
-// 選んだテーマをページ全体に反映する
-(async () => {
-  const { getMyProfile } = await import("./supabase.js");
-  const p = await getMyProfile();
-  if (p?.card_bg) applyTheme(p.card_bg);
-})();
-
 const user = await getUser();
 if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 
@@ -109,6 +104,7 @@ if (!profile) {
   window.__showFatal("プロフィールを読み込めませんでした", "ページを再読み込みしてください。");
   throw new Error("no profile");
 }
+applyTheme(profile.card_bg);
 
 // 今の登録状況を数えて、各項目に出す
 const [climbedRes, wishRes] = await Promise.all([
@@ -137,13 +133,13 @@ const GROUPS = [
   {
     title: "プロフィール",
     items: [
-      { ic: "pen", t: "表示名・ひとこと", d: "カードの上部に出る情報", href: "./setup.html" },
-      { ic: "brush", t: "カードの背景", d: "5種類から選べます", href: "./setup.html#bg-group" },
-      { ic: "link", t: "SNSリンク", d: "YAMAP・ヤマレコ・Instagram・X", href: "./setup.html#sns-group" },
+      { ic: "pen", t: "プロフィール更新",
+        d: "表示名・ひとこと・カードの背景・載せる踏破状況・SNS",
+        href: "./setup.html" },
     ],
   },
   {
-    title: "登山タイプ",
+    title: "登山タイプ診断",
     items: [
       { ic: "redo", t: "診断をやり直す",
         d: profile.type_code ? `いまは ${profile.type_code}` : "まだ診断を受けていません",
@@ -153,19 +149,12 @@ const GROUPS = [
   {
     title: "山の登録",
     items: [
-      { ic: "mt",   t: "登った山", d: "名山ハントのリングに反映されます",
-        n: `${n.climbed}座`, href: "./mountains.html" },
-      { ic: "star", t: "行ってよかった山", d: "登った山から5座まで",
-        n: `${n.fav}/5`, href: "./picks.html#fav" },
+      { ic: "mt",   t: "登った山", d: "踏破状況のリングに反映されます",
+        n: `${n.climbed}座`, href: "./mountains.html#climbed" },
+      { ic: "star", t: "行ってよかった山", d: "登った山から5座まで・順位をつけられます",
+        n: `${n.fav}/5`, href: "./mountains.html#fav" },
       { ic: "flag", t: "登ってみたい山", d: "まだ登っていない山から5座まで",
-        n: `${n.wish}/5`, href: "./picks.html#wish" },
-    ],
-  },
-  {
-    title: "カードに載せるもの",
-    items: [
-      { ic: "pen", t: "踏破数の表示", d: "百名山・二百名山・三百名山の出し分け",
-        href: "./setup.html#vis-group" },
+        n: `${n.wish}/5`, href: "./mountains.html#wish" },
     ],
   },
 ];

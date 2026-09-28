@@ -188,9 +188,21 @@ const RANKS = [
 ];
 
 // ---------------------------------------------
+// SNSのアイコン
+// YAMAP・ヤマレコは山の形、Instagram・Xは頭文字
+// ---------------------------------------------
+const MT_GLYPH = `<svg viewBox="0 0 24 24" fill="#fff"><path d="M2.5 19.5 9 8l3.6 6.2L15 10l6.5 9.5z"/></svg>`;
+export function snsIcon(key) {
+  const s = SNS[key];
+  if (!s) return "";
+  return `<span class="sns-ic" style="background:${s.bg}">${s.icon === "mt" ? MT_GLYPH : esc(s.short)}</span>`;
+}
+
+// ---------------------------------------------
 // テーマをページ全体に効かせる
 //
-// カードの背景を選ぶと、ページの地色や見出しの色も変わる。
+// 模様（等高線など）はヒーローカードだけに敷く。
+// ページの地色・文字色は、カードと同系色でそろえてカードを引き立てる。
 // body にクラスを付けることで、CSS変数が全体に行き渡る。
 // ---------------------------------------------
 export function applyTheme(bg) {
@@ -222,12 +234,22 @@ function ringSVG(done, color, rad) {
   </svg>`;
 }
 
+// 行ってよかった山を順位順にそろえる（pos が無い古いデータは後ろへ）
+function sortedFavs(list) {
+  return [...(list ?? [])].sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
+}
+
+// 順位のバッジ（1〜3位は金・銀・銅）
+function posBadge(pos) {
+  if (!pos) return "";
+  return `<span class="pos pos-${pos <= 3 ? pos : "n"}">${pos}</span>`;
+}
+
 // =============================================
-// カード（縦長・要約）
+// ヒーローカード（縦長・要約）
 //
-// 横長はスマホで文字が小さくなりすぎるため縦長に戻した。
-// ここは要約だけを置き、詳細は下のセクションで見せる。
 // 背景の模様と、動物ごとの足跡を敷く。
+// 行ってよかった山・登ってみたい山は省略せず全件載せる（各5座まで）。
 // =============================================
 export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
@@ -236,6 +258,7 @@ export function renderHeroCard(d, opts = {}) {
   const linked = opts.linked !== false;   // false ならスクロールさせない
 
   const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
+  const hasOther = ranks.other !== undefined && ranks.other !== null;
 
   const rings = shown.map((r) => {
     const done = Number(ranks[r.key]);
@@ -245,14 +268,14 @@ export function renderHeroCard(d, opts = {}) {
           <div class="mn"><b>${done}</b><span>/100</span></div></div>
         <p>${r.label}</p><em>${done >= 100 ? "完登" : `あと${100 - done}`}</em>
       </div>`;
-  }).join("");
+  }).join("") + (hasOther ? `
+      <div class="mini-ring">
+        <div class="mr mr-other"><div class="mn"><b>${Number(ranks.other)}</b><span>座</span></div></div>
+        <p>その他</p><em>&nbsp;</em>
+      </div>` : "");
 
-  const favN = d.favorites?.length ?? 0;
-  const wishN = d.wishlist?.length ?? 0;
-  const sampleTags = [
-    ...(d.favorites ?? []).slice(0, 2).map((m) => `<span class="mini-tag fav">${esc(m.name)}</span>`),
-    ...(d.wishlist ?? []).slice(0, 2).map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`),
-  ].join("");
+  const favs = sortedFavs(d.favorites);
+  const wish = d.wishlist ?? [];
 
   const blk = (go, inner) => linked
     ? `<button class="hero-blk" data-go="${go}">${inner}</button>`
@@ -284,14 +307,20 @@ export function renderHeroCard(d, opts = {}) {
       </div>
 
       ${rings ? blk("section-meizan", `
-        <p class="hero-lbl">名山ハント</p>
+        <p class="hero-lbl">踏破状況</p>
         <div class="mini-rings">${rings}</div>`) : ""}
 
-      ${(favN || wishN) ? blk("section-mountains", `
-        <p class="hero-lbl">山リスト
-          ${favN ? `<span class="mini-cnt fav">★${favN}</span>` : ""}
-          ${wishN ? `<span class="mini-cnt wish">⚑${wishN}</span>` : ""}</p>
-        <div class="mini-tags">${sampleTags}</div>`) : ""}
+      ${favs.length ? blk("section-mountains", `
+        <p class="hero-lbl">${STAR}行ってよかった山</p>
+        <ol class="hero-favs">
+          ${favs.map((m) => `<li>${posBadge(m.pos)}<span>${esc(m.name)}</span></li>`).join("")}
+        </ol>`) : ""}
+
+      ${wish.length ? blk("section-mountains", `
+        <p class="hero-lbl">${FLAG}登ってみたい山</p>
+        <div class="mini-tags">
+          ${wish.map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`).join("")}
+        </div>`) : ""}
     </div>
   </div>`;
 }
@@ -303,16 +332,120 @@ function escMultiline(s) {
 
 // =============================================
 // 詳細セクション（カードの下に並べる）
+//
+// 並び：山リスト → 踏破状況 → 登山タイプ診断 → SNS
+// 枠で囲わず、横線で区切るだけにしてヒーローカードを引き立てる
 // =============================================
 export function renderDetails(d, opts = {}) {
   return [
-    diagnosisSection(d, opts),
-    meizanSection(d),
     mountainsSection(d, opts),
+    meizanSection(d),
+    diagnosisSection(d, opts),
+    snsSection(d),
   ].filter(Boolean).join("");
 }
 
-// ---------- 登山タイプ ----------
+// ---------- 山リスト ----------
+function mountainsSection(d, opts) {
+  const fav = sortedFavs(d.favorites);
+  const wish = d.wishlist ?? [];
+
+  // 自分のカードでは、空でもセクションを出して登録へ誘導する
+  if (!fav.length && !wish.length) {
+    if (!opts.own) return "";
+    return `
+    <section class="det" id="section-mountains">
+      <div class="det-h"><h2>山リスト</h2></div>
+      <p class="det-empty">行ってよかった山・登ってみたい山を<br>それぞれ5座まで載せられます。
+        <a href="/mountains.html#fav">登録する</a></p>
+    </section>`;
+  }
+
+  return `
+  <section class="det" id="section-mountains">
+    <div class="det-h"><h2>山リスト</h2></div>
+    ${fav.length ? `<div class="d-card">
+      <p class="d-sub first">行ってよかった山</p>
+      <div class="d-tags">${tags(fav, "fav", STAR, opts.overlaps?.favorites)}</div>
+    </div>` : ""}
+    ${wish.length ? `<div class="d-card">
+      <p class="d-sub first">登ってみたい山</p>
+      <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
+    </div>` : ""}
+    ${opts.own && (!fav.length || !wish.length) ? `
+      <p class="det-empty">
+        ${!fav.length ? "行ってよかった山" : "登ってみたい山"}がまだ未登録です。
+        <a href="/mountains.html#${!fav.length ? "fav" : "wish"}">登録する</a>
+      </p>` : ""}
+  </section>`;
+}
+
+// overlaps: { 山名: [{ name, public_id }] }
+function tags(list, cls, icon, overlaps) {
+  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
+  return list.map((m) => {
+    const lead = cls === "fav" && m.pos ? posBadge(m.pos) : icon;
+    const who = overlaps?.[m.name];
+    if (!who?.length) return `<span class="d-tag ${cls}">${lead}${esc(m.name)}</span>`;
+    const links = who.slice(0, 4)
+      .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}さん</a>`)
+      .join("、");
+    const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
+    return `<span class="d-tag ${cls} has-ov" tabindex="0">
+      ${lead}${esc(m.name)}<span class="ov-dot">${who.length}</span>
+      <template class="ov-src">${links}${rest}${verb}</template>
+    </span>`;
+  }).join("");
+}
+
+// ---------- 踏破状況 ----------
+function meizanSection(d) {
+  const ranks = d.ranks ?? {};
+  const list = d.climbed ?? [];
+  const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
+  const showOther = ranks.other !== undefined && ranks.other !== null;
+  const others = showOther ? list.filter((m) => !m.rank) : [];
+  if (!shown.length && !others.length) return "";
+
+  const total = shown.reduce((n, r) => n + Number(ranks[r.key]), 0);
+  const caret = `<svg class="mz-car" viewBox="0 0 24 24" fill="none"
+      stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  const tagList = (arr) => `
+      <div class="mz-in"><div class="d-tags">
+        ${arr.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
+      </div></div>`;
+
+  const blocks = shown.map((r) => {
+    const done = Number(ranks[r.key]);
+    const inRank = list.filter((m) => String(m.rank) === r.key);
+    return `
+      <button class="mz-row${inRank.length ? "" : " nolist"}" data-mz="${r.key}"
+              ${inRank.length ? "" : "disabled"}>
+        <div class="mz-r">${ringSVG(done, r.color, 22)}
+          <div class="mn"><b>${done}</b><span>/100</span></div></div>
+        <p class="mz-t">${r.label}<em>${done >= 100 ? "完登" : `あと${100 - done}座`}</em></p>
+        ${inRank.length ? caret : ""}
+      </button>
+      ${inRank.length ? `<div class="mz-list" id="mzl-${r.key}">${tagList(inRank)}</div>` : ""}`;
+  }).join("");
+
+  return `
+  <section class="det" id="section-meizan">
+    <div class="det-h"><h2>踏破状況</h2>${shown.length ? `<span class="det-n">${total} / ${shown.length * 100}</span>` : ""}</div>
+    <div class="d-card">
+      ${blocks}
+      ${others.length ? `
+        <button class="mz-row mz-other${shown.length ? "" : " solo"}" data-mz="other">
+          <div class="mz-r mz-r-other"><div class="mn"><b>${others.length}</b><span>座</span></div></div>
+          <p class="mz-t">その他<em>名山リスト外の山</em></p>
+          ${caret}
+        </button>
+        <div class="mz-list" id="mzl-other">${tagList(others)}</div>` : ""}
+    </div>
+  </section>`;
+}
+
+// ---------- 登山タイプ診断 ----------
 const AXIS_DEFS = [
   { key: "pe", title: "目的",   a: "P", b: "E", aName: "ピークハント", bName: "エンジョイ" },
   { key: "sg", title: "仲間",   a: "S", b: "G", aName: "ソロ",         bName: "グループ" },
@@ -343,125 +476,42 @@ function diagnosisSection(d, opts) {
 
   return `
   <section class="det" id="section-diagnosis">
-    <div class="det-h"><h2>登山タイプ</h2><span class="det-n">${esc(d.type_code)}</span></div>
-    ${rows ? `<div class="d-card">${rows}</div>` : ""}
-    ${(opts.features || opts.caution) ? `
-      <div class="d-card">
-        ${opts.features ? `<p class="d-sub">特徴</p><p class="d-desc">${esc(opts.features)}</p>` : ""}
-        ${opts.caution ? `<p class="d-sub">気をつけたいこと</p><p class="d-desc">${esc(opts.caution)}</p>` : ""}
-      </div>` : ""}
-  </section>`;
-}
-
-// ---------- 名山ハント ----------
-function meizanSection(d) {
-  const ranks = d.ranks ?? {};
-  const list = d.climbed ?? [];
-  const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
-  if (!shown.length && !list.length) return "";
-
-  const total = shown.reduce((n, r) => n + Number(ranks[r.key]), 0);
-  const others = list.filter((m) => !m.rank);
-
-  const blocks = shown.map((r, i) => {
-    const done = Number(ranks[r.key]);
-    const inRank = list.filter((m) => String(m.rank) === r.key);
-    return `
-      <button class="mz-row${inRank.length ? "" : " nolist"}" data-mz="${r.key}"
-              ${inRank.length ? "" : "disabled"}>
-        <div class="mz-r">${ringSVG(done, r.color, 22)}
-          <div class="mn"><b>${done}</b><span>/100</span></div></div>
-        <p class="mz-t">${r.label}<em>${done >= 100 ? "完登" : `あと${100 - done}座`}</em></p>
-        ${inRank.length ? `<svg class="mz-car" viewBox="0 0 24 24" fill="none"
-          stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>` : ""}
-      </button>
-      ${inRank.length ? `
-        <div class="mz-list" id="mzl-${r.key}">
-          <div class="mz-in"><div class="d-tags">
-            ${inRank.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
-          </div></div>
-        </div>` : ""}`;
-  }).join("");
-
-  return `
-  <section class="det" id="section-meizan">
-    <div class="det-h"><h2>名山ハント</h2><span class="det-n">${total} / 300</span></div>
+    <div class="det-h"><h2>登山タイプ診断</h2><span class="det-n">${esc(d.type_code)}</span></div>
+    ${opts.typeName ? `<p class="d-type">${esc(opts.animal ?? "")}・${esc(opts.typeName)}</p>` : ""}
     <div class="d-card">
-      ${blocks}
-      ${others.length ? `
-        <button class="mz-row mz-other" data-mz="other">
-          <p class="mz-t">そのほかの山<em>${others.length}座</em></p>
-          <svg class="mz-car" viewBox="0 0 24 24" fill="none"
-            stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="mz-list" id="mzl-other">
-          <div class="mz-in"><div class="d-tags">
-            ${others.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
-          </div></div>
-        </div>` : ""}
+      ${opts.features ? `<p class="d-sub first">特徴</p><p class="d-desc">${esc(opts.features)}</p>` : ""}
+      ${opts.caution ? `<p class="d-sub${opts.features ? "" : " first"}">気をつけたいこと</p><p class="d-desc">${esc(opts.caution)}</p>` : ""}
+      ${rows ? `<p class="d-sub${opts.features || opts.caution ? "" : " first"}">4軸のスコア</p>${rows}` : ""}
     </div>
   </section>`;
 }
 
-// ---------- 山リスト ----------
-function mountainsSection(d, opts) {
-  const fav = d.favorites ?? [];
-  const wish = d.wishlist ?? [];
-
-  // 自分のカードでは、空でもセクションを出して登録へ誘導する
-  if (!fav.length && !wish.length) {
-    if (!opts.own) return "";
-    return `
-    <section class="det" id="section-mountains">
-      <div class="det-h"><h2>山リスト</h2></div>
-      <div class="hc-empty">
-        <p>行ってよかった山・登ってみたい山を<br>それぞれ5座まで載せられます。</p>
-        <button class="btn ghost" style="margin-top:12px"
-                onclick="location.href='./picks.html'">選ぶ</button>
-      </div>
-    </section>`;
-  }
+// ---------- SNS ----------
+function snsSection(d) {
+  const entries = Object.entries(d.sns ?? {})
+    .filter(([k, v]) => SNS[k] && String(v ?? "").trim());
+  if (!entries.length) return "";
 
   return `
-  <section class="det" id="section-mountains">
-    <div class="det-h"><h2>山リスト</h2></div>
-    ${fav.length ? `<div class="d-card">
-      <p class="d-sub first">行ってよかった山</p>
-      <div class="d-tags">${tags(fav, "fav", STAR, opts.overlaps?.favorites)}</div>
-    </div>` : ""}
-    ${wish.length ? `<div class="d-card">
-      <p class="d-sub first">登ってみたい山</p>
-      <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
-    </div>` : ""}
-    ${opts.own && (!fav.length || !wish.length) ? `
-      <p class="af-note" style="text-align:center;margin-top:10px">
-        ${!fav.length ? "行ってよかった山" : "登ってみたい山"}がまだ未登録です。
-        <a href="./picks.html" style="color:var(--c-acc)">選ぶ</a>
-      </p>` : ""}
+  <section class="det" id="section-sns">
+    <div class="det-h"><h2>SNS</h2></div>
+    <div class="sns-links">
+      ${entries.map(([k, v]) => `
+        <a class="sns-link" href="${esc(SNS[k].url(encodeURIComponent(v)))}"
+           target="_blank" rel="noopener noreferrer">
+          ${snsIcon(k)}
+          <span class="sns-t"><b>${SNS[k].label}</b><span>${esc(v)}</span></span>
+          <svg class="sns-go" viewBox="0 0 24 24" fill="none" stroke-linecap="round"
+               stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>`).join("")}
+    </div>
   </section>`;
-}
-
-// overlaps: { 山名: [{ name, public_id }] }
-function tags(list, cls, icon, overlaps) {
-  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
-  return list.map((m) => {
-    const who = overlaps?.[m.name];
-    if (!who?.length) return `<span class="d-tag ${cls}">${icon}${esc(m.name)}</span>`;
-    const links = who.slice(0, 4)
-      .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}</a>`)
-      .join("、");
-    const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
-    return `<span class="d-tag ${cls} has-ov">
-      ${icon}${esc(m.name)}<span class="ov-dot">${who.length}</span>
-      <span class="ov-bubble">${links}${rest}${verb}</span>
-    </span>`;
-  }).join("");
 }
 
 // =============================================
 // 操作を有効にする
 //   ・ヒーローカード → 詳細へスムーズスクロール
-//   ・名山ハントの折りたたみ
+//   ・踏破状況の開閉（開いたものは、もう一度押すまで閉じない）
 //   ・重なりの吹き出し
 // =============================================
 export function bindCardInteractions(root = document) {
@@ -474,33 +524,118 @@ export function bindCardInteractions(root = document) {
     });
   });
 
-  // 名山は1つずつ開く
+  // 押したものだけを開閉する。ほかの開いているものには触らない
   root.querySelectorAll("[data-mz]").forEach((b) => {
     if (b.dataset.bound) return;
     b.dataset.bound = "1";
     b.addEventListener("click", () => {
       const target = root.querySelector(`#mzl-${b.dataset.mz}`);
-      const wasOpen = b.classList.contains("open");
-      root.querySelectorAll("[data-mz]").forEach((x) => x.classList.remove("open"));
-      root.querySelectorAll(".mz-list").forEach((x) => x.classList.remove("open"));
-      if (!wasOpen && target) { b.classList.add("open"); target.classList.add("open"); }
+      if (!target) return;
+      const open = !b.classList.contains("open");
+      b.classList.toggle("open", open);
+      target.classList.toggle("open", open);
     });
   });
 
-  // 吹き出しはタップでも開く（スマホにはマウスオーバーが無いため）
+  bindOverlapPopover(root);
+}
+
+// ---------------------------------------------
+// 重なりの吹き出し
+//
+// タグの中に置くと、画面の端で切れてしまう（スマホで顕著）。
+// そこで body 直下に1つだけ吹き出しを作り、
+// 押した（マウスを乗せた）タグの位置に合わせて、画面内に収まるよう置く。
+// 吹き出しの中の名前は、その人のカードへのリンクになっている。
+// ---------------------------------------------
+let pop = null;
+let popFor = null;
+let hideTimer = null;
+
+function ensurePop() {
+  if (pop) return pop;
+  pop = document.createElement("div");
+  pop.className = "ov-pop";
+  pop.hidden = true;
+  pop.innerHTML = `<div class="ov-pop-in"></div><i class="ov-pop-arrow"></i>`;
+  document.body.appendChild(pop);
+
+  // 吹き出しの上にマウスがある間は閉じない（リンクを押せるように）
+  pop.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+  pop.addEventListener("mouseleave", () => scheduleHide());
+  pop.addEventListener("click", (e) => e.stopPropagation());
+
+  document.addEventListener("click", () => hidePop());
+  addEventListener("resize", () => hidePop());
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hidePop(); });
+  return pop;
+}
+
+function showPop(tag) {
+  const p = ensurePop();
+  clearTimeout(hideTimer);
+  const src = tag.querySelector(".ov-src");
+  if (!src) return;
+
+  p.querySelector(".ov-pop-in").innerHTML = src.innerHTML;
+  p.hidden = false;
+  popFor = tag;
+
+  // 画面の幅に合わせて位置を決める
+  const margin = 10;
+  const vw = document.documentElement.clientWidth;
+  const r = tag.getBoundingClientRect();
+  const w = Math.min(250, vw - margin * 2);
+  p.style.width = w + "px";
+
+  const h = p.offsetHeight;
+  const cx = r.left + r.width / 2;
+  const left = Math.max(margin, Math.min(cx - w / 2, vw - w - margin));
+
+  // 上に出すスペースが無ければ（ヘッダーと重なるなら）下に出す
+  const headerH = 70;
+  const below = r.top - h - 10 < headerH;
+  const top = below ? r.bottom + 10 : r.top - h - 10;
+
+  p.style.left = left + scrollX + "px";
+  p.style.top = top + scrollY + "px";
+  p.classList.toggle("below", below);
+
+  // 矢印はタグの中央を指す
+  const arrowX = Math.max(14, Math.min(cx - left, w - 14));
+  p.querySelector(".ov-pop-arrow").style.left = arrowX + "px";
+}
+
+function hidePop() {
+  clearTimeout(hideTimer);
+  if (pop) pop.hidden = true;
+  popFor = null;
+}
+
+function scheduleHide() {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(hidePop, 220);
+}
+
+function bindOverlapPopover(root) {
+  const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
   root.querySelectorAll(".d-tag.has-ov").forEach((t) => {
     if (t.dataset.bound) return;
     t.dataset.bound = "1";
+
+    // タップで開閉する（スマホにはマウスオーバーが無いため）。
+    // マウスの場合は乗せた時点で開いているので、クリックでは閉じない
     t.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;
       e.stopPropagation();
-      const open = t.classList.contains("show-ov");
-      root.querySelectorAll(".d-tag.show-ov").forEach((x) => x.classList.remove("show-ov"));
-      if (!open) t.classList.add("show-ov");
+      if (!canHover && popFor === t && !pop.hidden) hidePop();
+      else showPop(t);
     });
-  });
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".d-tag.show-ov").forEach((x) => x.classList.remove("show-ov"));
+
+    if (canHover) {
+      t.addEventListener("mouseenter", () => showPop(t));
+      t.addEventListener("mouseleave", () => scheduleHide());
+    }
   });
 }
 
