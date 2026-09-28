@@ -6,7 +6,7 @@
 <title>カードの画像｜ハイカーズカード</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;900&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="stylesheet" href="/style.css">
@@ -33,9 +33,15 @@
   /* 画像にする元の見た目（画面外に置く） */
   .stage { position: fixed; left: -10000px; top: 0; }
   .frame {
-    width: 380px; padding: 22px 20px 16px;
-    background: var(--c-page, #E7ECE8); color: var(--c-fg, var(--pine));
+    position: relative; overflow: hidden;
+    width: 380px; padding: 26px 22px 18px;
+    background: linear-gradient(180deg, var(--c-page, #F1F3F1), var(--c-page2, #E1E7E3));
+    color: var(--c-fg, var(--pine));
   }
+  /* ページと同じく、テーマの模様を画像全体の背景に敷く */
+  .frame-bg { position: absolute; inset: 0; }
+  .frame-bg svg { width: 100%; height: 100%; display: block; }
+  .frame > :not(.frame-bg) { position: relative; }
   /* html2canvas は内側の影（inset）を塗りつぶしの四角として描いてしまうため、
      画像にするときは外側の影だけにする */
   .frame .hero { margin-top: 0; box-shadow: 0 8px 24px rgba(20,40,32,.22); }
@@ -81,7 +87,7 @@
 
 <script type="module">
 import { supabase, getUser, getMyProfile } from "/supabase.js";
-import { renderHeroCard, applyTheme, esc } from "/card.js";
+import { renderHeroCard, applyTheme, esc, BG, pageBgSVG } from "/card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -108,12 +114,14 @@ if (!profile?.public_id) { fail("プロフィールを読み込めませんで�
 const { data, error } = await supabase.rpc("get_public_card", { p_public_id: profile.public_id });
 if (error || !data) { fail("カードを読み込めませんでした。表示名が未設定の可能性があります。"); throw error; }
 
-applyTheme(data.card_bg);
+applyTheme(data.card_bg, { page: true });
 
 const diagnosed = !!data.type_code;
 const url = `${location.origin}/u/${data.public_id}`;
 
+const bgId = BG[data.card_bg] ? data.card_bg : "contour";
 $("#frame").innerHTML = `
+  <div class="frame-bg">${pageBgSVG(bgId)}</div>
   ${renderHeroCard(data, {
     charSVG: diagnosed ? characterSVG(data.type_code) : "",
     animal:  diagnosed ? CHARACTERS[data.type_code]?.animal : "",
