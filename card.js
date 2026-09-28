@@ -291,7 +291,7 @@ export function renderHeroCard(d, opts = {}) {
 
     <div class="hero-in">
       <div class="hero-top">
-        <span class="hero-brand">${LOGO_MARK}<span>ハイカーズカード</span></span>
+        <span class="hero-brand">#ハイカーズカード</span>
         <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
       </div>
 
@@ -343,20 +343,24 @@ const IC_BAR = {
   pen:  `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
   back: `<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>`,
   ok:   `<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>`,
+  img:  `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg>`,
 };
 
 export function renderOwnerBar(kind, d = {}) {
   const name = esc(d.display_name);
-  const btn = (href, icon, label) =>
-    `<a class="ob-btn" href="${href}">${IC_BAR[icon]}<span>${label}</span></a>`;
+  const btn = (href, icon, label, blank = false) =>
+    `<a class="ob-btn" href="${href}" aria-label="${label}"${blank ? ' target="_blank" rel="noopener"' : ""}>${IC_BAR[icon]}<span>${label}</span></a>`;
 
   if (kind === "own") {
     return `
     <div class="owner-bar mine">
       <span class="ob-ic">${IC_BAR.me}</span>
       <p class="ob-t"><b>マイカード</b><span>あなたのカードです</span></p>
-      ${btn(`/u/${encodeURIComponent(d.public_id)}`, "eye", "見え方")}
-      ${btn("/edit.html", "pen", "編集")}
+      <span class="ob-btns">
+        ${btn(`/u/${encodeURIComponent(d.public_id)}`, "eye", "見え方")}
+        ${btn("/card-image.html", "img", "画像", true)}
+        ${btn("/edit.html", "pen", "編集")}
+      </span>
     </div>`;
   }
 

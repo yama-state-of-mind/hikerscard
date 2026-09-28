@@ -371,6 +371,8 @@ select tablename, string_agg(distinct cmd, ', ' order by cmd) as policies
 
 ### Service Worker の方針
 
+**Step 17 から、ページ・スクリプト・CSSは毎回サーバーに「新しくなっていないか」を確かめるようにしました**（`sw.js` の `cache: "no-cache"` と、`vercel.json` の `Cache-Control: no-cache`）。変わっていなければ中身は送られないので、通信量はほとんど増えません。
+
 **キャッシュはほとんど使っていません。**
 
 開発中に頻繁に更新するサイトでキャッシュを効かせすぎると、「直したのに反映されない」という厄介な問題が起きます。ユーザー側でキャッシュを消してもらうのは現実的ではありません。
@@ -421,6 +423,7 @@ select tablename, string_agg(distinct cmd, ', ' order by cmd) as policies
 | 「プロフィールを読み込めませんでした」 | profiles にトリガーで行が作られていない。SQL Editor で `select * from public.profiles;` を確認 |
 | マジックリンクが届かない | 送信数の上限（1時間に数通）に達している可能性。普段はGoogleログインでテストする |
 | ポートが 3000 以外 | Redirect URLs に登録したポートと一致させるか、Supabase側に追加する |
+| デプロイしたのに一部だけ古い（CSSは新しいのにJSが古い など） | まず `https://（サイト）/card.js` を直接開き、新しいコードが入っているか確かめる。入っていなければリポジトリの差し替え漏れ。入っていればキャッシュなので、アプリ（ホーム画面から開いたもの）を完全に終了して開き直す。Step 17 以降は `vercel.json` と `sw.js` で毎回サーバーに確かめる設定にしてある |
 
 ## 次のステップ
 
