@@ -31,8 +31,10 @@
 .deck {
   position: relative; margin: 16px auto 0;
   width: 100%; max-width: 330px;
-  /* カードの高さ＋重なり分。中身に応じてJSで調整する */
-  min-height: 300px;
+  /* すべてのカードを同じ高さ（--deck-h）にそろえる。
+     枠の高さ＝カードの高さ＋奥のカードが覗く分（3枚×14px）＋少し */
+  --deck-h: 480px;
+  height: calc(var(--deck-h) + 50px);
 }
 .deck-item {
   position: absolute; left: 50%; top: 0; width: 100%;
@@ -40,7 +42,23 @@
   transition: transform .34s cubic-bezier(.22,.9,.3,1), opacity .25s;
   will-change: transform;
 }
-.deck-item .hero { margin-top: 0; }
+.deck-item .hero {
+  margin-top: 0; height: var(--deck-h);
+  display: flex; flex-direction: column;
+}
+.deck-item .hero-in { flex: 1; min-height: 0; overflow: hidden; }
+
+/* 長いカードは、下の方をふわっと消して省略する（模様は消さず、中身だけ） */
+.deck-item .hero.clipped .hero-in {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 84px), transparent calc(100% - 26px));
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 84px), transparent calc(100% - 26px));
+}
+.deck-more {
+  position: absolute; left: 50%; bottom: 14px; z-index: 2; transform: translateX(-50%);
+  font-size: 10.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap;
+  color: var(--c-fg2); background: var(--c-bg); border: 1px solid var(--c-div);
+  border-radius: 999px; padding: 4px 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
 
 /* 手前のカードだけ操作できるようにする */
 .deck-item:not(.front) { pointer-events: none; }
@@ -53,24 +71,26 @@
 
 /* ---------- 操作 ---------- */
 .deck-ctrl {
-  display: flex; justify-content: center; gap: 10px; margin-top: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  max-width: 330px; margin: 4px auto 0;
 }
 .deck-btn {
-  font-family: var(--font); font-size: 12.5px; font-weight: 700;
-  color: var(--fjord); background: var(--paper);
-  border: 1.5px solid var(--line); border-radius: 999px;
-  padding: 9px 22px; cursor: pointer;
+  width: 44px; height: 44px; flex: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: var(--c-bg, var(--paper)); color: var(--c-fg, var(--pine));
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.1);
 }
-.deck-btn:active { background: var(--birch); }
+.deck-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round; }
+.deck-btn:active { transform: scale(.94); }
 .deck-btn:disabled { opacity: .4; cursor: default; }
+.deck-mid { flex: 1; text-align: center; min-width: 0; }
 
 .deck-pos {
-  text-align: center; font-family: var(--mono); font-size: 12px;
-  color: var(--stone); margin-top: 10px; letter-spacing: 1px;
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: var(--c-fg, var(--pine)); letter-spacing: 1px;
 }
-.met-at {
-  text-align: center; font-size: 11.5px; color: var(--stone); margin-top: 4px;
-}
+.met-at { font-size: 11px; color: var(--c-mut, var(--stone)); margin-top: 2px; }
 
 /* ---------- 空のとき ---------- */
 .deck-empty {
@@ -186,6 +206,10 @@ $("#n").textContent = cards.length;
 // drawDeck() より前に宣言しておく必要がある（letは宣言行を通るまで使えない）
 let frontIndex = 0;
 
+// カードの下に並ぶもの（位置・操作ボタン・案内・交換ボタン）の合計のおおよその高さ。
+// これも drawDeck() より前に宣言しておく
+const BELOW_DECK = 150;
+
 if (!cards.length) {
   $("#body").innerHTML = `
     <div class="deck-empty">
@@ -201,16 +225,21 @@ if (!cards.length) {
 } else {
   $("#body").innerHTML = `
     <div class="deck" id="deck"></div>
-    <p class="deck-pos" id="pos"></p>
-    <p class="met-at" id="met"></p>
+    <!-- 位置・交換日・めくるボタンを1行にまとめて、カードを大きく取る -->
     <div class="deck-ctrl">
-      <button class="deck-btn" id="prev">◀ もどす</button>
-      <button class="deck-btn" id="next">めくる ▶</button>
-    </div>
-    <p class="deck-hint">カードを押すと、その人のページが開きます</p>`;
+      <button class="deck-btn" id="prev" aria-label="もどす">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="deck-mid">
+        <p class="deck-pos" id="pos"></p>
+        <p class="met-at" id="met"></p>
+      </div>
+      <button class="deck-btn" id="next" aria-label="めくる">
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>`;
 
   $("#prev").onclick = () => cycle(-1);
   $("#next").onclick = () => cycle(1);
+  if (cards.length < 2) { $("#prev").disabled = true; $("#next").disabled = true; }
 }
 
 $("#go-exchange").onclick = () => location.href = "./exchange.html";
@@ -246,10 +275,40 @@ function drawDeck() {
       </div>`;
   }).join("");
 
+  sizeDeck();
   layout();
   bindSwipe();
   updateLabels();
 }
+
+// ---------------------------------------------
+// カードの高さを決める
+//
+// 下の「カードを交換する」ボタンまでが1画面に収まる高さにする。
+// ただし小さすぎ・大きすぎないよう 360〜560px の間に収める。
+// ---------------------------------------------
+function sizeDeck() {
+  const deck = $("#deck");
+  if (!deck) return;
+  const top = deck.getBoundingClientRect().top + scrollY;
+  const avail = innerHeight - top - 50 - BELOW_DECK;
+  const h = Math.round(Math.max(360, Math.min(560, avail)));
+  deck.style.setProperty("--deck-h", h + "px");
+
+  // はみ出しているカードにだけ「省略」の印を付ける
+  requestAnimationFrame(() => {
+    document.querySelectorAll(".deck-item .hero").forEach((hero) => {
+      const inner = hero.querySelector(".hero-in");
+      const over = inner.scrollHeight > inner.clientHeight + 4;
+      hero.classList.toggle("clipped", over);
+      if (over && !hero.querySelector(".deck-more")) {
+        hero.insertAdjacentHTML("beforeend", `<span class="deck-more">タップして全部見る</span>`);
+      }
+    });
+  });
+}
+
+addEventListener("resize", () => { if (cards.length) sizeDeck(); });
 
 // 位置・拡大率・重ね順を割り当てる
 function layout() {
@@ -262,15 +321,6 @@ function layout() {
     el.style.zIndex = String(n - pos);
     el.style.opacity = pos > 3 ? "0" : "1";  // 4枚目より奥は隠す
     el.dataset.base = el.style.transform;
-  });
-
-  // 一番手前のカードの高さに合わせて、枠の高さを決める。
-  // 描画が画面に反映されてから測る必要があるので、1フレーム待つ
-  requestAnimationFrame(() => {
-    const front = document.querySelector(".deck-item.front .hero");
-    if (front && front.offsetHeight > 0) {
-      $("#deck").style.minHeight = front.offsetHeight + 60 + "px";
-    }
   });
 }
 
