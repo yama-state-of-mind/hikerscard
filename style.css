@@ -991,12 +991,12 @@ body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -1
 .sk-groups { margin-top: 20px; }
 .sk-group + .sk-group { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--c-div); }
 .sk-gt { font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--c-mut); margin-bottom: 4px; }
-.sk-row { display: grid; grid-template-columns: 7.2em auto 1fr; align-items: center; gap: 10px; padding: 5px 0; }
+.sk-row { display: grid; grid-template-columns: 7.2em auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 5px 0; }
 .sk-name { font-size: 12.5px; font-weight: 600; }
 .sk-meter { display: inline-flex; gap: 3px; }
 .sk-meter i { width: 15px; height: 6px; border-radius: 2px; background: var(--c-div); }
 .sk-meter i.on { background: var(--c-fg); }
-.sk-lv { font-size: 11px; color: var(--c-fg2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-lv { font-size: 11px; color: var(--c-fg2); text-align: right; line-height: 1.35; min-width: 0; }
 .bk-note { font-size: 10px; color: var(--c-mut); text-align: center; margin-top: auto; padding-top: 18px; letter-spacing: .06em; }
 
 .bk-lock { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1006,3 +1006,32 @@ body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -1
 .bk-lock-ic svg { width: 24px; height: 24px; fill: none; stroke: var(--c-fg); stroke-width: 1.8;
   stroke-linecap: round; stroke-linejoin: round; }
 .bk-btn { width: auto; margin-top: 2px; padding: 10px 22px; text-decoration: none; }
+
+/* ---------- 裏面：レーダーチャート ---------- */
+.bk-view { display: flex; gap: 2px; margin: 16px auto 0; padding: 3px; border-radius: 999px;
+  background: var(--c-soft); width: max-content; }
+.bk-view-b { font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .06em;
+  border: none; cursor: pointer; border-radius: 999px; padding: 5px 16px; background: none; color: var(--c-mut); }
+.bk-view-b.on { background: var(--c-bg); color: var(--c-fg); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+.rd-wrap { margin-top: 10px; }
+.rd-box { text-align: center; }
+.rd-box .sk-gt { margin-bottom: 0; }
+.rd-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px;
+  padding-top: 12px; border-top: 1px solid var(--c-div); }
+.rd { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+.rd-lg { max-width: 330px; }
+.rd-sm { max-width: 220px; }
+.rd-ring { fill: none; stroke: var(--c-div); stroke-width: 1; }
+.rd-ring.outer { stroke-width: 1.2; }
+.rd-spoke { stroke: var(--c-div); stroke-width: 1; }
+.rd-area { fill: var(--sun); fill-opacity: .28; stroke: var(--c-fg); stroke-width: 1.6; stroke-linejoin: round; }
+.rd-dot { fill: var(--c-fg); }
+.rd-lbl { font-family: var(--font); fill: var(--c-fg); }
+.rd-lg .rd-lbl { font-size: 12px; }
+.rd-sm .rd-lbl { font-size: 13px; }
+.rd-name { font-weight: 600; }
+.rd-val { font-family: var(--mono); font-weight: 700; fill: var(--c-fg2); }
+.rd-val.none { fill: var(--c-mut); font-weight: 400; }
+.rd-box.empty .rd-area { fill: none; stroke: none; }
+.rd-box.empty .rd-lbl { fill: var(--c-mut); }

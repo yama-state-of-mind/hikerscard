@@ -24,18 +24,13 @@ export const SKILL_GROUPS = [
         ["健脚", "標高差1500m・歩行9時間以上もこなせる"],
         ["超健脚", "標高差2000m級・10時間を超える行程を安定して歩ける"],
       ]},
-      { key: "navigation", name: "地図読み", desc: "地図やコンパスでルートを判断する力", levels: [
+      { key: "navigation", short: "地図読み", name: "地図読み", desc: "地図やコンパスでルートを判断する力", levels: [
         ["アプリで確認", "登山アプリの軌跡を見ながら歩く"],
         ["地形図も携行", "紙の地形図も持ち、分岐で確認している"],
         ["現在地がわかる", "地形とコンパスで現在地を特定できる"],
         ["道迷いに対応", "道を外れても、自力で正しいルートに戻れる"],
         ["読図で歩ける", "登山道のない尾根や谷も、読図で歩ける"],
       ]},
-    ],
-  },
-  {
-    id: "stay", title: "泊まり",
-    items: [
       { key: "hut", name: "小屋泊", desc: "山小屋・避難小屋での宿泊", levels: [
         ["1泊", "営業小屋に1泊したことがある"],
         ["小屋で連泊", "小屋をつないで2〜3日歩いたことがある"],
@@ -57,10 +52,17 @@ export const SKILL_GROUPS = [
         ["4泊以上", "4泊以上の縦走をしたことがある"],
         ["長期縦走", "1週間以上の長期縦走をしたことがある"],
       ]},
+      { key: "firstaid", name: "安全", desc: "応急手当・セルフレスキュー", levels: [
+        ["救急セット", "救急セットを持ち、基本的な手当ができる"],
+        ["講習受講", "普通救命講習などを受けたことがある"],
+        ["野外救急", "WFAなど、野外救急の講習を受けている"],
+        ["セルフレスキュー", "搬送やロープを使うセルフレスキューを学んだ"],
+        ["教えられる", "応急手当やレスキューを人に教えられる"],
+      ]},
     ],
   },
   {
-    id: "terrain", title: "季節・地形",
+    id: "advanced", title: "応用",
     items: [
       { key: "snow", name: "雪山", desc: "雪のある山での行動", levels: [
         ["雪の低山", "チェーンスパイクで雪のある低山を歩いた"],
@@ -69,14 +71,14 @@ export const SKILL_GROUPS = [
         ["冬のアルプス", "厳冬期の3000m級一般ルートに登った"],
         ["厳冬期縦走", "厳冬期の縦走や、雪のバリエーションに行った"],
       ]},
-      { key: "rock", name: "岩稜・鎖場", desc: "岩場やハシゴのある道", levels: [
+      { key: "rock", short: "岩稜", name: "岩稜・鎖場", desc: "岩場やハシゴのある道", levels: [
         ["短い鎖場", "短い鎖場・ハシゴなら落ち着いて通れる"],
         ["一般的な岩場", "槍ヶ岳の穂先くらいの岩場を登れる"],
         ["難所", "大キレットや剱岳の一般ルートを歩ける"],
         ["最難関", "ジャンダルムなど、最難関の一般ルートも歩ける"],
         ["ロープ技術", "ロープでの確保や懸垂下降ができる"],
       ]},
-      { key: "variation", name: "バリエーション", desc: "登山道のないルート", levels: [
+      { key: "variation", short: "バリエ", name: "バリエーション", desc: "登山道のないルート", levels: [
         ["踏み跡", "踏み跡の薄い道や廃道を歩いたことがある"],
         ["経験者と", "経験者と一緒に、やさしい尾根や藪を歩いた"],
         ["自分で計画", "自分で計画してバリエーションルートを歩ける"],
@@ -95,38 +97,26 @@ export const SKILL_GROUPS = [
   {
     id: "sport", title: "スポーツ",
     items: [
-      { key: "trailrun", name: "トレイルラン", desc: "山道を走る", levels: [
+      { key: "trailrun", short: "トレラン", name: "トレイルラン", desc: "山道を走る", levels: [
         ["少し走る", "下りや平らな道を少し走る程度"],
         ["20kmくらい", "20km前後のコースを走れる"],
         ["50km級", "50km級のレースや練習をこなせる"],
         ["100km級", "100km級を完走したことがある"],
         ["100マイル級", "100マイル級を完走したことがある"],
       ]},
-      { key: "climbing", name: "クライミング", desc: "岩や壁を登る", levels: [
+      { key: "climbing", short: "クライム", name: "クライミング", desc: "岩や壁を登る", levels: [
         ["ボルダリング", "ジムでボルダリングをしている"],
         ["ロープ（ジム）", "ジムでリード・トップロープができる"],
         ["外岩", "外の岩場でクライミングをしている"],
         ["マルチピッチ", "外岩のマルチピッチを登る"],
         ["アルパイン", "アルパインクライミングをしている"],
       ]},
-      { key: "ski", name: "山スキー・BC", desc: "雪山を滑る", levels: [
+      { key: "ski", short: "山スキー", name: "山スキー・BC", desc: "雪山を滑る", levels: [
         ["サイドカントリー", "ゲレンデ脇やリフト近くの山を滑った"],
         ["ツアー体験", "ガイドツアーでバックカントリーを体験した"],
         ["自分たちで", "ビーコンなどを持ち、自分たちでツアーに行ける"],
         ["急斜面も", "急斜面や大きな山域も滑れる"],
         ["上級", "長大なツアーや厳冬期の山岳滑走もこなせる"],
-      ]},
-    ],
-  },
-  {
-    id: "safety", title: "安全",
-    items: [
-      { key: "firstaid", name: "応急手当", desc: "けがや体調不良への対応", levels: [
-        ["救急セット", "救急セットを持ち、基本的な手当ができる"],
-        ["講習受講", "普通救命講習などを受けたことがある"],
-        ["野外救急", "WFAなど、野外救急の講習を受けている"],
-        ["セルフレスキュー", "搬送やロープを使うセルフレスキューを学んだ"],
-        ["教えられる", "応急手当やレスキューを人に教えられる"],
       ]},
     ],
   },
@@ -142,6 +132,90 @@ export const levelDesc = (item, lv) => lv === 0 ? "まだ経験はない（こ�
 export function meter(lv) {
   return `<span class="sk-meter" aria-label="5段階中${lv}">${
     [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? "on" : ""}"></i>`).join("")}</span>`;
+}
+
+// =============================================
+// レーダーチャート
+//
+// 軸の数は項目数で固定（基本=6、応用=4、スポーツ=3）。
+// 表示していない・未登録の項目も軸は残し、値は中心、ラベルは「—」にする。
+// =============================================
+function radarSVG(group, skills, size) {
+  const items = group.items;
+  const n = items.length;
+  const pad = size === "lg" ? 56 : 44;     // ラベルのための余白
+  const R = size === "lg" ? 86 : 40;
+  const W = (R + pad) * 2;
+  const H = n === 3 ? R * 1.5 + pad * 2 : (R + pad) * 2 - (n === 4 ? 0 : 8);
+  const cx = W / 2;
+  const cy = n === 3 ? pad + R : H / 2;    // 三角形は上に寄せて余白を詰める
+  const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+  const pt = (i, r) => [cx + Math.cos(ang(i)) * r, cy + Math.sin(ang(i)) * r];
+  const poly = (r) => items.map((_, i) => pt(i, r).map((v) => v.toFixed(1)).join(",")).join(" ");
+
+  // 目盛り（1〜5段）と軸
+  const rings = [1, 2, 3, 4, 5].map((lv) =>
+    `<polygon class="rd-ring${lv === 5 ? " outer" : ""}" points="${poly((R * lv) / 5)}"/>`).join("");
+  const spokes = items.map((_, i) => {
+    const [x, y] = pt(i, R);
+    return `<line class="rd-spoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+  }).join("");
+
+  // 値
+  const vals = items.map((it) => (skills[it.key] === undefined ? null : Number(skills[it.key])));
+  const dataPts = vals.map((v, i) => pt(i, (R * (v ?? 0)) / 5));
+  const area = `<polygon class="rd-area" points="${dataPts.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ")}"/>`;
+  const dots = dataPts.map(([x, y], i) => vals[i] === null ? "" :
+    `<circle class="rd-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${size === "lg" ? 3.4 : 2.8}"/>`).join("");
+
+  // ラベル（項目名＋段階）。角度に合わせて寄せる
+  const labels = items.map((it, i) => {
+    const [x, y] = pt(i, R + (size === "lg" ? 16 : 13));
+    const c = Math.cos(ang(i));
+    const s = Math.sin(ang(i));
+    // 三角形の下の2つは、横にはみ出さないよう頂点の真下に置く
+    const below = n === 3 && s > 0.3;
+    const anchor = below || Math.abs(c) < 0.2 ? "middle" : c > 0 ? "start" : "end";
+    const dy = s < -0.5 ? -6 : below || s > 0.5 ? 14 : 3;   // 上の軸は上へ、下の軸は下へ
+    const v = vals[i];
+    return `<text class="rd-lbl" x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}">
+        <tspan class="rd-name">${esc(it.short ?? it.name)}</tspan><tspan class="rd-val${v === null ? " none" : ""}" dx="4">${v === null ? "—" : v}</tspan>
+      </text>`;
+  }).join("");
+
+  return `<svg class="rd rd-${size}" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="${esc(group.title)}：${items.map((it, i) => `${it.name} ${vals[i] ?? "未登録"}`).join("、")}">
+      ${rings}${spokes}${area}${dots}${labels}</svg>`;
+}
+
+function chartsHtml(skills) {
+  const [base, adv, sport] = SKILL_GROUPS;
+  const has = (g) => g.items.some((it) => skills[it.key] !== undefined);
+  const block = (g, size) => `
+    <div class="rd-box${has(g) ? "" : " empty"}">
+      <p class="sk-gt">${g.title}</p>
+      ${radarSVG(g, skills, size)}
+    </div>`;
+  return `
+    <div class="rd-wrap">
+      ${block(base, "lg")}
+      <div class="rd-row">${block(adv, "sm")}${block(sport, "sm")}</div>
+    </div>`;
+}
+
+function listHtml(skills) {
+  return SKILL_GROUPS.map((g) => {
+    const rows = g.items.filter((it) => skills[it.key] !== undefined).map((it) => {
+      const lv = Number(skills[it.key]);
+      return `
+        <div class="sk-row">
+          <span class="sk-name">${esc(it.name)}</span>
+          ${meter(lv)}
+          <span class="sk-lv">${esc(levelName(it, lv))}</span>
+        </div>`;
+    }).join("");
+    return rows ? `<div class="sk-group"><p class="sk-gt">${g.title}</p>${rows}</div>` : "";
+  }).join("");
 }
 
 const LOCK = `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
@@ -178,22 +252,16 @@ export function renderBackFace(d, back, opts = {}) {
       </div>`;
   } else {
     const skills = back.skills ?? {};
-    const groups = SKILL_GROUPS.map((g) => {
-      const rows = g.items.filter((it) => skills[it.key] !== undefined).map((it) => {
-        const lv = Number(skills[it.key]);
-        return `
-          <div class="sk-row">
-            <span class="sk-name">${esc(it.name)}</span>
-            ${meter(lv)}
-            <span class="sk-lv">${esc(levelName(it, lv))}</span>
-          </div>`;
-      }).join("");
-      return rows ? `<div class="sk-group"><p class="sk-gt">${g.title}</p>${rows}</div>` : "";
-    }).join("");
-
+    const groups = Object.keys(skills).some((k) => SKILL_BY_KEY[k]);
+    // チャートと一覧を切り替えられる（段階の名前は一覧で見られる）
     body = groups
-      ? `<div class="sk-groups">${groups}</div>
-         <p class="bk-note">自己申告のスキルです</p>`
+      ? `<div class="bk-view" role="tablist">
+           <button class="bk-view-b on" data-view="chart" role="tab" aria-selected="true">チャート</button>
+           <button class="bk-view-b" data-view="list" role="tab" aria-selected="false">一覧</button>
+         </div>
+         <div class="bk-pane" data-pane="chart">${chartsHtml(skills)}</div>
+         <div class="bk-pane" data-pane="list" hidden><div class="sk-groups">${listHtml(skills)}</div></div>
+         <p class="bk-note">自己申告のスキルです（0＝未経験〜5）</p>`
       : `<div class="bk-lock">
            <p>${opts.own
               ? "裏面はまだ空です。<br>登山スキルを登録すると、交換した相手に見せられます。"
@@ -248,6 +316,18 @@ export function bindFlip(root = document) {
   };
 
   btn.addEventListener("click", toggle);
+
+  // 裏面の「チャート｜一覧」
+  back.addEventListener("click", (e) => {
+    const v = e.target.closest("[data-view]");
+    if (!v) return;
+    back.querySelectorAll("[data-view]").forEach((b) => {
+      const on = b === v;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", on);
+    });
+    back.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== v.dataset.view; });
+  });
 
   // 裏面のURL（#back）で開いたら、最初から裏を見せる
   if (location.hash === "#back") {
