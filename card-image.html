@@ -43,7 +43,7 @@
      画像にするときは外側の影だけにする */
   .frame .hero { margin-top: 0; box-shadow: 0 8px 24px rgba(20,40,32,.22); }
   .frame-foot {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
     margin-top: 12px; padding: 0 4px;
     font-size: 10.5px; color: var(--c-mut, var(--stone));
   }
@@ -124,7 +124,6 @@ $("#frame").innerHTML = `
     linked: false,
   })}
   <div class="frame-foot">
-    <b>#ハイカーズカード</b>
     <span>${esc(url.replace(/^https?:\/\//, ""))}</span>
   </div>`;
 

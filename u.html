@@ -157,7 +157,7 @@ if (!publicId) {
       ? `<a class="btn ghost bk-btn" href="/login.html">ログインする</a>`
       : `<a class="btn ghost bk-btn" href="/exchange.html">カードを交換する</a>`;
     $("#hero").innerHTML = renderFlipCard(
-      renderHeroCard(data, opts),
+      renderHeroCard(data, { ...opts, flipBtn: true }),
       renderBackFace(data, backRes.data, { own: isOwn, lockAction }));
     $("#details").innerHTML = renderDetails(data, opts);
 

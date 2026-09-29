@@ -11,7 +11,7 @@
 // ※ 裏面の情報は、登山相性のスコアには使っていない。
 // =============================================
 
-import { esc, patternSVG, BG } from "./card.js";
+import { esc, patternSVG, BG, flipToggle } from "./card.js";
 
 export const SKILL_GROUPS = [
   {
@@ -231,7 +231,7 @@ export function renderBackFace(d, back, opts = {}) {
   const bg = BG[d.card_bg] ? d.card_bg : "contour";
   const head = `
     <div class="hero-top">
-      <span class="hero-brand">#ハイカーズカード</span>
+      ${flipToggle(false)}
       <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
     </div>
     <div class="bk-title">
@@ -274,48 +274,45 @@ export function renderBackFace(d, back, opts = {}) {
   <div class="hero hero-back t-${bg}">
     ${patternSVG(bg)}
     <div class="hero-in">${head}${body}</div>
+    <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>
   </div>`;
 }
 
 // =============================================
 // 裏返せるカード
 // =============================================
-const FLIP_IC = `<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15"/><path d="M4 20v-5h5"/></svg>`;
 
 export function renderFlipCard(frontHTML, backHTML) {
   return `
     <div class="flip" id="flip">
       <div class="flip-face front">${frontHTML}</div>
       <div class="flip-face back" aria-hidden="true">${backHTML}</div>
-    </div>
-    <button class="flip-btn" id="flip-btn" aria-pressed="false">
-      ${FLIP_IC}<span>裏面を見る</span>
-    </button>`;
+    </div>`;
 }
 
 export function bindFlip(root = document) {
   const flip = root.querySelector("#flip");
-  const btn = root.querySelector("#flip-btn");
-  if (!flip || !btn) return;
+  if (!flip) return;
 
   const front = flip.querySelector(".flip-face.front");
   const back = flip.querySelector(".flip-face.back");
 
-  const toggle = () => {
-    const toBack = !flip.classList.contains("flipped");
-    // 裏返す間だけ、ゆっくり回るアニメーションにする（普段は傾きに素早く追従させる）
-    flip.classList.add("flipping");
+  const set = (toBack) => {
     flip.classList.toggle("flipped", toBack);
-    clearTimeout(flip._t);
-    flip._t = setTimeout(() => flip.classList.remove("flipping"), 800);
-
     front.setAttribute("aria-hidden", toBack);
     back.setAttribute("aria-hidden", !toBack);
-    btn.setAttribute("aria-pressed", toBack);
-    btn.querySelector("span").textContent = toBack ? "表面にもどす" : "裏面を見る";
   };
 
-  btn.addEventListener("click", toggle);
+  // カードの左上のボタン（表・裏それぞれにある）で裏返す
+  flip.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-flip]")) return;
+    e.stopPropagation();
+    // 裏返す間だけ、ゆっくり回るアニメーションにする（普段は傾きに素早く追従させる）
+    flip.classList.add("flipping");
+    set(!flip.classList.contains("flipped"));
+    clearTimeout(flip._t);
+    flip._t = setTimeout(() => flip.classList.remove("flipping"), 800);
+  });
 
   // 裏面の「チャート｜一覧」
   back.addEventListener("click", (e) => {
@@ -330,11 +327,5 @@ export function bindFlip(root = document) {
   });
 
   // 裏面のURL（#back）で開いたら、最初から裏を見せる
-  if (location.hash === "#back") {
-    flip.classList.add("flipped");
-    front.setAttribute("aria-hidden", "true");
-    back.setAttribute("aria-hidden", "false");
-    btn.setAttribute("aria-pressed", "true");
-    btn.querySelector("span").textContent = "表面にもどす";
-  }
+  if (location.hash === "#back") set(true);
 }

@@ -283,7 +283,7 @@
 .slot-btn:disabled { opacity: .3; cursor: default; }
 .slot-btn.x svg { stroke: var(--c-mut, var(--stone)); }
 
-/* ---------- 登ってみたい山：選択中のトレイ ---------- */
+/* ---------- 行ってみたい山：選択中のトレイ ---------- */
 .wish-tray { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 34px; }
 .wish-chip {
   display: inline-flex; align-items: center; gap: 6px; font-family: var(--font);
@@ -336,7 +336,7 @@ body.t-night .mt-item.wish.on { background: rgba(127,181,212,.14); }
         <div class="tabs" role="tablist">
           <button class="tab" data-tab="climbed" role="tab">登った山<b id="tn-climbed">0</b></button>
           <button class="tab" data-tab="fav"     role="tab">行ってよかった山<b id="tn-fav">0/5</b></button>
-          <button class="tab" data-tab="wish"    role="tab">登ってみたい山<b id="tn-wish">0/5</b></button>
+          <button class="tab" data-tab="wish"    role="tab">行ってみたい山<b id="tn-wish">0/5</b></button>
         </div>
 
         <!-- 登った山のタブだけ、達成率のリングを出す -->
@@ -439,7 +439,7 @@ if (profile?.card_bg) applyTheme(profile.card_bg);
 
 // どれか1つでも失敗したら止める。
 // 空のまま保存すると、登録済みの山を消してしまうため
-for (const [res, label] of [[mtRes, "山のデータ"], [climbedRes, "登った山"], [wishRes, "登ってみたい山"]]) {
+for (const [res, label] of [[mtRes, "山のデータ"], [climbedRes, "登った山"], [wishRes, "行ってみたい山"]]) {
   if (res.error) {
     window.__showFatal(`${label}を読み込めませんでした`, res.error.message);
     throw res.error;
@@ -747,7 +747,7 @@ function drawPanel() {
     return;
   }
 
-  // 登ってみたい山
+  // 行ってみたい山
   const chips = [...wish].map((id) => byId.get(id)).filter(Boolean)
     .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0))
     .map((m) => `<button class="wish-chip" data-rm-wish="${m.id}" aria-label="${esc(m.name)}を外す">
@@ -780,7 +780,7 @@ $("#panel").addEventListener("click", (e) => {
     return;
   }
 
-  // 登ってみたい山を外す
+  // 行ってみたい山を外す
   const chip = e.target.closest("[data-rm-wish]");
   if (chip) {
     wish.delete(Number(chip.dataset.rmWish));
@@ -907,10 +907,10 @@ $("#list").addEventListener("click", (e) => {
       }
     } else {
       climbed.add(id);
-      // 登った山に入れたら、登ってみたい山からは外す
+      // 登った山に入れたら、行ってみたい山からは外す
       if (wish.has(id)) {
         wish.delete(id);
-        toast(`${m.name}を「登ってみたい山」から外しました。登頂おめでとうございます！`);
+        toast(`${m.name}を「行ってみたい山」から外しました。登頂おめでとうございます！`);
       }
     }
   } else if (tab === "fav") {

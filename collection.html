@@ -54,7 +54,7 @@
           mask-image: linear-gradient(to bottom, #000 calc(100% - 84px), transparent calc(100% - 26px));
 }
 .deck-more {
-  position: absolute; left: 50%; bottom: 14px; z-index: 2; transform: translateX(-50%);
+  position: absolute; right: 16px; bottom: 12px; z-index: 2;
   font-size: 10.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap;
   color: var(--c-fg2); background: var(--c-bg); border: 1px solid var(--c-div);
   border-radius: 999px; padding: 4px 12px; box-shadow: 0 2px 6px rgba(0,0,0,.08);
@@ -63,6 +63,8 @@
 /* 手前のカードだけ操作できるようにする */
 .deck-item:not(.front) { pointer-events: none; }
 .deck-item.front { cursor: pointer; }
+/* 横の操作はスワイプとして受け取り、縦の操作はページのスクロールにする */
+.deck { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
   .deck-hint {
     text-align: center; font-size: 11px; color: var(--c-mut, var(--stone));
     margin-top: 10px;
@@ -210,6 +212,9 @@ let frontIndex = 0;
 // これも drawDeck() より前に宣言しておく
 const BELOW_DECK = 150;
 
+// スワイプのリスナーを付けたかどうか（これも drawDeck() より前に宣言する）
+let swipeBound = false;
+
 if (!cards.length) {
   $("#body").innerHTML = `
     <div class="deck-empty">
@@ -324,11 +329,12 @@ function layout() {
   });
 }
 
+// めくる。ページのスクロール位置は動かさない
+// （以前は毎回ページの先頭へ戻していたため、何枚かめくると位置がずれて操作しづらかった）
 function cycle(dir) {
   const n = cards.length;
   frontIndex = (frontIndex + dir + n) % n;
   drawDeck();
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function updateLabels() {
@@ -346,50 +352,69 @@ function fmtDate(iso) {
 
 // =============================================
 // スワイプでめくる
+//
+// ・横に動かしたときだけカードを動かし、縦の動きはページのスクロールに任せる
+//   （.deck に touch-action: pan-y を付けて、横の操作をこちらで受け取る）
+// ・リスナーは最初の1回だけ付ける（描き直すたびに増えないように）
+// ・ほとんど動かさずに離したら「押した」とみなして、その人のページを開く
 // =============================================
 function bindSwipe() {
-  const el = document.querySelector(".deck-item.front");
-  if (!el) return;
+  if (swipeBound) return;
+  swipeBound = true;
 
-  const base = el.dataset.base;
-  const openUrl = `/u/${encodeURIComponent(el.dataset.uid)}`;
+  const deck = $("#deck");
+  let el = null, base = "", sx = 0, sy = 0, dx = 0, axis = null, pid = null;
 
-  let sx = 0, dx = 0, dragging = false, moved = false;
-
-  const start = (x) => {
-    sx = x; dx = 0; moved = false; dragging = true;
+  deck.addEventListener("pointerdown", (e) => {
+    const front = e.target.closest(".deck-item.front");
+    if (!front || (e.pointerType === "mouse" && e.button !== 0)) return;
+    el = front; base = el.dataset.base;
+    sx = e.clientX; sy = e.clientY; dx = 0; axis = null; pid = e.pointerId;
     el.style.transition = "none";
-  };
-  const move = (x) => {
-    if (!dragging) return;
-    dx = x - sx;
-    if (Math.abs(dx) > 6) moved = true;      // 6pxを超えたらスワイプ扱い
-    if (cards.length < 2) return;            // 1枚だけなら動かさない
-    el.style.transform = `${base} translateX(${dx}px) rotate(${dx * 0.03}deg)`;
-  };
-  const end = () => {
-    if (!dragging) return;
-    dragging = false;
-    el.style.transition = "";
+  });
 
-    // ほとんど動いていなければ「押した」とみなして、その人のページへ
-    if (!moved) {
-      location.href = openUrl;
+  deck.addEventListener("pointermove", (e) => {
+    if (!el || e.pointerId !== pid) return;
+    const mx = e.clientX - sx, my = e.clientY - sy;
+
+    // 最初に大きく動いた向きで、横スワイプか縦スクロールかを決める
+    if (!axis && Math.hypot(mx, my) > 8) {
+      axis = Math.abs(mx) > Math.abs(my) ? "x" : "y";
+      if (axis === "x") deck.setPointerCapture(pid);
+    }
+    if (axis !== "x") return;
+
+    dx = mx;
+    if (cards.length < 2) return;           // 1枚だけなら動かさない
+    el.style.transform = `${base} translateX(${dx}px) rotate(${dx * 0.03}deg)`;
+  });
+
+  const end = (e) => {
+    if (!el || (e && e.pointerId !== pid)) return;
+    const target = el;
+    el = null;
+    target.style.transition = "";
+
+    if (axis === null) {                     // ほとんど動いていない＝押した
+      location.href = `/u/${encodeURIComponent(target.dataset.uid)}`;
       return;
     }
-
-    if (cards.length > 1 && Math.abs(dx) > 70) cycle(dx < 0 ? 1 : -1);
-    else el.style.transform = base;
-    dx = 0;
+    if (axis === "x" && cards.length > 1 && Math.abs(dx) > 70) {
+      cycle(dx < 0 ? 1 : -1);
+    } else {
+      target.style.transform = base;         // 元の位置に戻す
+    }
   };
+  deck.addEventListener("pointerup", end);
+  deck.addEventListener("pointercancel", (e) => {   // 縦スクロールに切り替わったときなど
+    if (!el || e.pointerId !== pid) return;
+    el.style.transition = "";
+    el.style.transform = base;
+    el = null;
+  });
 
-  el.addEventListener("mousedown", (e) => { e.preventDefault(); start(e.clientX); });
-  window.addEventListener("mousemove", (e) => move(e.clientX));
-  window.addEventListener("mouseup", end);
-
-  el.addEventListener("touchstart", (e) => start(e.touches[0].clientX), { passive: true });
-  el.addEventListener("touchmove",  (e) => move(e.touches[0].clientX),  { passive: true });
-  el.addEventListener("touchend", end);
+  // リンクの画像などをドラッグしてしまわないように
+  deck.addEventListener("dragstart", (e) => e.preventDefault());
 }
 </script>
 </body>

@@ -109,7 +109,7 @@ profile = await applyPendingDiagnosis(profile);
 // 未ログインのまま開いた交換URLがあれば、ここで交換する
 const justExchanged = await applyPendingExchange();
 
-// 登った山・好きな山・登りたい山
+// 登った山・好きな山・行ってみたい山
 const [climbedRes, wishRes, cntRes, colRes, backRes] = await Promise.all([
   supabase.from("climbed_mountains")
           .select("is_favorite, favorite_rank, mountains(name, meizan_rank, elevation)")
@@ -130,7 +130,7 @@ if (climbedRes.error) {
   throw climbedRes.error;
 }
 if (wishRes.error) {
-  console.warn("登りたい山を読み込めませんでした:", wishRes.error.message);
+  console.warn("行ってみたい山を読み込めませんでした:", wishRes.error.message);
 }
 
 const byElev = (a, b) => (b.elevation ?? 0) - (a.elevation ?? 0);
@@ -210,7 +210,7 @@ const cardOpts = {
 
 $("#owner").innerHTML = renderOwnerBar("own", cardData);
 $("#hero").innerHTML = renderFlipCard(
-  renderHeroCard(cardData, cardOpts),
+  renderHeroCard(cardData, { ...cardOpts, flipBtn: true }),
   renderBackFace(cardData, backRes.data, { own: true }));
 enableTilt($("#flip"));
 bindFlip();

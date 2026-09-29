@@ -257,7 +257,22 @@ function sortedFavs(list) {
   return [...(list ?? [])].sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
 }
 
-// 順位のバッジ（1〜3位は金・銀・銅）
+// 1〜3位の冠（金・銀・銅）。4位以下は何も付けない
+export function crown(pos) {
+  if (!pos || pos > 3) return "";
+  const label = ["", "1位", "2位", "3位"][pos];
+  return `<svg class="crown c${pos}" viewBox="0 0 24 24" role="img" aria-label="${label}">
+    <path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.8 10H4.8z"/><rect x="4.6" y="19" width="14.8" height="2" rx="1"/></svg>`;
+}
+
+// カードの左上に置く「裏返す」ボタン（円状の矢印＋2文字）
+export const FLIP_IC = `<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15"/><path d="M4 20v-5h5"/></svg>`;
+export function flipToggle(toBack) {
+  const label = toBack ? "裏面" : "表面";
+  return `<button class="flip-toggle" data-flip aria-label="${label}を見る">${FLIP_IC}<span>${label}</span></button>`;
+}
+
+// 順位のバッジ（数字）
 function posBadge(pos) {
   if (!pos) return "";
   return `<span class="pos pos-${pos <= 3 ? pos : "n"}">${pos}</span>`;
@@ -267,7 +282,7 @@ function posBadge(pos) {
 // ヒーローカード（縦長・要約）
 //
 // 背景の模様と、動物ごとの足跡を敷く。
-// 行ってよかった山・登ってみたい山は省略せず全件載せる（各5座まで）。
+// 行ってよかった山・行ってみたい山は省略せず全件載せる（各5座まで）。
 // =============================================
 export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
@@ -309,7 +324,7 @@ export function renderHeroCard(d, opts = {}) {
 
     <div class="hero-in">
       <div class="hero-top">
-        <span class="hero-brand">#ハイカーズカード</span>
+        ${opts.flipBtn ? flipToggle(true) : "<span></span>"}
         <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
       </div>
 
@@ -330,16 +345,17 @@ export function renderHeroCard(d, opts = {}) {
 
       ${favs.length ? blk("section-mountains", `
         <p class="hero-lbl">${STAR}行ってよかった山</p>
-        <ol class="hero-favs">
-          ${favs.map((m) => `<li>${posBadge(m.pos)}<span>${esc(m.name)}</span></li>`).join("")}
-        </ol>`) : ""}
+        <div class="mini-tags">
+          ${favs.map((m) => `<span class="mini-tag fav">${crown(m.pos)}${esc(m.name)}</span>`).join("")}
+        </div>`) : ""}
 
       ${wish.length ? blk("section-mountains", `
-        <p class="hero-lbl">${FLAG}登ってみたい山</p>
+        <p class="hero-lbl">${FLAG}行ってみたい山</p>
         <div class="mini-tags">
           ${wish.map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`).join("")}
         </div>`) : ""}
     </div>
+    <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>
   </div>`;
 }
 
@@ -436,7 +452,7 @@ function mountainsSection(d, opts) {
     return `
     <section class="det" id="section-mountains">
       <div class="det-h"><h2>山リスト</h2></div>
-      <p class="det-empty">行ってよかった山・登ってみたい山を<br>それぞれ5座まで載せられます。
+      <p class="det-empty">行ってよかった山・行ってみたい山を<br>それぞれ5座まで載せられます。
         <a href="/mountains.html#fav">登録する</a></p>
     </section>`;
   }
@@ -449,12 +465,12 @@ function mountainsSection(d, opts) {
       <div class="d-tags">${tags(fav, "fav", STAR, opts.overlaps?.favorites)}</div>
     </div>` : ""}
     ${wish.length ? `<div class="d-card">
-      <p class="d-sub first">登ってみたい山</p>
+      <p class="d-sub first">行ってみたい山</p>
       <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
     </div>` : ""}
     ${opts.own && (!fav.length || !wish.length) ? `
       <p class="det-empty">
-        ${!fav.length ? "行ってよかった山" : "登ってみたい山"}がまだ未登録です。
+        ${!fav.length ? "行ってよかった山" : "行ってみたい山"}がまだ未登録です。
         <a href="/mountains.html#${!fav.length ? "fav" : "wish"}">登録する</a>
       </p>` : ""}
   </section>`;
@@ -462,9 +478,9 @@ function mountainsSection(d, opts) {
 
 // overlaps: { 山名: [{ name, public_id }] }
 function tags(list, cls, icon, overlaps) {
-  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
+  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も行ってみたい山にしています";
   return list.map((m) => {
-    const lead = cls === "fav" && m.pos ? posBadge(m.pos) : icon;
+    const lead = cls === "fav" ? crown(m.pos) : icon;
     const who = overlaps?.[m.name];
     if (!who?.length) return `<span class="d-tag ${cls}">${lead}${esc(m.name)}</span>`;
     const links = who.slice(0, 4)
