@@ -37,45 +37,72 @@
   .ske-name { flex: 1; font-size: 14px; font-weight: 700; line-height: 1.4; }
   .ske-name span { display: block; font-size: 10.5px; font-weight: 400; color: var(--c-mut); margin-top: 1px; }
 
-  /* 表示／非表示 */
-  .ske-vis { flex: none; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
-    font-family: var(--font); font-size: 11px; font-weight: 600; border-radius: 999px;
-    padding: 5px 10px; border: 1px solid var(--c-div); background: none; color: var(--c-fg); }
-  .ske-vis svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;
-    stroke-linecap: round; stroke-linejoin: round; }
-  .ske-vis.off { color: var(--c-mut); }
-  .ske-vis:disabled { opacity: .35; cursor: default; }
+  /* 表示／非表示（チェックボックス） */
+  .ske-chk { flex: none; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    font-size: 11.5px; font-weight: 600; color: var(--c-fg); padding: 4px 0; user-select: none; }
+  .ske-chk input { appearance: none; -webkit-appearance: none; margin: 0; cursor: pointer;
+    width: 20px; height: 20px; border-radius: 6px; border: 1.6px solid var(--c-div);
+    background: var(--c-bg); display: grid; place-content: center; transition: background .15s, border-color .15s; }
+  .ske-chk input::after { content: ""; width: 10px; height: 6px; margin-top: -2px;
+    border-left: 2.2px solid var(--c-bg); border-bottom: 2.2px solid var(--c-bg);
+    transform: rotate(-45deg) scale(0); transition: transform .12s; }
+  .ske-chk input:checked { background: var(--c-fg); border-color: var(--c-fg); }
+  .ske-chk input:checked::after { transform: rotate(-45deg) scale(1); }
+  .ske-chk input:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  .ske-chk.disabled { opacity: .35; cursor: default; }
+  .ske-chk.disabled input { cursor: default; }
 
-  /* 段階の選択：未経験 ＋ 5段のメーター */
-  .ske-seg { display: flex; gap: 6px; margin-top: 12px; align-items: stretch; }
-  .ske-zero { flex: none; font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer;
-    border-radius: 10px; padding: 0 10px; border: 1px solid var(--c-div); background: none; color: var(--c-fg2); }
-  .ske-zero.cur { background: var(--c-chip); color: var(--c-chipfg); border-color: transparent; }
-  .ske-steps { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-  .ske-step { height: 38px; border-radius: 10px; border: none; cursor: pointer;
-    font-family: var(--mono); font-size: 13px; font-weight: 700;
-    background: var(--c-soft); color: var(--c-mut); transition: background .15s, color .15s; }
-  .ske-step.on { background: var(--c-fg); color: var(--c-bg); opacity: .55; }
-  .ske-step.cur { opacity: 1; }
-  .ske-step:focus-visible, .ske-zero:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  /* 段階のスライダー（0 = 未経験 〜 5） */
+  .ske-slider { margin-top: 16px; padding: 0 11px; }
+  .ske-range { --p: 0%; -webkit-appearance: none; appearance: none; display: block;
+    width: 100%; height: 28px; margin: 0; background: none; cursor: pointer; touch-action: pan-y; }
+  .ske-range:focus { outline: none; }
+  /* つまみの左側だけ塗る（--p を JS で更新） */
+  .ske-range::-webkit-slider-runnable-track { height: 6px; border-radius: 99px;
+    background: linear-gradient(to right, var(--c-fg) var(--p), var(--c-div) var(--p)); }
+  .ske-range::-moz-range-track { height: 6px; border-radius: 99px; background: var(--c-div); }
+  .ske-range::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--c-fg); }
+  .ske-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px;
+    border-radius: 50%; background: var(--c-bg); border: 2px solid var(--c-fg);
+    box-shadow: 0 2px 6px rgba(0,0,0,.18); transition: transform .12s; }
+  .ske-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--c-bg);
+    border: 2px solid var(--c-fg); box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+  .ske-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+  .ske-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(224,163,59,.45); }
+
+  /* 目盛り（押しても選べる） */
+  .ske-ticks { display: flex; justify-content: space-between; margin: 4px -11px 0; }
+  .ske-tick { width: 44px; text-align: center; font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--c-mut); background: none; border: none; cursor: pointer; padding: 2px 0; }
+  .ske-tick.zero { font-family: var(--font); font-size: 10px; }
+  .ske-tick.cur { color: var(--c-fg); }
+
+  /* 未設定：スライダーを薄くして「ドラッグして選ぶ」と案内 */
+  .ske.unset .ske-range::-webkit-slider-runnable-track { background: var(--c-div); }
+  .ske.unset .ske-range::-webkit-slider-thumb { border-color: var(--c-mut); border-style: dashed; box-shadow: none; }
+  .ske.unset .ske-range::-moz-range-progress { background: transparent; }
+  .ske.unset .ske-range::-moz-range-thumb { border-color: var(--c-mut); border-style: dashed; box-shadow: none; }
+  .ske.unset .ske-tick.cur { color: var(--c-mut); }
 
   .ske-desc { font-size: 12px; line-height: 1.8; margin-top: 10px; color: var(--c-fg2); min-height: 1.8em; }
   .ske-desc b { color: var(--c-fg); margin-right: 6px; }
   .ske-desc.none { color: var(--c-mut); }
 
-  .ske-all { margin-top: 6px; font-size: 11px; color: var(--c-mut); }
-  .ske-all summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
-  .ske-all summary::-webkit-details-marker { display: none; }
-  .ske-all summary::after { content: "▾"; font-size: 10px; }
-  .ske-all[open] summary::after { content: "▴"; }
-  .ske-all ol { list-style: none; margin-top: 6px; }
-  .ske-all li { display: grid; grid-template-columns: 1.6em 7.5em 1fr; gap: 6px; padding: 4px 0;
-    border-top: 1px solid var(--c-div); line-height: 1.6; }
-  .ske-all li b { font-family: var(--mono); color: var(--c-fg); }
-  .ske-all li span:nth-child(2) { color: var(--c-fg); font-weight: 600; }
+  /* 段階の目安（常に表示。いまの段階を強調、押しても選べる） */
+  .ske-guide { list-style: none; margin-top: 10px; border-top: 1px solid var(--c-div); }
+  .ske-guide li { display: grid; grid-template-columns: 1.4em 7.2em 1fr; gap: 6px; align-items: baseline;
+    font-size: 11px; line-height: 1.6; color: var(--c-mut); padding: 6px 8px; margin: 0 -8px;
+    border-radius: 8px; cursor: pointer; transition: background .15s, color .15s; }
+  .ske-guide li + li { border-top: 1px solid var(--c-div); }
+  .ske-guide li b { font-family: var(--mono); color: var(--c-fg2); }
+  .ske-guide li .gn { color: var(--c-fg2); font-weight: 600; }
+  .ske-guide li.cur { background: var(--c-soft); color: var(--c-fg); }
+  .ske-guide li.cur b, .ske-guide li.cur .gn { color: var(--c-fg); }
+  .ske-guide li.cur + li { border-top-color: transparent; }
+  .ske.unset .ske-guide li.cur { background: none; color: var(--c-mut); }
 
   .ske-clear { font-family: var(--font); font-size: 11px; color: var(--c-mut); background: none; border: none;
-    cursor: pointer; padding: 2px 0; margin-left: 12px; text-decoration: underline; text-underline-offset: 2px; }
+    cursor: pointer; padding: 2px 0; margin-top: 8px; text-decoration: underline; text-underline-offset: 2px; }
 
   .save-bar { position: sticky; bottom: 0; margin: 28px -22px 0; padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(to bottom, transparent, var(--c-page) 28%); }
@@ -94,7 +121,8 @@
   <div id="main" hidden>
     <h1>カード裏面の編集</h1>
     <p class="sk-intro">登山スキルを<b>5段階</b>で自己申告します。<br>
-      裏面は<b>カードを交換した相手だけ</b>が見られます。項目ごとに表示・非表示を選べます。</p>
+      裏面は<b>カードを交換した相手だけ</b>が見られます。項目ごとに表示・非表示を選べます。<br>
+      バーを<b>ドラッグ</b>して、未経験〜5の中から選んでください。</p>
 
     <div id="groups"></div>
 
@@ -150,41 +178,83 @@ for (const [k, v] of Object.entries(row?.skills ?? {})) {
 }
 const original = JSON.stringify(state);
 
-const EYE = {
-  on:  `<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`,
-  off: `<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.7-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`,
-};
+// 目安の一覧（0 = 未経験 も含めて、スライダーと同じ 0〜5 の6段）
+const guideRows = (it) => [
+  [0, "未経験", "まだ経験はない（これから挑戦したい）"],
+  ...it.levels.map(([n, d], i) => [i + 1, n, d]),
+];
 
 function itemHtml(it) {
   const s = state[it.key];
-  const lv = s ? s.level : null;
-  const vis = s ? s.visible : true;
+  const lv = s ? s.level : 0;
   return `
     <div class="ske${s ? "" : " unset"}" data-key="${it.key}">
       <div class="ske-h">
         <p class="ske-name">${esc(it.name)}<span>${esc(it.desc)}</span></p>
-        <button class="ske-vis${vis ? "" : " off"}" data-vis ${s ? "" : "disabled"}
-                aria-pressed="${vis}" aria-label="${esc(it.name)}を裏面に${vis ? "表示中" : "非表示"}">
-          ${vis ? EYE.on : EYE.off}<span>${vis ? "表示" : "非表示"}</span>
-        </button>
+        <label class="ske-chk${s ? "" : " disabled"}">
+          <input type="checkbox" data-vis ${s && s.visible !== false ? "checked" : ""} ${s ? "" : "disabled"}>
+          裏面に表示
+        </label>
       </div>
-      <div class="ske-seg">
-        <button class="ske-zero${lv === 0 ? " cur" : ""}" data-lv="0">未経験</button>
-        <div class="ske-steps">
-          ${[1, 2, 3, 4, 5].map((i) => `
-            <button class="ske-step${lv !== null && i <= lv ? " on" : ""}${lv === i ? " cur" : ""}"
-                    data-lv="${i}" aria-label="段階${i}：${esc(it.levels[i - 1][0])}">${i}</button>`).join("")}
+
+      <div class="ske-slider">
+        <input class="ske-range" type="range" min="0" max="5" step="1" value="${lv}"
+               aria-label="${esc(it.name)}の段階（0＝未経験〜5）"
+               aria-valuetext="${esc(lv === 0 ? "未経験" : `${lv} ${levelName(it, lv)}`)}">
+        <div class="ske-ticks">
+          ${[0, 1, 2, 3, 4, 5].map((i) => `
+            <button class="ske-tick${i === 0 ? " zero" : ""}${i === lv ? " cur" : ""}" data-lv="${i}"
+                    tabindex="-1" aria-hidden="true">${i === 0 ? "未経験" : i}</button>`).join("")}
         </div>
       </div>
-      <p class="ske-desc${s ? "" : " none"}">${s
-        ? `<b>${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</b>${esc(levelDesc(it, lv))}`
-        : "未設定（裏面には載りません）"}</p>
-      <details class="ske-all">
-        <summary>段階の目安を見る</summary>
-        <ol>${it.levels.map(([n, d], i) => `<li><b>${i + 1}</b><span>${esc(n)}</span><span>${esc(d)}</span></li>`).join("")}</ol>
-      </details>
-      ${s ? `<button class="ske-clear" data-clear>未設定にもどす</button>` : ""}
+
+      <p class="ske-desc"></p>
+
+      <ol class="ske-guide">
+        ${guideRows(it).map(([i, n, d]) => `
+          <li data-lv="${i}"><b>${i === 0 ? "0" : i}</b><span class="gn">${esc(n)}</span><span>${esc(d)}</span></li>`).join("")}
+      </ol>
+
+      <button class="ske-clear" data-clear ${s ? "" : "hidden"}>未設定にもどす</button>
     </div>`;
+}
+
+// 1項目の見た目を、いまの状態に合わせる。
+// ドラッグ中にスライダーを作り直すと指が離れてしまうので、描き直さずに中身だけ更新する
+function sync(key) {
+  const el = document.querySelector(`.ske[data-key="${key}"]`);
+  const it = SKILL_BY_KEY[key];
+  const s = state[key];
+  const lv = s ? s.level : Number(el.querySelector(".ske-range").value);
+
+  el.classList.toggle("unset", !s);
+
+  const range = el.querySelector(".ske-range");
+  range.value = lv;
+  range.style.setProperty("--p", `${(lv / 5) * 100}%`);
+  range.setAttribute("aria-valuetext", lv === 0 ? "未経験" : `${lv} ${levelName(it, lv)}`);
+
+  el.querySelectorAll(".ske-tick").forEach((t) => t.classList.toggle("cur", Number(t.dataset.lv) === lv));
+  el.querySelectorAll(".ske-guide li").forEach((li) => li.classList.toggle("cur", Number(li.dataset.lv) === lv));
+
+  const desc = el.querySelector(".ske-desc");
+  desc.classList.toggle("none", !s);
+  desc.innerHTML = s
+    ? `<b>${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</b>${esc(levelDesc(it, lv))}`
+    : "未設定（裏面には載りません）。バーをドラッグして選んでください";
+
+  const chk = el.querySelector("[data-vis]");
+  chk.disabled = !s;
+  chk.checked = s ? s.visible : false;   // 未設定のうちはチェックなし（登録すると表示オンになる）
+  el.querySelector(".ske-chk").classList.toggle("disabled", !s);
+
+  el.querySelector("[data-clear]").hidden = !s;
+  updateNote();
+}
+
+function setLevel(key, lv) {
+  state[key] = { level: lv, visible: state[key]?.visible ?? true };
+  sync(key);
 }
 
 function draw() {
@@ -193,16 +263,7 @@ function draw() {
       <h2>${g.title}</h2>
       ${g.items.map(itemHtml).join("")}
     </div>`).join("");
-  updateNote();
-}
-
-// 1項目だけ描き直す（開いている「目安」を閉じないように、その項目の中身だけ差し替える）
-function redraw(key) {
-  const el = document.querySelector(`.ske[data-key="${key}"]`);
-  const open = el.querySelector(".ske-all").open;
-  el.outerHTML = itemHtml(SKILL_BY_KEY[key]);
-  if (open) document.querySelector(`.ske[data-key="${key}"] .ske-all`).open = true;
-  updateNote();
+  SKILL_GROUPS.forEach((g) => g.items.forEach((it) => sync(it.key)));
 }
 
 function updateNote() {
@@ -214,26 +275,42 @@ function updateNote() {
     : "まだ何も登録されていません";
 }
 
+// スライダーを動かしたら、その段階で登録する（ドラッグ中も追従）
+$("#groups").addEventListener("input", (e) => {
+  const range = e.target.closest(".ske-range");
+  if (!range) return;
+  setLevel(range.closest(".ske").dataset.key, Number(range.value));
+});
+
+// 未設定の項目は、動かさずに押しただけでも登録する（つまみが0のまま押した場合など）
+$("#groups").addEventListener("pointerdown", (e) => {
+  const range = e.target.closest(".ske-range");
+  if (!range) return;
+  const key = range.closest(".ske").dataset.key;
+  if (!state[key]) setLevel(key, Number(range.value));
+});
+
+// 表示・非表示
+$("#groups").addEventListener("change", (e) => {
+  const chk = e.target.closest("[data-vis]");
+  if (!chk) return;
+  const key = chk.closest(".ske").dataset.key;
+  if (state[key]) { state[key].visible = chk.checked; sync(key); }
+});
+
+// 目盛り・目安の行を押しても選べる。「未設定にもどす」
 $("#groups").addEventListener("click", (e) => {
   const card = e.target.closest(".ske");
   if (!card) return;
   const key = card.dataset.key;
 
-  const lvBtn = e.target.closest("[data-lv]");
-  if (lvBtn) {
-    const lv = Number(lvBtn.dataset.lv);
-    // 選択中の段階をもう一度押したら、未設定に戻す
-    if (state[key]?.level === lv) delete state[key];
-    else state[key] = { level: lv, visible: state[key]?.visible ?? true };
-    return redraw(key);
-  }
-  if (e.target.closest("[data-vis]") && state[key]) {
-    state[key].visible = !state[key].visible;
-    return redraw(key);
-  }
+  const pickEl = e.target.closest(".ske-tick, .ske-guide li");
+  if (pickEl) return setLevel(key, Number(pickEl.dataset.lv));
+
   if (e.target.closest("[data-clear]")) {
     delete state[key];
-    return redraw(key);
+    card.querySelector(".ske-range").value = 0;
+    sync(key);
   }
 });
 
