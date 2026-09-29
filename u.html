@@ -60,7 +60,7 @@
   <div id="main" hidden>
     <div id="owner"></div>
     <div id="hero"></div>
-    <div id="affinity"></div>
+    <div id="af-cta"></div>
     <div id="details"></div>
     <section class="det" id="section-actions">
       <div id="below"></div>
@@ -85,7 +85,9 @@
 <script type="module">
 import { supabase, getUser, signOut } from "/supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions, applyTheme,
-         buildAffinity, renderAffinity, renderOwnerBar, esc } from "/card.js";
+         renderOwnerBar, enableTilt, esc } from "/card.js";
+import { renderBackFace, renderFlipCard, bindFlip } from "/card-back.js";
+import { renderAffinityButton, openAffinitySheet } from "/affinity.js";
 import { mountHeader } from "/header.js";
 
 const $ = (s) => document.querySelector(s);
@@ -127,7 +129,12 @@ if (!publicId) {
     const me = viewer;
 
     // ログインしていれば自分のカードも取っておく（本人判定と共通点に使う）
-    const mine = me ? (await supabase.rpc("get_my_card")).data : null;
+    // 裏面は、本人か交換済みの相手だけ中身が返る（それ以外は鍵つきで返る）
+    const [mineRes, backRes] = await Promise.all([
+      me ? supabase.rpc("get_my_card") : Promise.resolve({ data: null }),
+      supabase.rpc("get_card_back", { p_public_id: data.public_id }),
+    ]);
+    const mine = mineRes.data;
     const isOwn = !!mine && mine.public_id === data.public_id;
 
     document.title = isOwn
@@ -146,13 +153,28 @@ if (!publicId) {
     };
 
     $("#owner").innerHTML = renderOwnerBar(isOwn ? "own-public" : me ? "other" : "guest", data);
-    $("#hero").innerHTML = renderHeroCard(data, opts);
+    const lockAction = backRes.data?.reason === "login"
+      ? `<a class="btn ghost bk-btn" href="/login.html">ログインする</a>`
+      : `<a class="btn ghost bk-btn" href="/exchange.html">カードを交換する</a>`;
+    $("#hero").innerHTML = renderFlipCard(
+      renderHeroCard(data, opts),
+      renderBackFace(data, backRes.data, { own: isOwn, lockAction }));
     $("#details").innerHTML = renderDetails(data, opts);
 
-    // 他人のカードなら、自分との共通点を出す（自分のカードでは出さない）
-    if (mine && !isOwn) {
-      const af = buildAffinity(mine, data);
-      $("#affinity").innerHTML = renderAffinity(af, data.display_name);
+    enableTilt($("#flip"));
+    bindFlip();
+
+    // 他人のカードなら「登山相性をみる」ボタンを出す（自分のカードでは出さない）。
+    // 未ログインでも押せて、シートの中でログインへ誘導する
+    if (!isOwn) {
+      $("#af-cta").innerHTML = renderAffinityButton(data.display_name);
+      $("#af-open").onclick = () => openAffinitySheet({
+        me: mine,
+        other: data,
+        myChar: mine?.type_code ? characterSVG(mine.type_code) : "",
+        otherChar: diagnosed ? characterSVG(data.type_code) : "",
+        loginUrl: "/login.html",
+      });
     }
 
     bindCardInteractions();

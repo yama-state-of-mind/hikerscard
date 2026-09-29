@@ -84,7 +84,8 @@
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
          applyPendingExchange, signOut } from "./supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions,
-         renderOwnerBar, applyTheme, esc } from "./card.js";
+         renderOwnerBar, enableTilt, applyTheme, esc } from "./card.js";
+import { renderBackFace, renderFlipCard, bindFlip } from "./card-back.js";
 import { mountHeader } from "./header.js";
 
 const $ = (s) => document.querySelector(s);
@@ -109,7 +110,7 @@ profile = await applyPendingDiagnosis(profile);
 const justExchanged = await applyPendingExchange();
 
 // 登った山・好きな山・登りたい山
-const [climbedRes, wishRes, cntRes, colRes] = await Promise.all([
+const [climbedRes, wishRes, cntRes, colRes, backRes] = await Promise.all([
   supabase.from("climbed_mountains")
           .select("is_favorite, favorite_rank, mountains(name, meizan_rank, elevation)")
           .eq("user_id", user.id),
@@ -118,6 +119,8 @@ const [climbedRes, wishRes, cntRes, colRes] = await Promise.all([
           .eq("user_id", user.id),
   supabase.rpc("meizan_counts", { p_user: user.id }),
   supabase.rpc("get_my_collection"),
+  // 裏面は、交換した相手から見えるのと同じ内容（表示オンの項目だけ）で出す
+  supabase.rpc("get_card_back", { p_public_id: profile.public_id }),
 ]);
 
 // クエリが失敗していたら、黙って空にせず画面に出す
@@ -206,7 +209,11 @@ const cardOpts = {
 };
 
 $("#owner").innerHTML = renderOwnerBar("own", cardData);
-$("#hero").innerHTML = renderHeroCard(cardData, cardOpts);
+$("#hero").innerHTML = renderFlipCard(
+  renderHeroCard(cardData, cardOpts),
+  renderBackFace(cardData, backRes.data, { own: true }));
+enableTilt($("#flip"));
+bindFlip();
 $("#details").innerHTML = renderDetails(cardData, cardOpts);
 bindCardInteractions();
 

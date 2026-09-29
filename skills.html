@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>カード裏面の編集｜ハイカーズカード</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1E3A31">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ハイカーズカード">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  }
+</script>
+<style>
+  .sk-intro { font-size: 12px; color: var(--c-mut); line-height: 1.9; margin-top: 6px; }
+  .sk-intro b { color: var(--c-fg); }
+
+  .ske-group { margin-top: 26px; }
+  .ske-group > h2 { font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--c-fg2);
+    margin-bottom: 10px; padding-left: 2px; }
+
+  .ske { background: var(--c-bg); border-radius: 18px; padding: 14px 16px 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px -8px rgba(0,0,0,.12); }
+  .ske + .ske { margin-top: 10px; }
+  .ske.unset { background: transparent; box-shadow: none; border: 1px dashed var(--c-div); }
+
+  .ske-h { display: flex; align-items: flex-start; gap: 10px; }
+  .ske-name { flex: 1; font-size: 14px; font-weight: 700; line-height: 1.4; }
+  .ske-name span { display: block; font-size: 10.5px; font-weight: 400; color: var(--c-mut); margin-top: 1px; }
+
+  /* 表示／非表示 */
+  .ske-vis { flex: none; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    font-family: var(--font); font-size: 11px; font-weight: 600; border-radius: 999px;
+    padding: 5px 10px; border: 1px solid var(--c-div); background: none; color: var(--c-fg); }
+  .ske-vis svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .ske-vis.off { color: var(--c-mut); }
+  .ske-vis:disabled { opacity: .35; cursor: default; }
+
+  /* 段階の選択：未経験 ＋ 5段のメーター */
+  .ske-seg { display: flex; gap: 6px; margin-top: 12px; align-items: stretch; }
+  .ske-zero { flex: none; font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer;
+    border-radius: 10px; padding: 0 10px; border: 1px solid var(--c-div); background: none; color: var(--c-fg2); }
+  .ske-zero.cur { background: var(--c-chip); color: var(--c-chipfg); border-color: transparent; }
+  .ske-steps { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .ske-step { height: 38px; border-radius: 10px; border: none; cursor: pointer;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    background: var(--c-soft); color: var(--c-mut); transition: background .15s, color .15s; }
+  .ske-step.on { background: var(--c-fg); color: var(--c-bg); opacity: .55; }
+  .ske-step.cur { opacity: 1; }
+  .ske-step:focus-visible, .ske-zero:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+
+  .ske-desc { font-size: 12px; line-height: 1.8; margin-top: 10px; color: var(--c-fg2); min-height: 1.8em; }
+  .ske-desc b { color: var(--c-fg); margin-right: 6px; }
+  .ske-desc.none { color: var(--c-mut); }
+
+  .ske-all { margin-top: 6px; font-size: 11px; color: var(--c-mut); }
+  .ske-all summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+  .ske-all summary::-webkit-details-marker { display: none; }
+  .ske-all summary::after { content: "▾"; font-size: 10px; }
+  .ske-all[open] summary::after { content: "▴"; }
+  .ske-all ol { list-style: none; margin-top: 6px; }
+  .ske-all li { display: grid; grid-template-columns: 1.6em 7.5em 1fr; gap: 6px; padding: 4px 0;
+    border-top: 1px solid var(--c-div); line-height: 1.6; }
+  .ske-all li b { font-family: var(--mono); color: var(--c-fg); }
+  .ske-all li span:nth-child(2) { color: var(--c-fg); font-weight: 600; }
+
+  .ske-clear { font-family: var(--font); font-size: 11px; color: var(--c-mut); background: none; border: none;
+    cursor: pointer; padding: 2px 0; margin-left: 12px; text-decoration: underline; text-underline-offset: 2px; }
+
+  .save-bar { position: sticky; bottom: 0; margin: 28px -22px 0; padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to bottom, transparent, var(--c-page) 28%); }
+  .save-bar .btn { margin-top: 0; }
+  .save-note { font-size: 11px; color: var(--c-mut); text-align: center; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="wrap has-hd">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>読み込んでいます…</p>
+  </div>
+
+  <div id="main" hidden>
+    <h1>カード裏面の編集</h1>
+    <p class="sk-intro">登山スキルを<b>5段階</b>で自己申告します。<br>
+      裏面は<b>カードを交換した相手だけ</b>が見られます。項目ごとに表示・非表示を選べます。</p>
+
+    <div id="groups"></div>
+
+    <div class="save-bar">
+      <p class="save-note" id="save-note"></p>
+      <button class="btn sun" id="save">保存する</button>
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.__showFatal = function (label, detail) {
+  var el = document.getElementById("loading");
+  if (!el) return;
+  el.innerHTML = '<p class="msg error" style="text-align:left"><b>' + label + '</b><br>' +
+                 String(detail).replace(/[<>&]/g, "") + '</p>';
+  el.hidden = false;
+};
+window.addEventListener("error", (e) =>
+  window.__showFatal("読み込みに失敗しました", (e.message || "") + " " + (e.filename || "")));
+window.addEventListener("unhandledrejection", (e) =>
+  window.__showFatal("エラーが発生しました", (e.reason && (e.reason.message || e.reason)) || ""));
+</script>
+
+<script type="module">
+import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
+import { mountHeader } from "./header.js";
+import { applyTheme, esc } from "./card.js";
+import { SKILL_GROUPS, SKILL_BY_KEY, levelName, levelDesc } from "./card-back.js";
+
+const $ = (s) => document.querySelector(s);
+
+const user = await getUser();
+if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
+
+const profile = await getMyProfile();
+mountHeader(signOut, { shareId: profile?.public_id });
+if (profile?.card_bg) applyTheme(profile.card_bg);
+
+// 保存済みの裏面（本人だけが直接読める）
+const { data: row, error } = await supabase
+  .from("card_backs").select("skills").eq("user_id", user.id).maybeSingle();
+if (error) {
+  window.__showFatal("裏面を読み込めませんでした", error.message);
+  throw error;
+}
+
+// state[キー] = { level: 0〜5, visible: bool }。未設定の項目はキーが無い
+const state = {};
+for (const [k, v] of Object.entries(row?.skills ?? {})) {
+  if (SKILL_BY_KEY[k]) state[k] = { level: Number(v.level), visible: v.visible !== false };
+}
+const original = JSON.stringify(state);
+
+const EYE = {
+  on:  `<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  off: `<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.7-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`,
+};
+
+function itemHtml(it) {
+  const s = state[it.key];
+  const lv = s ? s.level : null;
+  const vis = s ? s.visible : true;
+  return `
+    <div class="ske${s ? "" : " unset"}" data-key="${it.key}">
+      <div class="ske-h">
+        <p class="ske-name">${esc(it.name)}<span>${esc(it.desc)}</span></p>
+        <button class="ske-vis${vis ? "" : " off"}" data-vis ${s ? "" : "disabled"}
+                aria-pressed="${vis}" aria-label="${esc(it.name)}を裏面に${vis ? "表示中" : "非表示"}">
+          ${vis ? EYE.on : EYE.off}<span>${vis ? "表示" : "非表示"}</span>
+        </button>
+      </div>
+      <div class="ske-seg">
+        <button class="ske-zero${lv === 0 ? " cur" : ""}" data-lv="0">未経験</button>
+        <div class="ske-steps">
+          ${[1, 2, 3, 4, 5].map((i) => `
+            <button class="ske-step${lv !== null && i <= lv ? " on" : ""}${lv === i ? " cur" : ""}"
+                    data-lv="${i}" aria-label="段階${i}：${esc(it.levels[i - 1][0])}">${i}</button>`).join("")}
+        </div>
+      </div>
+      <p class="ske-desc${s ? "" : " none"}">${s
+        ? `<b>${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</b>${esc(levelDesc(it, lv))}`
+        : "未設定（裏面には載りません）"}</p>
+      <details class="ske-all">
+        <summary>段階の目安を見る</summary>
+        <ol>${it.levels.map(([n, d], i) => `<li><b>${i + 1}</b><span>${esc(n)}</span><span>${esc(d)}</span></li>`).join("")}</ol>
+      </details>
+      ${s ? `<button class="ske-clear" data-clear>未設定にもどす</button>` : ""}
+    </div>`;
+}
+
+function draw() {
+  $("#groups").innerHTML = SKILL_GROUPS.map((g) => `
+    <div class="ske-group">
+      <h2>${g.title}</h2>
+      ${g.items.map(itemHtml).join("")}
+    </div>`).join("");
+  updateNote();
+}
+
+// 1項目だけ描き直す（開いている「目安」を閉じないように、その項目の中身だけ差し替える）
+function redraw(key) {
+  const el = document.querySelector(`.ske[data-key="${key}"]`);
+  const open = el.querySelector(".ske-all").open;
+  el.outerHTML = itemHtml(SKILL_BY_KEY[key]);
+  if (open) document.querySelector(`.ske[data-key="${key}"] .ske-all`).open = true;
+  updateNote();
+}
+
+function updateNote() {
+  const set = Object.values(state);
+  const shown = set.filter((s) => s.visible).length;
+  const changed = JSON.stringify(state) !== original;
+  $("#save-note").textContent = set.length
+    ? `${set.length}項目を登録中・うち${shown}項目を裏面に表示${changed ? "（未保存の変更あり）" : ""}`
+    : "まだ何も登録されていません";
+}
+
+$("#groups").addEventListener("click", (e) => {
+  const card = e.target.closest(".ske");
+  if (!card) return;
+  const key = card.dataset.key;
+
+  const lvBtn = e.target.closest("[data-lv]");
+  if (lvBtn) {
+    const lv = Number(lvBtn.dataset.lv);
+    // 選択中の段階をもう一度押したら、未設定に戻す
+    if (state[key]?.level === lv) delete state[key];
+    else state[key] = { level: lv, visible: state[key]?.visible ?? true };
+    return redraw(key);
+  }
+  if (e.target.closest("[data-vis]") && state[key]) {
+    state[key].visible = !state[key].visible;
+    return redraw(key);
+  }
+  if (e.target.closest("[data-clear]")) {
+    delete state[key];
+    return redraw(key);
+  }
+});
+
+// ---------------------------------------------
+// 保存
+// ---------------------------------------------
+let saving = false;
+$("#save").onclick = async () => {
+  const btn = $("#save"), msg = $("#msg");
+  msg.className = "msg"; msg.textContent = "";
+  btn.disabled = true; btn.textContent = "保存しています…";
+  saving = true;
+
+  const { error } = await supabase.rpc("save_card_back", { p_skills: state });
+  if (error) {
+    saving = false;
+    btn.disabled = false; btn.textContent = "保存する";
+    msg.className = "msg error";
+    msg.textContent = "保存できませんでした：" + error.message;
+    return;
+  }
+  // 保存したら、マイカードの裏面を開いて見せる
+  location.href = "./card.html#back";
+};
+
+addEventListener("beforeunload", (e) => {
+  if (!saving && JSON.stringify(state) !== original) { e.preventDefault(); e.returnValue = ""; }
+});
+
+draw();
+$("#loading").hidden = true;
+$("#main").hidden = false;
+</script>
+</body>
+</html>

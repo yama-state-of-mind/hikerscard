@@ -1,0 +1,260 @@
+// =============================================
+// カードの裏面（登山スキル）
+//
+//   SKILL_GROUPS      … 項目と各段階の目安（編集画面と裏面で共通）
+//   renderBackFace()  … 裏面のカード
+//   renderFlipCard()  … 表と裏を重ねた、裏返せるカード
+//   bindFlip()        … 裏返すボタンを有効にする
+//
+// 段階は 0〜5。0 = 未経験、1〜5 = 下の目安。
+// 項目を増やすときは、ここに足すだけでよい（SQLの変更は不要）。
+// ※ 裏面の情報は、登山相性のスコアには使っていない。
+// =============================================
+
+import { esc, patternSVG, BG } from "./card.js";
+
+export const SKILL_GROUPS = [
+  {
+    id: "base", title: "基本",
+    items: [
+      { key: "stamina", name: "歩行力", desc: "1日に歩ける行程の目安", levels: [
+        ["ゆったり", "標高差500m・歩行3時間くらいまで"],
+        ["ふつう", "標高差800m・歩行5時間くらい"],
+        ["しっかり", "標高差1000m・歩行7時間くらい"],
+        ["健脚", "標高差1500m・歩行9時間以上もこなせる"],
+        ["超健脚", "標高差2000m級・10時間を超える行程を安定して歩ける"],
+      ]},
+      { key: "navigation", name: "地図読み", desc: "地図やコンパスでルートを判断する力", levels: [
+        ["アプリで確認", "登山アプリの軌跡を見ながら歩く"],
+        ["地形図も携行", "紙の地形図も持ち、分岐で確認している"],
+        ["現在地がわかる", "地形とコンパスで現在地を特定できる"],
+        ["道迷いに対応", "道を外れても、自力で正しいルートに戻れる"],
+        ["読図で歩ける", "登山道のない尾根や谷も、読図で歩ける"],
+      ]},
+    ],
+  },
+  {
+    id: "stay", title: "泊まり",
+    items: [
+      { key: "hut", name: "小屋泊", desc: "山小屋・避難小屋での宿泊", levels: [
+        ["1泊", "営業小屋に1泊したことがある"],
+        ["小屋で連泊", "小屋をつないで2〜3日歩いたことがある"],
+        ["避難小屋", "寝具・食料を持って避難小屋に泊まったことがある"],
+        ["長期", "小屋泊で4泊以上の山行をしたことがある"],
+        ["自在", "季節や混雑に合わせて、小屋泊を自在に計画できる"],
+      ]},
+      { key: "tent", name: "テント泊", desc: "テントを担いでの宿泊", levels: [
+        ["1泊", "テント場で1泊したことがある"],
+        ["テントで縦走", "テントを担いで縦走したことがある"],
+        ["連泊", "テントで3泊以上の山行をしたことがある"],
+        ["冬季も", "冬季のテント泊をしたことがある"],
+        ["どこでも", "雪上や水場のない場所でも、快適に泊まれる"],
+      ]},
+      { key: "traverse", name: "縦走", desc: "山から山へ歩きつなぐ山行", levels: [
+        ["日帰り縦走", "日帰りで周回・縦走をしたことがある"],
+        ["1泊2日", "1泊2日の縦走をしたことがある"],
+        ["2〜3泊", "2〜3泊の縦走をしたことがある"],
+        ["4泊以上", "4泊以上の縦走をしたことがある"],
+        ["長期縦走", "1週間以上の長期縦走をしたことがある"],
+      ]},
+    ],
+  },
+  {
+    id: "terrain", title: "季節・地形",
+    items: [
+      { key: "snow", name: "雪山", desc: "雪のある山での行動", levels: [
+        ["雪の低山", "チェーンスパイクで雪のある低山を歩いた"],
+        ["雪の一般ルート", "アイゼン・ピッケルで雪山の一般ルートを歩いた"],
+        ["冬の2000m級", "赤岳など、厳冬期の2000m級に登った"],
+        ["冬のアルプス", "厳冬期の3000m級一般ルートに登った"],
+        ["厳冬期縦走", "厳冬期の縦走や、雪のバリエーションに行った"],
+      ]},
+      { key: "rock", name: "岩稜・鎖場", desc: "岩場やハシゴのある道", levels: [
+        ["短い鎖場", "短い鎖場・ハシゴなら落ち着いて通れる"],
+        ["一般的な岩場", "槍ヶ岳の穂先くらいの岩場を登れる"],
+        ["難所", "大キレットや剱岳の一般ルートを歩ける"],
+        ["最難関", "ジャンダルムなど、最難関の一般ルートも歩ける"],
+        ["ロープ技術", "ロープでの確保や懸垂下降ができる"],
+      ]},
+      { key: "variation", name: "バリエーション", desc: "登山道のないルート", levels: [
+        ["踏み跡", "踏み跡の薄い道や廃道を歩いたことがある"],
+        ["経験者と", "経験者と一緒に、やさしい尾根や藪を歩いた"],
+        ["自分で計画", "自分で計画してバリエーションルートを歩ける"],
+        ["難路も", "藪・岩・雪が混じる難しいルートも歩ける"],
+        ["リード", "難しいルートでもパーティをリードできる"],
+      ]},
+      { key: "sawa", name: "沢登り", desc: "沢を遡って登る", levels: [
+        ["体験", "ガイドや経験者と、初級の沢に行った"],
+        ["初級", "初級の沢なら、自分たちで遡行できる"],
+        ["中級", "ロープを使う中級の沢を遡行できる"],
+        ["泊まりも", "泊まりがけの遡行をしたことがある"],
+        ["上級", "上級の沢でもリードできる"],
+      ]},
+    ],
+  },
+  {
+    id: "sport", title: "スポーツ",
+    items: [
+      { key: "trailrun", name: "トレイルラン", desc: "山道を走る", levels: [
+        ["少し走る", "下りや平らな道を少し走る程度"],
+        ["20kmくらい", "20km前後のコースを走れる"],
+        ["50km級", "50km級のレースや練習をこなせる"],
+        ["100km級", "100km級を完走したことがある"],
+        ["100マイル級", "100マイル級を完走したことがある"],
+      ]},
+      { key: "climbing", name: "クライミング", desc: "岩や壁を登る", levels: [
+        ["ボルダリング", "ジムでボルダリングをしている"],
+        ["ロープ（ジム）", "ジムでリード・トップロープができる"],
+        ["外岩", "外の岩場でクライミングをしている"],
+        ["マルチピッチ", "外岩のマルチピッチを登る"],
+        ["アルパイン", "アルパインクライミングをしている"],
+      ]},
+      { key: "ski", name: "山スキー・BC", desc: "雪山を滑る", levels: [
+        ["サイドカントリー", "ゲレンデ脇やリフト近くの山を滑った"],
+        ["ツアー体験", "ガイドツアーでバックカントリーを体験した"],
+        ["自分たちで", "ビーコンなどを持ち、自分たちでツアーに行ける"],
+        ["急斜面も", "急斜面や大きな山域も滑れる"],
+        ["上級", "長大なツアーや厳冬期の山岳滑走もこなせる"],
+      ]},
+    ],
+  },
+  {
+    id: "safety", title: "安全",
+    items: [
+      { key: "firstaid", name: "応急手当", desc: "けがや体調不良への対応", levels: [
+        ["救急セット", "救急セットを持ち、基本的な手当ができる"],
+        ["講習受講", "普通救命講習などを受けたことがある"],
+        ["野外救急", "WFAなど、野外救急の講習を受けている"],
+        ["セルフレスキュー", "搬送やロープを使うセルフレスキューを学んだ"],
+        ["教えられる", "応急手当やレスキューを人に教えられる"],
+      ]},
+    ],
+  },
+];
+
+export const SKILL_BY_KEY = Object.fromEntries(
+  SKILL_GROUPS.flatMap((g) => g.items.map((it) => [it.key, { ...it, group: g }])));
+
+export const levelName = (item, lv) => lv === 0 ? "未経験" : item.levels[lv - 1]?.[0] ?? "";
+export const levelDesc = (item, lv) => lv === 0 ? "まだ経験はない（これから挑戦したい）" : item.levels[lv - 1]?.[1] ?? "";
+
+// 5段のメーター
+export function meter(lv) {
+  return `<span class="sk-meter" aria-label="5段階中${lv}">${
+    [1, 2, 3, 4, 5].map((i) => `<i class="${i <= lv ? "on" : ""}"></i>`).join("")}</span>`;
+}
+
+const LOCK = `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+
+// =============================================
+// 裏面のカード
+//
+// back: get_card_back の結果
+//   null / { locked: true, reason } / { locked: false, skills: {キー: 段階} }
+// opts.own: 自分のカードか（空のときの案内を変える）
+// =============================================
+export function renderBackFace(d, back, opts = {}) {
+  const bg = BG[d.card_bg] ? d.card_bg : "contour";
+  const head = `
+    <div class="hero-top">
+      <span class="hero-brand">#ハイカーズカード</span>
+      <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
+    </div>
+    <div class="bk-title">
+      <p class="bk-en">SKILLS</p>
+      <p class="bk-name">${esc(d.display_name)}さんの登山スキル</p>
+    </div>`;
+
+  let body;
+  if (!back || back.locked) {
+    const text = back?.reason === "login"
+      ? "ログインして、カードを交換すると<br>裏面の登山スキルが見られます。"
+      : "カードを交換すると、<br>裏面の登山スキルが見られます。";
+    body = `
+      <div class="bk-lock">
+        <span class="bk-lock-ic">${LOCK}</span>
+        <p>${text}</p>
+        ${opts.lockAction ?? ""}
+      </div>`;
+  } else {
+    const skills = back.skills ?? {};
+    const groups = SKILL_GROUPS.map((g) => {
+      const rows = g.items.filter((it) => skills[it.key] !== undefined).map((it) => {
+        const lv = Number(skills[it.key]);
+        return `
+          <div class="sk-row">
+            <span class="sk-name">${esc(it.name)}</span>
+            ${meter(lv)}
+            <span class="sk-lv">${esc(levelName(it, lv))}</span>
+          </div>`;
+      }).join("");
+      return rows ? `<div class="sk-group"><p class="sk-gt">${g.title}</p>${rows}</div>` : "";
+    }).join("");
+
+    body = groups
+      ? `<div class="sk-groups">${groups}</div>
+         <p class="bk-note">自己申告のスキルです</p>`
+      : `<div class="bk-lock">
+           <p>${opts.own
+              ? "裏面はまだ空です。<br>登山スキルを登録すると、交換した相手に見せられます。"
+              : "まだ登山スキルが登録されていません。"}</p>
+           ${opts.own ? `<a class="btn ghost bk-btn" href="/skills.html">登山スキルを登録する</a>` : ""}
+         </div>`;
+  }
+
+  return `
+  <div class="hero hero-back t-${bg}">
+    ${patternSVG(bg)}
+    <div class="hero-in">${head}${body}</div>
+  </div>`;
+}
+
+// =============================================
+// 裏返せるカード
+// =============================================
+const FLIP_IC = `<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15"/><path d="M4 20v-5h5"/></svg>`;
+
+export function renderFlipCard(frontHTML, backHTML) {
+  return `
+    <div class="flip" id="flip">
+      <div class="flip-face front">${frontHTML}</div>
+      <div class="flip-face back" aria-hidden="true">${backHTML}</div>
+    </div>
+    <button class="flip-btn" id="flip-btn" aria-pressed="false">
+      ${FLIP_IC}<span>裏面を見る</span>
+    </button>`;
+}
+
+export function bindFlip(root = document) {
+  const flip = root.querySelector("#flip");
+  const btn = root.querySelector("#flip-btn");
+  if (!flip || !btn) return;
+
+  const front = flip.querySelector(".flip-face.front");
+  const back = flip.querySelector(".flip-face.back");
+
+  const toggle = () => {
+    const toBack = !flip.classList.contains("flipped");
+    // 裏返す間だけ、ゆっくり回るアニメーションにする（普段は傾きに素早く追従させる）
+    flip.classList.add("flipping");
+    flip.classList.toggle("flipped", toBack);
+    clearTimeout(flip._t);
+    flip._t = setTimeout(() => flip.classList.remove("flipping"), 800);
+
+    front.setAttribute("aria-hidden", toBack);
+    back.setAttribute("aria-hidden", !toBack);
+    btn.setAttribute("aria-pressed", toBack);
+    btn.querySelector("span").textContent = toBack ? "表面にもどす" : "裏面を見る";
+  };
+
+  btn.addEventListener("click", toggle);
+
+  // 裏面のURL（#back）で開いたら、最初から裏を見せる
+  if (location.hash === "#back") {
+    flip.classList.add("flipped");
+    front.setAttribute("aria-hidden", "true");
+    back.setAttribute("aria-hidden", "false");
+    btn.setAttribute("aria-pressed", "true");
+    btn.querySelector("span").textContent = "表面にもどす";
+  }
+}

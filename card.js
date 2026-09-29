@@ -726,121 +726,32 @@ export function esc(s) {
 }
 
 // =============================================
-// 相手との共通点
+// ヒーローカードを傾けて立体感を出す
 //
-// 公開ページをログイン済みで見たときに出す。
-// 「同じところ」を具体的に見せて、会話のきっかけにする。
+// マウスの位置に合わせて、カードを少しだけ傾け、光の当たる位置を動かす。
+// マウスのある端末（PC）だけ。動きを減らす設定の人には効かせない。
 // =============================================
-const AXIS_COMMENT = {
-  pe: { P: "どちらも頂上を目指すタイプ", E: "どちらも道中を楽しむタイプ" },
-  sg: { S: "どちらも一人の時間を大事にする", G: "どちらも誰かと登るのが好き" },
-  lf: { L: "どちらも計画を立ててから動く", F: "どちらもその日の気分で決める" },
-  ca: { C: "どちらも慎重に判断する", A: "どちらも挑戦を選ぶ" },
-};
-const AXIS_META = {
-  pe: { a: "P", b: "E", title: "目的" },
-  sg: { a: "S", b: "G", title: "仲間" },
-  lf: { a: "L", b: "F", title: "計画" },
-  ca: { a: "C", b: "A", title: "リスク" },
-};
+export function enableTilt(card) {
+  if (!card) return;
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-export function buildAffinity(me, other) {
-  if (!me || !other) return null;
+  const MAX = 5;   // 最大の傾き（度）
+  card.classList.add("tilt");
 
-  // ---- 4軸の一致 ----
-  const axisHits = [];
-  let axisScore = 0;
-  if (me.axes && other.axes) {
-    for (const k of ["pe", "sg", "lf", "ca"]) {
-      const a = me.axes[k], b = other.axes[k];
-      if (a == null || b == null) continue;
-      const sideA = a >= 50, sideB = b >= 50;
-      if (sideA === sideB) {
-        const letter = sideA ? AXIS_META[k].a : AXIS_META[k].b;
-        axisHits.push({ title: AXIS_META[k].title, letter, text: AXIS_COMMENT[k][letter] });
-        // 寄り具合が近いほど高く（同じ側で最大25点）
-        axisScore += 25 - Math.min(24, Math.abs(a - b) / 2);
-      }
-    }
-  }
-
-  // ---- 山の重なり ----
-  const names = (list) => new Set((list ?? []).map((m) => m.name));
-  const myFav = names(me.favorites), myWish = names(me.wishlist);
-  const myClimbed = names(me.climbed);
-
-  const sameFav  = (other.favorites ?? []).filter((m) => myFav.has(m.name)).map((m) => m.name);
-  const sameWish = (other.wishlist ?? []).filter((m) => myWish.has(m.name)).map((m) => m.name);
-  // 相手が登りたい山を、自分はもう登っている
-  const canTell  = (other.wishlist ?? []).filter((m) => myClimbed.has(m.name)).map((m) => m.name);
-  // 自分が登りたい山を、相手はもう登っている
-  const canAsk   = (me.wishlist ?? []).filter((m) => names(other.climbed).has(m.name)).map((m) => m.name);
-
-  const mtScore = Math.min(100, sameFav.length * 12 + sameWish.length * 10 + canTell.length * 4);
-  const score = Math.round(axisScore * 0.7 + mtScore * 0.3);
-
-  return {
-    score: Math.max(0, Math.min(100, score)),
-    axisHits, sameFav, sameWish, canTell, canAsk,
-    label: score >= 75 ? "とても近い" : score >= 50 ? "近い" : score >= 25 ? "少し違う" : "かなり違う",
-  };
-}
-
-export function renderAffinity(af, partnerName) {
-  if (!af) return "";
-
-  const items = [];
-
-  if (af.axisHits.length) {
-    items.push(`
-      <div class="af-item">
-        <p class="af-t">登山タイプ</p>
-        <ul class="af-list">
-          ${af.axisHits.map((h) => `<li><b>${h.letter}</b>${esc(h.text)}</li>`).join("")}
-        </ul>
-      </div>`);
-  }
-
-  const mtRow = (label, list, cls) => list.length ? `
-    <div class="af-item">
-      <p class="af-t">${label}</p>
-      <div class="d-tags">${list.map((n) => `<span class="d-tag ${cls}">${esc(n)}</span>`).join("")}</div>
-    </div>` : "";
-
-  items.push(mtRow("同じ山を「よかった」に選んでいます", af.sameFav, "fav"));
-  items.push(mtRow("同じ山に登りたいと思っています", af.sameWish, "wish"));
-
-  if (af.canTell.length) {
-    items.push(`
-      <div class="af-item">
-        <p class="af-t">${esc(partnerName)}さんが登りたい山のうち、あなたが登った山</p>
-        <div class="d-tags">${af.canTell.map((n) => `<span class="d-tag">${esc(n)}</span>`).join("")}</div>
-        <p class="af-note">話を聞かせてあげられそうです。</p>
-      </div>`);
-  }
-  if (af.canAsk.length) {
-    items.push(`
-      <div class="af-item">
-        <p class="af-t">あなたが登りたい山のうち、${esc(partnerName)}さんが登った山</p>
-        <div class="d-tags">${af.canAsk.map((n) => `<span class="d-tag">${esc(n)}</span>`).join("")}</div>
-        <p class="af-note">話を聞いてみるとよさそうです。</p>
-      </div>`);
-  }
-
-  const body = items.filter(Boolean).join("");
-
-  return `
-  <section class="det" id="section-affinity">
-    <div class="det-h"><h2>${esc(partnerName)}さんとの共通点</h2></div>
-    <div class="d-card">
-      <div class="af-score">
-        <div class="af-meter">
-          <div class="af-bar" style="width:${af.score}%"></div>
-        </div>
-        <div class="af-num"><b>${af.score}</b><span>${af.label}</span></div>
-      </div>
-      ${body || `<p class="af-none">まだ共通点が見つかりません。<br>
-        山を登録すると、重なりが見えてきます。</p>`}
-    </div>
-  </section>`;
+  card.addEventListener("pointermove", (e) => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;    // 0〜1
+    const y = (e.clientY - r.top) / r.height;
+    card.style.setProperty("--rx", `${(0.5 - y) * MAX}deg`);
+    card.style.setProperty("--ry", `${(x - 0.5) * MAX}deg`);
+    card.style.setProperty("--gx", `${x * 100}%`);
+    card.style.setProperty("--gy", `${y * 100}%`);
+  });
+  card.addEventListener("pointerleave", () => {
+    card.style.setProperty("--rx", "0deg");
+    card.style.setProperty("--ry", "0deg");
+    card.style.setProperty("--gx", "30%");
+    card.style.setProperty("--gy", "0%");
+  });
 }

@@ -583,36 +583,6 @@ body.t-night .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border
 /* =============================================
    相手との共通点
    ============================================= */
-.af-score { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
-.af-meter {
-  flex: 1; height: 9px; border-radius: 999px; background: var(--c-soft);
-  overflow: hidden; position: relative;
-}
-.af-bar {
-  height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, var(--c-acc), var(--sun));
-  transition: width .6s cubic-bezier(.22,.9,.3,1);
-}
-.af-num { flex: none; text-align: right; }
-.af-num b { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; }
-.af-num span { display: block; font-size: 10px; color: var(--c-mut); margin-top: 2px; }
-
-.af-item { padding-top: 13px; border-top: 1px solid var(--c-div); }
-.af-item:first-of-type { padding-top: 0; border-top: none; }
-.af-item + .af-item { margin-top: 13px; }
-.af-t { font-size: 10.5px; font-weight: 900; color: var(--c-acc); margin-bottom: 6px; }
-.af-list { list-style: none; }
-.af-list li {
-  font-size: 12.5px; color: var(--c-fg2); padding: 3px 0;
-  display: flex; align-items: center; gap: 8px;
-}
-.af-list b {
-  font-family: var(--mono); font-size: 10px; font-weight: 700;
-  background: var(--c-chip); color: var(--c-chipfg);
-  border-radius: 5px; padding: 1px 6px; flex: none;
-}
-.af-note { font-size: 11px; color: var(--c-mut); margin-top: 6px; }
-.af-none { font-size: 12.5px; color: var(--c-mut); line-height: 1.9; text-align: center; padding: 8px 0; }
 
 
 /* =============================================
@@ -740,8 +710,33 @@ body.t-night .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14);
 body { font-feature-settings: "palt"; letter-spacing: .02em; -webkit-font-smoothing: antialiased; }
 
 /* ヒーローカード：装飾を減らし、余白と文字で見せる */
-.hero { border-radius: 28px; border: none;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 20px 50px -12px rgba(0,0,0,.18); }
+/* 立体感：影を何層にも重ねて「厚み」と「浮き」を出し、
+   上からの光（::after のグラデーション）で表面のつやを出す */
+.hero {
+  border-radius: 28px; border: none;
+  box-shadow:
+    0 1px 1px rgba(0,0,0,.05),
+    0 2px 2px rgba(0,0,0,.05),
+    0 4px 4px rgba(0,0,0,.05),
+    0 8px 8px rgba(0,0,0,.05),
+    0 16px 16px rgba(0,0,0,.05),
+    0 32px 56px -8px rgba(0,0,0,.20);
+  transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .25s ease-out, box-shadow .25s;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 70% at var(--gx, 30%) var(--gy, 0%), rgba(255,255,255,.55), rgba(255,255,255,0) 55%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.55);   /* 縁のハイライト */
+}
+.hero.tilt { will-change: transform; }
+.hero.tilt:hover { transition: transform .08s linear; }
+body.t-night .hero::after {
+  background: radial-gradient(120% 70% at var(--gx, 30%) var(--gy, 0%), rgba(255,255,255,.08), rgba(255,255,255,0) 55%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+}
 .hero-bg { opacity: 1; }
 .hero-paw { display: none; }
 .hero-in { padding: 20px 22px 24px; }
@@ -827,3 +822,187 @@ body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -1
 .det-h h2 { color: var(--c-fg2); }
 /* PCの広いカードでも、踏破状況のリングは間延びさせずに中央へ寄せる */
 .mini-rings { max-width: 420px; margin-left: auto; margin-right: auto; }
+
+/* =============================================
+   登山相性
+   ============================================= */
+
+/* ヒーローカードの下のボタン */
+.af-cta {
+  display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 16px;
+  font-family: var(--font); text-align: left; cursor: pointer;
+  border: none; border-radius: 999px; padding: 10px 18px 10px 10px;
+  background: var(--c-chip); color: var(--c-chipfg);
+  box-shadow: 0 2px 4px rgba(0,0,0,.08), 0 10px 24px -6px rgba(0,0,0,.25);
+  transition: transform .15s;
+}
+.af-cta:active { transform: scale(.98); }
+.af-cta-ic { width: 42px; height: 42px; border-radius: 50%; flex: none;
+  background: var(--sun); display: flex; align-items: center; justify-content: center; }
+.af-cta-ic svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round; }
+.af-cta-t { flex: 1; display: flex; flex-direction: column; line-height: 1.4; }
+.af-cta-t b { font-size: 14.5px; font-weight: 700; letter-spacing: .06em; }
+.af-cta-t span { font-size: 11px; opacity: .7; }
+.af-cta-go { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
+
+/* シート（下からせり出す） */
+.afs {
+  position: fixed; inset: 0; z-index: 220;
+  background: rgba(10,16,14,0); transition: background .3s;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.afs.open { background: rgba(10,16,14,.5); }
+.afs-panel {
+  position: relative; width: 100%; max-width: 624px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  background: var(--c-page, #F1F3F1); color: var(--c-fg, var(--pine));
+  border-radius: 26px 26px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,.2);
+  transform: translateY(100%); transition: transform .34s cubic-bezier(.22,.9,.3,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.afs.open .afs-panel { transform: translateY(0); }
+.afs-grab { padding: 10px 0 4px; display: flex; justify-content: center; cursor: grab; }
+.afs-grab i { width: 40px; height: 4px; border-radius: 99px; background: var(--c-div); }
+.afs-close { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border-radius: 50%;
+  border: none; cursor: pointer; background: var(--c-bg); color: var(--c-mut);
+  font-size: 20px; line-height: 1; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.afs-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 22px 28px; overscroll-behavior: contain; }
+
+/* ふたりの顔 */
+.afs-pair { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; }
+.afs-av { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: var(--c-bg);
+  box-shadow: 0 0 0 3px var(--c-page), 0 4px 12px rgba(0,0,0,.12); }
+.afs-av svg { width: 100%; height: 100%; display: block; }
+.afs-av.me { box-shadow: 0 0 0 3px var(--sun), 0 4px 12px rgba(0,0,0,.12); }
+.afs-x { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--c-mut); }
+.afs-names { text-align: center; font-size: 12px; font-weight: 600; color: var(--c-fg2); margin-top: 10px; letter-spacing: .06em; }
+
+/* スコア */
+.afs-score { position: relative; width: 150px; height: 150px; margin: 14px auto 0; }
+.afs-ring { width: 100%; height: 100%; }
+.afs-ring circle { fill: none; stroke-width: 7; }
+.afs-ring .trk { stroke: var(--c-div); }
+.afs-ring .val { stroke: var(--sun); stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(.22,.9,.3,1); }
+.afs-num { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; }
+.afs-num b { font-family: var(--mono); font-size: 46px; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+.afs-num span { font-family: var(--mono); font-size: 11px; color: var(--c-mut); margin-top: 4px; }
+.afs-label { text-align: center; font-size: 15px; font-weight: 700; letter-spacing: .08em; margin-top: 10px; }
+.afs-label em { font-style: normal; font-size: 10px; font-weight: 600; color: var(--c-mut);
+  border: 1px solid var(--c-div); border-radius: 999px; padding: 2px 8px; margin-left: 8px; vertical-align: 2px; }
+
+/* セクション */
+.afs-sec { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--c-div); }
+.afs-sec h3 { font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--c-fg2); margin-bottom: 12px; }
+.afs-empty { font-size: 12px; color: var(--c-mut); line-height: 1.9; text-align: center; padding: 6px 0; }
+
+/* 4軸の近さ */
+.afs-legend { display: flex; gap: 14px; font-size: 11px; color: var(--c-fg2); margin: -4px 0 10px; }
+.afs-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.afs-legend .afs-dot { position: static; transform: none; }
+.afs-ax + .afs-ax { margin-top: 16px; }
+.afs-ax-h { display: flex; align-items: baseline; justify-content: space-between; }
+.afs-ax-h p { font-size: 12.5px; font-weight: 700; }
+.afs-near { font-size: 11px; color: var(--c-mut); }
+.afs-near b { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--c-fg); margin: 0 1px 0 4px; }
+.afs-near em { font-style: normal; font-weight: 600; color: var(--c-fg2); margin-left: 8px; }
+.afs-ax-track { position: relative; height: 4px; border-radius: 99px; background: var(--c-div); margin: 12px 7px 0; }
+.afs-gap { position: absolute; top: 0; height: 100%; background: var(--sun); opacity: .35; border-radius: 99px; }
+.afs-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%;
+  transform: translate(-50%, -50%); display: inline-block; z-index: 1;
+  box-shadow: 0 0 0 2px var(--c-page), 0 1px 3px rgba(0,0,0,.2); }
+.afs-dot.me { background: var(--sun); z-index: 2; }
+.afs-dot.other { background: var(--c-chip); }
+.afs-ax-poles { display: flex; justify-content: space-between; font-size: 10px; color: var(--c-mut); margin-top: 8px; }
+
+/* 山の共通点 */
+.afs-mg + .afs-mg { margin-top: 16px; }
+.afs-mg-h { display: flex; align-items: center; gap: 8px; }
+.afs-mg-h p { font-size: 13px; font-weight: 700; }
+.afs-mg-ic { width: 26px; height: 26px; border-radius: 50%; flex: none; background: var(--c-bg);
+  display: flex; align-items: center; justify-content: center; }
+.afs-mg-ic svg { width: 15px; height: 15px; fill: none; stroke: var(--c-fg); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }
+.afs-mg.wish .afs-mg-ic { background: var(--sun); }
+.afs-mg.wish .afs-mg-ic svg { stroke: #fff; }
+.afs-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.afs-tags span { font-size: 12px; font-weight: 600; background: var(--c-bg); border: 1px solid var(--c-div);
+  border-radius: 999px; padding: 5px 12px; }
+.afs-mg-note { font-size: 11px; color: var(--c-mut); margin-top: 7px; line-height: 1.7; }
+
+/* コメント */
+.afs-comment { background: var(--c-bg); border-radius: 18px; padding: 18px 18px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 20px -8px rgba(0,0,0,.12); }
+.afs-comment p { font-size: 13px; line-height: 2; color: var(--c-fg2); }
+.afs-comment p + p { margin-top: 10px; }
+.afs-comment p:first-child { color: var(--c-fg); font-weight: 600; }
+
+/* 未ログイン */
+.afs-login { text-align: center; padding: 10px 4px 6px; }
+.afs-login-t { font-size: 16px; font-weight: 700; margin-top: 16px; letter-spacing: .04em; }
+.afs-login-d { font-size: 12px; color: var(--c-mut); line-height: 1.9; margin-top: 8px; }
+
+/* =============================================
+   Step 18：カードの裏面と、裏返すモーション
+   ============================================= */
+
+/* 表と裏を同じ場所に重ね、Y軸で回して裏返す。
+   高さは表・裏の高いほうに合わせる（grid で重ねる） */
+.flip {
+  display: grid; margin-top: 4px;
+  transform-style: preserve-3d;
+  transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) + var(--flip-deg, 0deg)));
+  transition: transform .2s ease-out;
+}
+.flip.flipped { --flip-deg: 180deg; }
+.flip.flipping { transition: transform .75s cubic-bezier(.3, .7, .2, 1); }   /* 裏返す間はゆっくり */
+.flip.tilt:not(.flipping):hover { transition: transform .08s linear; }
+.flip-face {
+  grid-area: 1 / 1; display: flex; flex-direction: column;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.flip-face.back { transform: rotateY(180deg); }
+.flip-face > .hero { flex: 1; margin-top: 0; }
+.flip .hero { transform: none; }   /* 傾きは .flip 全体で付ける */
+/* 見えていない面は押せないように */
+.flip:not(.flipped) .flip-face.back,
+.flip.flipped .flip-face.front { pointer-events: none; }
+
+.flip-btn {
+  display: flex; align-items: center; gap: 8px; margin: 14px auto 0;
+  font-family: var(--font); font-size: 12.5px; font-weight: 600; letter-spacing: .04em;
+  border: none; cursor: pointer; border-radius: 999px; padding: 9px 18px;
+  background: var(--c-bg); color: var(--c-fg);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.08);
+}
+.flip-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; transition: transform .6s; }
+.flip-btn[aria-pressed="true"] svg { transform: rotate(180deg); }
+
+/* ---------- 裏面 ---------- */
+.hero-back .hero-in { display: flex; flex-direction: column; height: 100%; }
+.bk-title { text-align: center; margin-top: 22px; }
+.bk-en { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: .32em; margin-right: -.32em; }
+.bk-name { font-size: 11.5px; color: var(--c-mut); margin-top: 4px; letter-spacing: .04em; }
+
+.sk-groups { margin-top: 20px; }
+.sk-group + .sk-group { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--c-div); }
+.sk-gt { font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--c-mut); margin-bottom: 4px; }
+.sk-row { display: grid; grid-template-columns: 7.2em auto 1fr; align-items: center; gap: 10px; padding: 5px 0; }
+.sk-name { font-size: 12.5px; font-weight: 600; }
+.sk-meter { display: inline-flex; gap: 3px; }
+.sk-meter i { width: 15px; height: 6px; border-radius: 2px; background: var(--c-div); }
+.sk-meter i.on { background: var(--c-fg); }
+.sk-lv { font-size: 11px; color: var(--c-fg2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-note { font-size: 10px; color: var(--c-mut); text-align: center; margin-top: auto; padding-top: 18px; letter-spacing: .06em; }
+
+.bk-lock { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 36px 8px; font-size: 12.5px; color: var(--c-fg2); line-height: 1.9; }
+.bk-lock-ic { width: 54px; height: 54px; border-radius: 50%; background: var(--c-soft);
+  display: flex; align-items: center; justify-content: center; }
+.bk-lock-ic svg { width: 24px; height: 24px; fill: none; stroke: var(--c-fg); stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }
+.bk-btn { width: auto; margin-top: 2px; padding: 10px 22px; text-decoration: none; }
