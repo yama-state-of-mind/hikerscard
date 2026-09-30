@@ -12,8 +12,8 @@
 //        計画・リスク … 近さ = 1 − d/200 （重み 各0.2）
 //          → 違っていても役割分担で補いあえるので、差の影響を半分にする
 //   2. 山の重なり（0〜1）
-//        行ってみたい山がおなじ ×3点、よかった山がおなじ ×2点、
-//        片方が行ってみたい山を、もう片方が登ったことがある ×1点
+//        登ってみたい山がおなじ ×3点、よかった山がおなじ ×2点、
+//        片方が登ってみたい山を、もう片方が登ったことがある ×1点
 //        を足して、6点で満点（それ以上は1に丸める）
 //   3. 合計 raw = 4軸 × 0.8 ＋ 山 × 0.2
 //   4. スコア = 50 + 50 × raw^1.5
@@ -94,8 +94,8 @@ export function computeAffinity(me, other) {
 
   const sameWish = list(other.wishlist, names(me.wishlist));
   const sameFav  = list(other.favorites, names(me.favorites));
-  const canAsk   = list(me.wishlist, names(other.climbed));    // 自分が行ってみたい山に、相手は登った
-  const canTell  = list(other.wishlist, names(me.climbed));    // 相手が行ってみたい山に、自分は登った
+  const canAsk   = list(me.wishlist, names(other.climbed));    // 自分が登ってみたい山に、相手は登った
+  const canTell  = list(other.wishlist, names(me.climbed));    // 相手が登ってみたい山に、自分は登った
 
   const mtPoints = sameWish.length * 3 + sameFav.length * 2 + canAsk.length + canTell.length;
   const mtRaw = Math.min(1, mtPoints / 6);
@@ -168,7 +168,7 @@ const SIMILAR = {
     C: ["ふたりとも慎重に判断するタイプ。「今日はやめておこう」と言い出しやすく、安心して一緒に歩けます。",
         "リスクへの感覚がよく似ていて、撤退の判断で揉めにくい組み合わせ。長く安全に山を続けられる相性です。"],
     A: ["ふたりとも新しい挑戦に心が動くタイプ。難しいルートや初めての山域にも、背中を押しあって踏み出せそうです。",
-        "「行ってみたい」の熱量がよく似ています。ふたりなら、ひとりではためらう山にも挑戦できるかもしれません。"],
+        "「登ってみたい」の熱量がよく似ています。ふたりなら、ひとりではためらう山にも挑戦できるかもしれません。"],
   },
 };
 
@@ -198,23 +198,23 @@ const DEGREE = [
 
 const MOUNTAIN = {
   sameWish: [
-    "そして、{M}はふたりとも「行ってみたい山」。一緒に計画を立てれば、初登頂の喜びを分かちあえるかもしれません！",
-    "{M}にふたりとも行ってみたいと思っているのも見逃せません。タイミングが合えば、同じ山頂で初めての景色を見られそうです。",
+    "そして、{M}はふたりとも「登ってみたい山」。一緒に計画を立てれば、初登頂の喜びを分かちあえるかもしれません！",
+    "{M}にふたりとも登ってみたいと思っているのも見逃せません。タイミングが合えば、同じ山頂で初めての景色を見られそうです。",
   ],
   canAsk: [
-    "{P}は、あなたが行ってみたい{M}にすでに登っています。コースの様子や見どころを聞いてみると、計画がぐっと具体的になりますよ。",
+    "{P}は、あなたが登ってみたい{M}にすでに登っています。コースの様子や見どころを聞いてみると、計画がぐっと具体的になりますよ。",
     "あなたの憧れの{M}は、{P}にとって経験済みの山。次に会ったとき、ぜひ体験談を聞いてみてください。",
   ],
   canTell: [
-    "{X}{P}が行ってみたい{M}は、あなたが登ったことのある山。あなたの経験が、{P}の背中を押すきっかけになりそうです。",
+    "{X}{P}が登ってみたい{M}は、あなたが登ったことのある山。あなたの経験が、{P}の背中を押すきっかけになりそうです。",
     "{X}{P}が気になっている{M}に、あなたは登ったことがあります。そのときの話をしてあげると、きっと喜ばれます。",
   ],
   sameFav: [
-    "{M}をふたりとも「行ってよかった山」に選んでいるのも、好みが近い証拠。思い出話で盛り上がれそうです。",
-    "「行ってよかった山」に{M}が重なっているのも素敵な偶然。同じ山の好きなところを語りあってみては。",
+    "{M}をふたりとも「登ってよかった山」に選んでいるのも、好みが近い証拠。思い出話で盛り上がれそうです。",
+    "「登ってよかった山」に{M}が重なっているのも素敵な偶然。同じ山の好きなところを語りあってみては。",
   ],
   none: [
-    "山の登録が増えると、共通の山が見えてくるかもしれません。まずはお互いの「行ってみたい山」を話してみては？",
+    "山の登録が増えると、共通の山が見えてくるかもしれません。まずはお互いの「登ってみたい山」を話してみては？",
     "今のところ共通の山は見つかりませんでしたが、そのぶんお互いの知らない山を紹介しあえる関係です。",
   ],
 };
@@ -305,10 +305,10 @@ function mountainGroups(af, P) {
 
   const { sameWish, canAsk, canTell, sameFav } = af.mt;
   const html = [
-    g(sameWish, "wish", "一緒に登れるかも！？", "ふたりとも「行ってみたい山」です。", "wish"),
-    g(canAsk,   "ask",  `${esc(P)}さんに話を聞いてみよう`, `あなたが行ってみたい山に、${esc(P)}さんはもう登っています。`, "ask"),
-    g(canTell,  "tell", "話してあげられるかも", `${esc(P)}さんが行ってみたい山に、あなたは登ったことがあります。`, "tell"),
-    g(sameFav,  "fav",  "好きな山がおなじ", "ふたりとも「行ってよかった山」に選んでいます。", "fav"),
+    g(sameWish, "wish", "一緒に登れるかも！？", "ふたりとも「登ってみたい山」です。", "wish"),
+    g(canAsk,   "ask",  `${esc(P)}さんに話を聞いてみよう`, `あなたが登ってみたい山に、${esc(P)}さんはもう登っています。`, "ask"),
+    g(canTell,  "tell", "話してあげられるかも", `${esc(P)}さんが登ってみたい山に、あなたは登ったことがあります。`, "tell"),
+    g(sameFav,  "fav",  "好きな山がおなじ", "ふたりとも「登ってよかった山」に選んでいます。", "fav"),
   ].join("");
 
   return html || `<p class="afs-empty">まだ共通の山はありません。<br>山を登録すると、重なりが見えてきます。</p>`;
@@ -359,7 +359,7 @@ function sheetBody(af, ctx) {
 
     <div class="afs-score">
       ${ringSVG(af.score)}
-      <div class="afs-num"><b data-count="${af.score}">50</b><span>/ 100</span></div>
+      <div class="afs-num"><b data-count="${af.score}">0</b><span>/ 100</span></div>
     </div>
     <p class="afs-label">${af.label}${af.reference ? `<em>参考値</em>` : ""}</p>
 
@@ -449,7 +449,7 @@ function animateScore(root) {
     const step = (t) => {
       const k = Math.min(1, (t - t0) / dur);
       const eased = 1 - Math.pow(1 - k, 3);
-      num.textContent = Math.round(50 + (target - 50) * eased);
+      num.textContent = Math.round(target * eased);   // 0 から数えあげる
       if (k < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);

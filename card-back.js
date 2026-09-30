@@ -192,7 +192,8 @@ function chartsHtml(skills) {
   const [base, adv, sport] = SKILL_GROUPS;
   const has = (g) => g.items.some((it) => skills[it.key] !== undefined);
   const block = (g, size) => `
-    <div class="rd-box${has(g) ? "" : " empty"}">
+    <div class="rd-box${has(g) ? "" : " empty"}" data-skill="${g.id}" role="button" tabindex="0"
+         aria-label="${esc(g.title)}の詳しい説明を見る">
       <p class="sk-gt">${g.title}</p>
       ${radarSVG(g, skills, size)}
     </div>`;
@@ -279,6 +280,68 @@ export function renderBackFace(d, back, opts = {}) {
 }
 
 // =============================================
+// 裏面のときにカードの下に出す「各スキルの詳しい説明」
+//
+// 分類（基本・応用・スポーツ）ごとのセクションにする。
+// id は skill-base などで、裏面のチャートを押すとここへスクロールする。
+// =============================================
+export function renderBackDetails(back, opts = {}) {
+  // まだ見られない（未ログイン・未交換）
+  if (!back || back.locked) {
+    return `
+      <section class="det" id="skill-locked">
+        <div class="det-h"><h2>登山スキル</h2></div>
+        <p class="det-empty">${back?.reason === "login"
+          ? "ログインして、カードを交換すると見られます。"
+          : "カードを交換すると、登山スキルの詳しい内容が見られます。"}</p>
+      </section>`;
+  }
+
+  const skills = back.skills ?? {};
+  const any = Object.keys(skills).some((k) => SKILL_BY_KEY[k]);
+  if (!any && !opts.own) {
+    return `
+      <section class="det">
+        <div class="det-h"><h2>登山スキル</h2></div>
+        <p class="det-empty">まだ登山スキルが登録されていません。</p>
+      </section>`;
+  }
+
+  return SKILL_GROUPS.map((g) => {
+    const rows = g.items.map((it) => {
+      const has = skills[it.key] !== undefined;
+      if (!has) {
+        // 自分のカードでは、未登録の項目も出して登録のきっかけにする
+        return opts.own ? `
+          <div class="skd none">
+            <div class="skd-h"><b>${esc(it.name)}</b><span class="skd-lv">（未登録）</span></div>
+            <p class="skd-what">${esc(it.desc)}</p>
+          </div>` : "";
+      }
+      const lv = Number(skills[it.key]);
+      return `
+        <div class="skd">
+          <div class="skd-h">
+            <b>${esc(it.name)}</b>
+            ${meter(lv)}
+            <span class="skd-lv">${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</span>
+          </div>
+          <p class="skd-desc">${esc(levelDesc(it, lv))}</p>
+          <p class="skd-what">${esc(it.desc)}</p>
+        </div>`;
+    }).join("");
+    if (!rows) return "";
+    return `
+      <section class="det" id="skill-${g.id}">
+        <div class="det-h"><h2>${esc(g.title)}</h2><span class="det-n">登山スキル</span></div>
+        <div class="skd-list">${rows}</div>
+      </section>`;
+  }).join("") + (opts.own
+    ? `<p class="det-empty" style="text-align:center;margin-top:18px"><a href="/skills.html">登山スキルを編集する</a></p>`
+    : "");
+}
+
+// =============================================
 // 裏返せるカード
 // =============================================
 
@@ -301,6 +364,10 @@ export function bindFlip(root = document) {
     flip.classList.toggle("flipped", toBack);
     front.setAttribute("aria-hidden", toBack);
     back.setAttribute("aria-hidden", !toBack);
+    // カードの下の表示も、表面用／裏面用を切り替える
+    document.querySelectorAll("[data-side]").forEach((el) => {
+      el.hidden = el.dataset.side !== (toBack ? "back" : "front");
+    });
   };
 
   // カードの左上のボタン（表・裏それぞれにある）で裏返す
@@ -314,8 +381,20 @@ export function bindFlip(root = document) {
     flip._t = setTimeout(() => flip.classList.remove("flipping"), 800);
   });
 
+  // 裏面のチャートを押したら、その分類の詳しい説明へ
+  const goSkill = (id) => {
+    const el = document.getElementById(`skill-${id}`) ?? document.getElementById("skill-locked");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  back.addEventListener("keydown", (e) => {
+    const box = e.target.closest("[data-skill]");
+    if (box && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); goSkill(box.dataset.skill); }
+  });
+
   // 裏面の「チャート｜一覧」
   back.addEventListener("click", (e) => {
+    const box = e.target.closest("[data-skill]");
+    if (box) { goSkill(box.dataset.skill); return; }
     const v = e.target.closest("[data-view]");
     if (!v) return;
     back.querySelectorAll("[data-view]").forEach((b) => {

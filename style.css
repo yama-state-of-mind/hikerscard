@@ -1081,3 +1081,47 @@ body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -1
 a.hero-none:hover em, a.hero-empty:hover em { border-style: solid; }
 a.hero-cmt.hero-none, a.hero-undiag.hero-none { display: flex; justify-content: center; }
 a.hero-empty { display: block; text-decoration: none; color: inherit; }
+
+/* =============================================
+   Step 22
+   ============================================= */
+
+/* スクロールして画面に入ったら、ふわっと表示（reveal.js） */
+.rv { opacity: 0; transform: translateY(18px);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.2, .8, .2, 1); }
+.rv.rv-in { opacity: 1; transform: none; }
+
+/* 登山相性のボタンはカードの上に */
+#af-cta .af-cta { margin: 2px 0 16px; }
+
+/* 4軸のスコア：四角い枠で囲み、バーは横幅の7割ほどにして左右に余白 */
+.d-axbox { margin-top: 18px; border: 1px solid var(--c-div); border-radius: 16px; padding: 14px 12px 16px;
+  background: var(--c-bg); }
+.d-axbox .d-sub { text-align: center; }
+.d-axrows { width: 70%; min-width: 250px; max-width: 100%; margin: 0 auto; }
+
+/* SNS：公式のアイコン（形・色を変えない） */
+.sns-ic.brand { background: none; border-radius: 0; }
+.sns-ic.brand svg { width: 28px; height: 28px; }
+.sns-ic.brand.x { color: #000; }
+body.t-night .sns-ic.brand.x { color: #fff; }
+.sns-link .sns-ic.brand { background: none; }
+/* アイコンは左端で、上下の真ん中にそろえる */
+.sns-link .sns-ic { top: 50%; transform: translateY(-50%); }
+
+/* 裏面のチャートは押せる */
+.rd-box { cursor: pointer; border-radius: 14px; transition: background .15s; }
+@media (hover: hover) { .rd-box:hover { background: var(--c-soft); } }   /* スマホでは押したあとに色が残るので、マウスのときだけ */
+.rd-box:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+
+/* 裏面のとき、カードの下に出す各スキルの詳しい説明 */
+.skd-list { display: flex; flex-direction: column; }
+.skd { padding: 12px 0; }
+.skd + .skd { border-top: 1px solid var(--c-div); }
+.skd-h { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; }
+.skd-h b { font-size: 14px; font-weight: 700; }
+.skd-h .sk-meter { grid-column: 2; grid-row: 1; }
+.skd-lv { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--c-fg2); }
+.skd-desc { font-size: 12.5px; line-height: 1.8; color: var(--c-fg); margin-top: 4px; }
+.skd-what { font-size: 10.5px; color: var(--c-mut); margin-top: 2px; }
+.skd.none .skd-lv { color: var(--c-mut); font-weight: 500; grid-column: 2; grid-row: 1; }

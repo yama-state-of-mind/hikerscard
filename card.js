@@ -82,13 +82,14 @@ export const SILHOUETTE = `
 // SNSの定義
 // ---------------------------------------------
 export const SNS = {
-  // 他社のロゴをそのまま使うのは商標上の問題があるため、
-  // 色だけ寄せた自作のアイコンにしている。
-  // 正式にロゴを使う場合は、各社の利用条件を確認すること。
+  // YAMAP・ヤマレコは、ロゴの利用条件が公開されていないため自作のアイコン。
+  // Instagram・X は、アカウントへのリンクにロゴ（グリフ）を使うことを
+  // 各社のブランドガイドラインが認めているので、公式の形をそのまま使う
+  // （形・色を変えない、他の図形の中に入れない、がルール）。
   yamap:     { label: "YAMAP",     bg: "#D93A2B", icon: "mt", url: (v) => `https://yamap.com/users/${v}` },
   yamareco:  { label: "ヤマレコ",   bg: "#1F6FB2", icon: "mt", url: (v) => `https://www.yamareco.com/modules/yamareco/userinfo-${v}.html` },
-  instagram: { label: "Instagram", bg: "#C13584", short: "in", url: (v) => `https://instagram.com/${v}` },
-  x:         { label: "X",         bg: "#111111", short: "X",  url: (v) => `https://x.com/${v}` },
+  instagram: { label: "Instagram", icon: "ig", url: (v) => `https://instagram.com/${v}` },
+  x:         { label: "X",         icon: "x",  url: (v) => `https://x.com/${v}` },
 };
 
 // ---------------------------------------------
@@ -192,10 +193,24 @@ const RANKS = [
 // YAMAP・ヤマレコは山の形、Instagram・Xは頭文字
 // ---------------------------------------------
 const MT_GLYPH = `<svg viewBox="0 0 24 24" fill="#fff"><path d="M2.5 19.5 9 8l3.6 6.2L15 10l6.5 9.5z"/></svg>`;
+// Instagram の公式グリフ（角丸の四角・円・右上の点）。公式のグラデーションで塗る
+const IG_GLYPH = `<svg viewBox="0 0 24 24" aria-hidden="true">
+  <defs><radialGradient id="hc-ig-grad" cx="30%" cy="107%" r="150%">
+    <stop offset="0" stop-color="#FDF497"/><stop offset=".05" stop-color="#FDF497"/>
+    <stop offset=".45" stop-color="#FD5949"/><stop offset=".6" stop-color="#D6249F"/><stop offset=".9" stop-color="#285AEB"/>
+  </radialGradient></defs>
+  <rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none" stroke="url(#hc-ig-grad)" stroke-width="2.2"/>
+  <circle cx="12" cy="12" r="4.6" fill="none" stroke="url(#hc-ig-grad)" stroke-width="2.2"/>
+  <circle cx="17.6" cy="6.4" r="1.4" fill="url(#hc-ig-grad)"/></svg>`;
+// X の公式ロゴ
+const X_GLYPH = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>`;
+
 export function snsIcon(key) {
   const s = SNS[key];
   if (!s) return "";
-  return `<span class="sns-ic" style="background:${s.bg}">${s.icon === "mt" ? MT_GLYPH : esc(s.short)}</span>`;
+  if (s.icon === "ig") return `<span class="sns-ic brand ig">${IG_GLYPH}</span>`;
+  if (s.icon === "x")  return `<span class="sns-ic brand x">${X_GLYPH}</span>`;
+  return `<span class="sns-ic" style="background:${s.bg}">${MT_GLYPH}</span>`;
 }
 
 // ---------------------------------------------
@@ -252,7 +267,7 @@ function ringSVG(done, color, rad) {
   </svg>`;
 }
 
-// 行ってよかった山を順位順にそろえる（pos が無い古いデータは後ろへ）
+// 登ってよかった山を順位順にそろえる（pos が無い古いデータは後ろへ）
 function sortedFavs(list) {
   return [...(list ?? [])].sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
 }
@@ -288,7 +303,7 @@ function posBadge(pos) {
 // ヒーローカード（縦長・要約）
 //
 // 背景の模様と、動物ごとの足跡を敷く。
-// 行ってよかった山・行ってみたい山は省略せず全件載せる（各5座まで）。
+// 登ってよかった山・登ってみたい山は省略せず全件載せる（各5座まで）。
 // =============================================
 export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
@@ -362,16 +377,16 @@ export function renderHeroCard(d, opts = {}) {
         <div class="mini-rings">${rings}</div>`) : ""}
 
       ${favs.length ? blk("section-mountains", `
-        <p class="hero-lbl">${STAR}行ってよかった山</p>
+        <p class="hero-lbl">${STAR}登ってよかった山</p>
         <div class="mini-tags">
           ${favs.map((m) => `<span class="mini-tag fav">${crown(m.pos)}${esc(m.name)}</span>`).join("")}
-        </div>`) : own ? emptyBlk("/mountains.html#fav", `${STAR}行ってよかった山`) : ""}
+        </div>`) : own ? emptyBlk("/mountains.html#fav", `${STAR}登ってよかった山`) : ""}
 
       ${wish.length ? blk("section-mountains", `
-        <p class="hero-lbl">${FLAG}行ってみたい山</p>
+        <p class="hero-lbl">${FLAG}登ってみたい山</p>
         <div class="mini-tags">
           ${wish.map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`).join("")}
-        </div>`) : own ? emptyBlk("/mountains.html#wish", `${FLAG}行ってみたい山`) : ""}
+        </div>`) : own ? emptyBlk("/mountains.html#wish", `${FLAG}登ってみたい山`) : ""}
     </div>
     <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>
   </div>`;
@@ -447,14 +462,14 @@ function escMultiline(s) {
 // =============================================
 // 詳細セクション（カードの下に並べる）
 //
-// 並び：山リスト → 踏破状況 → 登山タイプ診断 → SNS
+// 並び：登山タイプ診断 → 踏破状況 → 山リスト（登ってみたい山・登ってよかった山） → SNS
 // 枠で囲わず、横線で区切るだけにしてヒーローカードを引き立てる
 // =============================================
 export function renderDetails(d, opts = {}) {
   return [
-    mountainsSection(d, opts),
-    meizanSection(d),
     diagnosisSection(d, opts),
+    meizanSection(d),
+    mountainsSection(d, opts),
     snsSection(d, opts),
   ].filter(Boolean).join("");
 }
@@ -481,14 +496,14 @@ function mountainsSection(d, opts) {
   return `
   <section class="det" id="section-mountains">
     <div class="det-h"><h2>山リスト</h2></div>
-    ${part(fav, "行ってよかった山", "fav", STAR, opts.overlaps?.favorites, "fav")}
-    ${part(wish, "行ってみたい山", "wish", FLAG, opts.overlaps?.wishlist, "wish")}
+    ${part(wish, "登ってみたい山", "wish", FLAG, opts.overlaps?.wishlist, "wish")}
+    ${part(fav, "登ってよかった山", "fav", STAR, opts.overlaps?.favorites, "fav")}
   </section>`;
 }
 
 // overlaps: { 山名: [{ name, public_id }] }
 function tags(list, cls, icon, overlaps) {
-  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も行ってみたい山にしています";
+  const verb = cls === "fav" ? "も良かった山に選んでいます" : "も登ってみたい山にしています";
   return list.map((m) => {
     const lead = cls === "fav" ? crown(m.pos) : icon;
     const who = overlaps?.[m.name];
@@ -516,9 +531,11 @@ function meizanSection(d) {
   const total = shown.reduce((n, r) => n + Number(ranks[r.key]), 0);
   const caret = `<svg class="mz-car" viewBox="0 0 24 24" fill="none"
       stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  // 登ってよかった山のベスト3には、山名の左に王冠
+  const favPos = new Map(sortedFavs(d.favorites).map((m) => [m.name, m.pos]));
   const tagList = (arr) => `
       <div class="mz-in"><div class="d-tags">
-        ${arr.map((m) => `<span class="d-tag">${esc(m.name)}</span>`).join("")}
+        ${arr.map((m) => `<span class="d-tag">${crown(favPos.get(m.name))}${esc(m.name)}</span>`).join("")}
       </div></div>`;
 
   const blocks = shown.map((r) => {
@@ -594,7 +611,10 @@ function diagnosisSection(d, opts) {
     <div class="d-card">
       ${opts.features ? `<p class="d-sub first">特徴</p><p class="d-desc">${esc(opts.features)}</p>` : ""}
       ${opts.caution ? `<p class="d-sub${opts.features ? "" : " first"}">気をつけたいこと</p><p class="d-desc">${esc(opts.caution)}</p>` : ""}
-      ${rows ? `<p class="d-sub${opts.features || opts.caution ? "" : " first"}">4軸のスコア</p>${rows}` : ""}
+      ${rows ? `<div class="d-axbox">
+        <p class="d-sub first">4軸のスコア</p>
+        <div class="d-axrows">${rows}</div>
+      </div>` : ""}
     </div>
   </section>`;
 }

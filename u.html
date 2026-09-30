@@ -59,8 +59,9 @@
 
   <div id="main" hidden>
     <div id="owner"></div>
-    <div id="hero"></div>
+    <!-- 登山相性はカードの上に置く（目に入りやすく、押したくなる位置） -->
     <div id="af-cta"></div>
+    <div id="hero"></div>
     <div id="details"></div>
     <section class="det" id="section-actions">
       <div id="below"></div>
@@ -86,7 +87,7 @@
 import { supabase, getUser, signOut } from "/supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions, applyTheme,
          renderOwnerBar, enableTilt, esc } from "/card.js";
-import { renderBackFace, renderFlipCard, bindFlip } from "/card-back.js";
+import { renderBackFace, renderBackDetails, renderFlipCard, bindFlip } from "/card-back.js";
 import { renderAffinityButton, openAffinitySheet } from "/affinity.js";
 import { mountHeader } from "/header.js";
 
@@ -159,7 +160,9 @@ if (!publicId) {
     $("#hero").innerHTML = renderFlipCard(
       renderHeroCard(data, { ...opts, flipBtn: true }),
       renderBackFace(data, backRes.data, { own: isOwn, lockAction }));
-    $("#details").innerHTML = renderDetails(data, opts);
+    $("#details").innerHTML = `
+      <div data-side="front">${renderDetails(data, opts)}</div>
+      <div data-side="back" hidden>${renderBackDetails(backRes.data, { own: isOwn })}</div>`;
 
     enableTilt($("#flip"));
     bindFlip();

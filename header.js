@@ -14,8 +14,10 @@
 
 import { LOGO_MARK, esc } from "./card.js";
 import { getMyProfile } from "./supabase.js";
+import "./reveal.js";   // スクロールして画面に入った要素をふわっと表示する
 
 const ICON = {
+  redo: `<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`,
   home: `<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>`,
   card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
   deck: `<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 4h11a2 2 0 0 1 2 2v13"/></svg>`,
@@ -41,6 +43,7 @@ const MENU_IN = [
   { href: "/exchange.html",   icon: "qr",   label: "カードを交換する" },
   { sep: true },
   { href: "/edit.html",       icon: "pen",  label: "カードを編集する" },
+  { href: "/quiz.html",       icon: "redo", label: "診断をやり直す" },
   { sep: true },
   { href: "/blocks.html",     icon: "ban",  label: "ブロック中のユーザー", mut: true },
   { act: "logout",            icon: "out",  label: "ログアウト", mut: true },

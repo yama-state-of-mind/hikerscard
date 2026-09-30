@@ -85,7 +85,7 @@ import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
          applyPendingExchange, signOut } from "./supabase.js";
 import { renderHeroCard, renderDetails, bindCardInteractions,
          renderOwnerBar, enableTilt, applyTheme, esc } from "./card.js";
-import { renderBackFace, renderFlipCard, bindFlip } from "./card-back.js";
+import { renderBackFace, renderBackDetails, renderFlipCard, bindFlip } from "./card-back.js";
 import { mountHeader } from "./header.js";
 
 const $ = (s) => document.querySelector(s);
@@ -113,7 +113,7 @@ if (justExchanged) {
   await new Promise(() => {});
 }
 
-// 登った山・好きな山・行ってみたい山
+// 登った山・好きな山・登ってみたい山
 const [climbedRes, wishRes, cntRes, colRes, backRes] = await Promise.all([
   supabase.from("climbed_mountains")
           .select("is_favorite, favorite_rank, mountains(name, meizan_rank, elevation)")
@@ -134,7 +134,7 @@ if (climbedRes.error) {
   throw climbedRes.error;
 }
 if (wishRes.error) {
-  console.warn("行ってみたい山を読み込めませんでした:", wishRes.error.message);
+  console.warn("登ってみたい山を読み込めませんでした:", wishRes.error.message);
 }
 
 const byElev = (a, b) => (b.elevation ?? 0) - (a.elevation ?? 0);
@@ -142,7 +142,7 @@ const toTag = (m) => ({ name: m.name, rank: m.meizan_rank });
 
 const climbedRows = (climbedRes.data ?? []).filter((r) => r.mountains);
 const climbed = climbedRows.map((r) => r.mountains).sort(byElev).map(toTag);
-// 行ってよかった山は順位順（1位〜5位）
+// 登ってよかった山は順位順（1位〜5位）
 const favorites = climbedRows.filter((r) => r.is_favorite)
   .map((r) => ({ ...toTag(r.mountains), pos: r.favorite_rank, elevation: r.mountains.elevation }))
   .sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99) || byElev(a, b));
@@ -218,7 +218,10 @@ $("#hero").innerHTML = renderFlipCard(
   renderBackFace(cardData, backRes.data, { own: true }));
 enableTilt($("#flip"));
 bindFlip();
-$("#details").innerHTML = renderDetails(cardData, cardOpts);
+// カードの下：表面のときは各項目、裏返したら各スキルの詳しい説明
+$("#details").innerHTML = `
+  <div data-side="front">${renderDetails(cardData, cardOpts)}</div>
+  <div data-side="back" hidden>${renderBackDetails(backRes.data, { own: true })}</div>`;
 bindCardInteractions();
 
 // 足りないものがあれば案内を出す
