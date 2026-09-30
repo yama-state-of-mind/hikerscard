@@ -95,7 +95,7 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme } from "./card.js";
+import { applyTheme, cardNo } from "./card.js";
 
 mountHeader(signOut);
 
@@ -144,7 +144,7 @@ function draw() {
         <div class="av">${diagnosed ? characterSVG(b.type_code) : SILHOUETTE}</div>
         <div class="bd">
           <p class="nm">${esc(b.display_name)}</p>
-          <p class="mt">No.${String(b.card_no).padStart(4, "0")}
+          <p class="mt">${cardNo(b.card_no)}
             ・${fmtDate(b.blocked_at)} にブロック</p>
         </div>
         <button data-unblock="${esc(b.public_id)}">解除</button>

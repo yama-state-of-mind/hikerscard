@@ -257,6 +257,12 @@ function sortedFavs(list) {
   return [...(list ?? [])].sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
 }
 
+// カード番号の表示。「No.0003」の形にする。
+// 番号は「表示名の入力」と「診断」がそろった時点で発行されるので、まだ無い人もいる（そのときは空）
+export function cardNo(n, empty = "") {
+  return n === null || n === undefined ? empty : `No.${String(n).padStart(4, "0")}`;
+}
+
 // 1〜3位の冠（金・銀・銅）。4位以下は何も付けない
 export function crown(pos) {
   if (!pos || pos > 3) return "";
@@ -325,7 +331,7 @@ export function renderHeroCard(d, opts = {}) {
     <div class="hero-in">
       <div class="hero-top">
         ${opts.flipBtn ? flipToggle(true) : "<span></span>"}
-        <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
+        <span class="hero-no">${cardNo(d.card_no)}</span>
       </div>
 
       <div class="hero-me">
@@ -416,7 +422,7 @@ export function renderOwnerBar(kind, d = {}) {
   return `
   <div class="owner-bar">
     <span class="ob-ic">${IC_BAR.card}</span>
-    <p class="ob-t"><b>${name}さんのカード</b><span>No.${String(d.card_no ?? 0).padStart(4, "0")}</span></p>
+    <p class="ob-t"><b>${name}さんのカード</b><span>${cardNo(d.card_no)}</span></p>
     ${badge}
   </div>`;
 }

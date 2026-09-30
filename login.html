@@ -52,21 +52,6 @@
       Googleで続ける
     </button>
 
-    <div class="divider"><span>または</span></div>
-
-    <div class="field">
-      <input type="email" id="email" placeholder="メールアドレス"
-             autocomplete="email" inputmode="email">
-    </div>
-    <button class="btn dark" id="magic">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2.5" y="5" width="19" height="14" rx="2.5"/>
-        <path d="M3 7l9 6 9-6"/>
-      </svg>
-      確認メールを送る
-    </button>
-
     <div id="msg" class="msg"></div>
 
     <p class="terms">
@@ -75,41 +60,10 @@
     </p>
     <p class="terms">
       以前ご利用の方も、同じ入口からお入りください。<br>
-      <b style="color:var(--pine)">前回と同じメールアドレス</b>でログインできます。
+      <b style="color:var(--pine)">前回と同じGoogleアカウント</b>でログインできます。
     </p>
   </div>
 
-  <!-- メール送信後 -->
-  <div id="sent" hidden style="text-align:center">
-    <p class="brand">ハイカーズ<span>カード</span></p>
-
-    <div style="width:76px;height:76px;margin:10px auto 18px;border-radius:50%;
-                background:#EDF3EF;display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" style="width:34px;height:34px" fill="none"
-           stroke="#1E3A31" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9.5l9-5.5 9 5.5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
-        <path d="M3 10l9 6 9-6"/>
-        <path d="M8 4.5V2.5h8v2"/>
-      </svg>
-    </div>
-
-    <h1>メールを送りました</h1>
-    <p style="font-family:var(--mono);font-size:13px;font-weight:700;
-              background:var(--paper);border-radius:10px;padding:9px 14px;
-              display:inline-block;margin:12px 0 4px" id="sent-addr"></p>
-    <p class="sub">メールに記載のリンクから、<br>ログインを完了してください。</p>
-
-    <div class="hint" style="text-align:left">
-      <b>メールが届かないときは</b><br>
-      ・迷惑メールフォルダをご確認ください<br>
-      ・リンクの有効期限は<b>1時間</b>です<br>
-      ・この画面は開いたままで大丈夫です
-    </div>
-
-    <button class="btn ghost" id="resend">メールを再送する</button>
-    <button class="btn flat" id="back">別のメールアドレスを使う</button>
-    <div id="msg2" class="msg"></div>
-  </div>
 </div>
 
 <script type="module">
@@ -117,9 +71,7 @@ import { supabase, getUser, baseUrl } from "./supabase.js";
 
 const loading = document.getElementById("loading");
 const form    = document.getElementById("form");
-const sent    = document.getElementById("sent");
 const msg     = document.getElementById("msg");
-const msg2    = document.getElementById("msg2");
 
 // すでにログイン済みならトップへ戻す
 const user = await getUser();
@@ -150,69 +102,6 @@ document.getElementById("google").onclick = async () => {
   }
 };
 
-// ---------- マジックリンクを送る ----------
-let lastEmail = "";
-
-document.getElementById("magic").onclick = async () => {
-  const email = document.getElementById("email").value.trim();
-  msg.className = "msg";
-  msg.textContent = "";
-
-  if (!email || !email.includes("@")) {
-    msg.className = "msg error";
-    msg.textContent = "メールアドレスを入力してください。";
-    return;
-  }
-
-  const btn = document.getElementById("magic");
-  btn.disabled = true;
-
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: baseUrl() + "index.html" },
-  });
-
-  btn.disabled = false;
-
-  if (error) {
-    msg.className = "msg error";
-    msg.textContent = "送信できませんでした：" + error.message;
-    return;
-  }
-
-  lastEmail = email;
-  document.getElementById("sent-addr").textContent = email;
-  form.hidden = true;
-  sent.hidden = false;
-};
-
-// ---------- 再送 ----------
-document.getElementById("resend").onclick = async () => {
-  msg2.className = "msg";
-  msg2.textContent = "";
-
-  const { error } = await supabase.auth.signInWithOtp({
-    email: lastEmail,
-    options: { emailRedirectTo: baseUrl() + "index.html" },
-  });
-
-  if (error) {
-    msg2.className = "msg error";
-    // 送信数の上限に当たるとここに来る
-    msg2.textContent = "再送できませんでした：" + error.message;
-  } else {
-    msg2.className = "msg success";
-    msg2.textContent = "もう一度送りました。";
-  }
-};
-
-// ---------- 入口に戻る ----------
-document.getElementById("back").onclick = () => {
-  sent.hidden = true;
-  form.hidden = false;
-  msg.textContent = "";
-  msg2.textContent = "";
-};
 </script>
 </body>
 </html>

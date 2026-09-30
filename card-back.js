@@ -11,7 +11,7 @@
 // ※ 裏面の情報は、登山相性のスコアには使っていない。
 // =============================================
 
-import { esc, patternSVG, BG, flipToggle } from "./card.js";
+import { esc, patternSVG, BG, flipToggle, cardNo } from "./card.js";
 
 export const SKILL_GROUPS = [
   {
@@ -232,7 +232,7 @@ export function renderBackFace(d, back, opts = {}) {
   const head = `
     <div class="hero-top">
       ${flipToggle(false)}
-      <span class="hero-no">No.${String(d.card_no ?? 0).padStart(4, "0")}</span>
+      <span class="hero-no">${cardNo(d.card_no)}</span>
     </div>
     <div class="bk-title">
       <p class="bk-en">SKILLS</p>

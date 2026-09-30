@@ -139,7 +139,7 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme, esc, SILHOUETTE } from "./card.js";
+import { applyTheme, esc, SILHOUETTE, cardNo } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const PAGE = 50;
@@ -233,7 +233,7 @@ function rowHtml(u) {
           <p class="ad-name${named ? "" : " unset"}">${named ? esc(u.display_name) : "（表示名が未設定）"}${
             u.is_admin ? `<span class="ad-tag admin">管理者</span>` : ""}${
             u.reports_open ? `<span class="ad-tag rep">通報 ${u.reports_open}</span>` : ""}</p>
-          <p class="ad-sub"><b>No.${String(u.card_no).padStart(4, "0")}</b> ・ ${
+          <p class="ad-sub"><b>${cardNo(u.card_no, "No.未発行")}</b> ・ ${
             diag ? `${esc(u.type_code)} ${esc(CHARACTERS[u.type_code]?.animal ?? "")}` : "未診断"} ・ ${esc(u.email ?? "")}</p>
         </div>
       </div>

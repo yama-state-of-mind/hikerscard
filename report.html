@@ -171,7 +171,7 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, signOut } from "/supabase.js";
 import { mountHeader } from "/header.js";
-import { SILHOUETTE } from "/card.js";
+import { SILHOUETTE, cardNo } from "/card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -215,7 +215,7 @@ $("#target").innerHTML = `
   <div>
     <p class="nm">${esc(card.display_name)}</p>
     <p class="ty">${diagnosed ? esc(CHARACTERS[card.type_code].animal) : "未診断"}
-      ・No.${String(card.card_no).padStart(4, "0")}</p>
+${card.card_no ? `・${cardNo(card.card_no)}` : ""}</p>
   </div>`;
 
 $("#reasons").innerHTML = REASONS.map((r) => `
