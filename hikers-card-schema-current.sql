@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜20 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜21 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step20 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step21 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -666,6 +666,13 @@ begin
      set use_count = use_count + 1
    where token = p_token;
 
+  -- 新しく交換できたら、QRを見せていた側に「交換しました」のお知らせを残す
+  -- （読み取った側は、その場でお祝いの画面を見るので不要）
+  if is_new then
+    insert into public.notices (user_id, kind, partner_id)
+    values (tok.owner_id, 'exchanged', me);
+  end if;
+
   return jsonb_build_object(
     'ok', true,
     'is_new', is_new,
@@ -923,6 +930,7 @@ $$;
 -- ---------- 管理者 ----------
 create table public.admins (
   user_id    uuid primary key references auth.users(id) on delete cascade,
+  role       text not null default 'koyaban' check (role in ('kanrinin', 'koyaban')),  -- 管理人／小屋番（Step 21）
   note       text,
   created_at timestamptz not null default now()
 );
@@ -978,11 +986,15 @@ declare
   total int;
   allc  int;
   items jsonb;
+  my_role text := public.my_admin_role();
+  see_email boolean;
 begin
-  -- 管理者でなければ何も返さない
-  if not public.is_admin() then
+  -- 管理人・小屋番でなければ何も返さない
+  if my_role is null then
     raise exception 'forbidden';
   end if;
+  -- メールアドレスは管理人だけが見られる（小屋番はメールで検索することもできない）
+  see_email := my_role = 'kanrinin';
 
   -- LIKE の特殊文字（% と _）を、ふつうの文字として探せるようにする
   if q is not null then
@@ -993,27 +1005,120 @@ begin
 
   select count(*) into total
     from public.profiles p join auth.users u on u.id = p.id
-   where public.admin_user_matches(p.display_name, p.public_id, u.email, p.type_code, p.card_no, q, t);
+   where public.admin_user_matches(p.display_name, p.public_id, case when see_email then u.email end, p.type_code, p.card_no, q, t);
 
   select coalesce(jsonb_agg(row_to_json(r)::jsonb), '[]'::jsonb) into items
   from (
     select
       p.public_id, p.card_no, p.display_name, p.type_code,
-      u.email, p.created_at, u.last_sign_in_at,
+      case when see_email then u.email end as email,
+      p.created_at, u.last_sign_in_at,
       (select count(*) from public.climbed_mountains c where c.user_id = p.id) as climbed,
       (select count(*) from public.exchanges e where p.id in (e.user_a, e.user_b)) as exchanges,
       (select count(*) from public.reports rp where rp.reported_id = p.id and rp.status = 'open') as reports_open,
-      exists (select 1 from public.admins a where a.user_id = p.id) as is_admin
+      (select a.role from public.admins a where a.user_id = p.id) as role,
+      p.id = auth.uid() as is_me
     from public.profiles p join auth.users u on u.id = p.id
-    where public.admin_user_matches(p.display_name, p.public_id, u.email, p.type_code, p.card_no, q, t)
+    where public.admin_user_matches(p.display_name, p.public_id, case when see_email then u.email end, p.type_code, p.card_no, q, t)
     order by
       case when p_sort = 'old'  then p.created_at end asc,
       case when p_sort = 'no'   then p.card_no end asc,
       case when p_sort = 'name' then nullif(p.display_name, '') end asc nulls last,
+      case when p_sort = 'login' then u.last_sign_in_at end desc nulls last,
       p.created_at desc
     limit lim offset off
   ) r;
 
-  return jsonb_build_object('total', total, 'all', allc, 'items', items);
+  return jsonb_build_object('total', total, 'all', allc, 'items', items, 'my_role', my_role);
+end;
+$$;
+
+
+-- =============================================================
+-- 管理人・小屋番（Step 21）
+-- =============================================================
+
+create or replace function public.my_admin_role()
+returns text language sql stable security definer set search_path = public as $$
+  select role from public.admins where user_id = auth.uid();
+$$;
+
+create or replace function public.admin_set_koyaban(p_public_id text, p_on boolean)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  target uuid;
+  cur    text;
+begin
+  if public.my_admin_role() is distinct from 'kanrinin' then
+    raise exception 'forbidden';
+  end if;
+
+  select id into target from public.profiles where public_id = p_public_id;
+  if target is null then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
+  if target = auth.uid() then return jsonb_build_object('ok', false, 'reason', 'self'); end if;
+
+  select role into cur from public.admins where user_id = target;
+  if cur = 'kanrinin' then return jsonb_build_object('ok', false, 'reason', 'kanrinin'); end if;
+
+  if p_on then
+    insert into public.admins (user_id, role, note)
+    values (target, 'koyaban', '管理人が付与')
+    on conflict (user_id) do nothing;
+  else
+    delete from public.admins where user_id = target and role = 'koyaban';
+  end if;
+
+  return jsonb_build_object('ok', true, 'role', case when p_on then 'koyaban' end);
+end;
+$$;
+
+
+-- =============================================================
+-- カード交換のお知らせ（Step 21）
+-- ※ redeem_exchange_token がこの表に書き込む
+-- =============================================================
+
+create table public.notices (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  kind       text not null check (kind in ('exchanged')),
+  partner_id uuid references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  seen_at    timestamptz
+);
+create index notices_unseen_idx on public.notices (user_id) where seen_at is null;
+
+-- 画面からは直接読み書きさせない（take_my_notices 経由だけ）
+alter table public.notices enable row level security;
+
+create or replace function public.take_my_notices()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  result jsonb;
+begin
+  if me is null then return '[]'::jsonb; end if;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'kind', n.kind,
+      'created_at', n.created_at,
+      'partner', jsonb_build_object(
+        'public_id', p.public_id,
+        'display_name', p.display_name,
+        'type_code', p.type_code))
+      order by n.created_at desc), '[]'::jsonb)
+    into result
+    from public.notices n
+    join public.profiles p on p.id = n.partner_id
+   where n.user_id = me and n.seen_at is null
+     and not exists (
+       select 1 from public.blocks b
+        where (b.blocker_id = me and b.blocked_id = p.id)
+           or (b.blocker_id = p.id and b.blocked_id = me));
+
+  update public.notices set seen_at = now()
+   where user_id = me and seen_at is null;
+
+  return result;
 end;
 $$;

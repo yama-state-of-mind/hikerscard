@@ -134,7 +134,7 @@ export async function applyPendingDiagnosis(profile) {
 // 成功・失敗どちらでも預かり分は消す（期限切れのトークンが
 // 残り続けると、毎回エラーが出てしまうため）
 //
-// 戻り値: 交換できたら相手のpublic_id、そうでなければ null
+// 戻り値: 交換できたら { partner: 相手のpublic_id, isNew: 新しい交換か }、そうでなければ null
 // ---------------------------------------------
 export async function applyPendingExchange() {
   const token = localStorage.getItem("pendingExchangeToken");
@@ -157,7 +157,7 @@ export async function applyPendingExchange() {
     console.warn("交換できませんでした:", data?.reason);
     return null;
   }
-  return data.partner;
+  return { partner: data.partner, isNew: !!data.is_new };
 }
 
 // ---------------------------------------------

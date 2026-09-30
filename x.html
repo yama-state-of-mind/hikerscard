@@ -133,24 +133,9 @@ async function redeem(tok) {
     return;
   }
 
-  const { data: card } = await supabase.rpc("get_public_card", {
-    p_public_id: data.partner,
-  });
+  // 成功したら、お祝いの画面へ
+  location.replace(`/exchanged.html?p=${encodeURIComponent(data.partner)}&new=${data.is_new ? 1 : 0}`);
 
-  const diagnosed = !!card?.type_code;
-
-  render(`
-    <p class="brand">ハイカーズ<span>カード</span></p>
-    <div class="done-char">${diagnosed ? characterSVG(card.type_code) : ""}</div>
-    <p class="done-name">${esc(card?.display_name ?? "")}</p>
-    <p class="done-type">${diagnosed
-      ? `${esc(CHARACTERS[card.type_code].animal)}・${esc(TYPES[card.type_code].name)}`
-      : "未診断"}</p>
-    <p class="done-lead">${data.is_new
-      ? "カードを交換しました。<br><b>お互いのコレクション</b>に入りました。"
-      : "すでに交換済みの相手でした。<br>カードの内容を最新にしました。"}</p>
-    <button class="btn sun"   onclick="location.href='/collection.html'">コレクションを見る</button>
-    <button class="btn ghost" onclick="location.href='/card.html'">マイカードへ</button>`);
 }
 
 function errorView(title, detail) {

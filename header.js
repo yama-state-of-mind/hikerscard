@@ -16,6 +16,7 @@ import { LOGO_MARK, esc } from "./card.js";
 import { getMyProfile } from "./supabase.js";
 
 const ICON = {
+  home: `<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>`,
   card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
   deck: `<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 4h11a2 2 0 0 1 2 2v13"/></svg>`,
   qr:   `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 19h2v2h-2z"/></svg>`,
@@ -34,6 +35,7 @@ const ICON = {
 // リンクは絶対パスにする。
 // /u/x7k2p9 のような階層のあるパスから開いても正しく飛べるようにするため
 const MENU_IN = [
+  { href: "/mypage.html",     icon: "home", label: "マイページ" },
   { href: "/card.html",       icon: "card", label: "マイカード" },
   { href: "/collection.html", icon: "deck", label: "コレクション" },
   { href: "/exchange.html",   icon: "qr",   label: "カードを交換する" },
@@ -106,7 +108,7 @@ export function mountHeader(onLogout, opts = {}) {
   };
 
   document.getElementById("hd-logo").onclick = () => {
-    location.href = opts.loggedIn === false ? "/" : "/card.html";
+    location.href = opts.loggedIn === false ? "/" : "/mypage.html";
   };
 
   const share = document.getElementById("hd-share");

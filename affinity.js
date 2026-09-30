@@ -383,11 +383,11 @@ function sheetBody(af, ctx) {
 // ---------------------------------------------
 // シートの開閉（下からせり出す）
 // ---------------------------------------------
-function openSheet(inner, title) {
+function openSheet(inner, title, fit = false) {
   const wrap = document.createElement("div");
   wrap.className = "afs";
   wrap.innerHTML = `
-    <div class="afs-panel" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="afs-panel${fit ? " fit" : ""}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
       <div class="afs-grab"><i></i></div>
       <button class="afs-close" aria-label="閉じる">&times;</button>
       <div class="afs-scroll">${inner}</div>
@@ -483,7 +483,7 @@ export function openAffinitySheet(ctx) {
         <p class="afs-login-t">${esc(ctx.other.display_name)}さんとの登山相性</p>
         <p class="afs-login-d">ログインすると、4軸の近さや共通の山から<br>ふたりの相性を測定できます。</p>
         <a class="btn sun" href="${esc(ctx.loginUrl)}" style="text-decoration:none">ログインして測定する</a>
-      </div>`, "登山相性");
+      </div>`, "登山相性", true);
     return;
   }
 

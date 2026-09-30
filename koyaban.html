@@ -54,7 +54,13 @@
   .ad-sub { font-size: 11px; color: var(--c-mut); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ad-sub b { font-family: var(--mono); color: var(--c-fg2); letter-spacing: .06em; }
   .ad-tag { font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px; }
-  .ad-tag.admin { background: var(--c-chip); color: var(--c-chipfg); }
+  .ad-tag.kanrinin { background: var(--c-chip); color: var(--c-chipfg); }
+  .ad-tag.koyaban { background: var(--sun); color: #fff; }
+  .ad-role { margin-top: 10px; display: flex; justify-content: flex-end; }
+  .ad-role button { font-family: var(--font); font-size: 11.5px; font-weight: 700; cursor: pointer;
+    border-radius: 999px; padding: 6px 14px; border: 1.5px solid var(--c-div); background: none; color: var(--c-fg); }
+  .ad-role button.on { border-color: var(--sun); color: var(--sun); }
+  .ad-role button:disabled { opacity: .5; cursor: default; }
   .ad-tag.rep { background: #F6E1DE; color: #9A3B2E; }
 
   .ad-url { display: flex; align-items: center; gap: 6px; margin-top: 10px;
@@ -94,14 +100,14 @@
   </div>
 
   <div id="main" hidden>
-    <span class="ad-badge"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>小屋番</span>
+    <span class="ad-badge"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg><span id="my-role">小屋番</span></span>
     <h1 style="margin-top:8px">ユーザー検索</h1>
 
     <div class="ad-search">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      <input id="q" type="search" placeholder="名前・公開ID・メール・タイプ・No." autocomplete="off">
+      <input id="q" type="search" placeholder="名前・公開ID・タイプ・No." autocomplete="off">
     </div>
-    <p class="ad-hint">名前・公開ID・メールアドレスは部分一致。「EGFC」のようにタイプを入れるとそのタイプ、数字だけならカードNo.で探します。</p>
+    <p class="ad-hint" id="hint">名前・公開IDは部分一致。「EGFC」のようにタイプを入れるとそのタイプ、数字だけならカードNo.で探します。</p>
 
     <div class="ad-filters">
       <select id="type" aria-label="診断タイプで絞り込む"></select>
@@ -110,6 +116,7 @@
         <option value="old">登録が古い順</option>
         <option value="no">カードNo.順</option>
         <option value="name">名前順</option>
+        <option value="login">最終ログインが新しい順</option>
       </select>
     </div>
 
@@ -155,14 +162,26 @@ if (profile?.card_bg) applyTheme(profile.card_bg);
 // 管理者かどうか。データは検索のたびにDB側でも確かめているので、
 // ここは「管理者でない人に空の画面を見せない」ための表示の切り替えだけ
 // ---------------------------------------------
-const { data: isAdmin, error: adminErr } = await supabase.rpc("is_admin");
+// 役割：'kanrinin'（管理人）/ 'koyaban'（小屋番）/ null
+const { data: myRole, error: adminErr } = await supabase.rpc("my_admin_role");
 $("#loading").hidden = true;
-if (adminErr || !isAdmin) {
+if (adminErr || !myRole) {
   $("#deny").hidden = false;
   // ここで処理を止める（エラーにすると、画面にエラー表示が出てしまうため、終わらない待ちで止める）
   await new Promise(() => {});
 }
 $("#main").hidden = false;
+
+const IS_KANRININ = myRole === "kanrinin";
+const ROLE_NAME = { kanrinin: "管理人", koyaban: "小屋番" };
+$("#my-role").textContent = ROLE_NAME[myRole];
+document.title = `${ROLE_NAME[myRole]}｜ハイカーズカード`;
+
+// メールアドレスは管理人だけ（小屋番にはDBがそもそも返さない）
+if (IS_KANRININ) {
+  $("#q").placeholder = "名前・公開ID・メール・タイプ・No.";
+  $("#hint").textContent = "名前・公開ID・メールアドレスは部分一致。「EGFC」のようにタイプを入れるとそのタイプ、数字だけならカードNo.で探します。";
+}
 
 // タイプの選択肢（16タイプ＋未診断）
 $("#type").innerHTML = `<option value="">すべてのタイプ</option>` +
@@ -231,10 +250,11 @@ function rowHtml(u) {
         <div class="ad-av">${diag ? characterSVG(u.type_code) : SILHOUETTE}</div>
         <div class="ad-who">
           <p class="ad-name${named ? "" : " unset"}">${named ? esc(u.display_name) : "（表示名が未設定）"}${
-            u.is_admin ? `<span class="ad-tag admin">管理者</span>` : ""}${
+            u.role ? `<span class="ad-tag ${u.role}">${ROLE_NAME[u.role]}</span>` : ""}${
             u.reports_open ? `<span class="ad-tag rep">通報 ${u.reports_open}</span>` : ""}</p>
           <p class="ad-sub"><b>${cardNo(u.card_no, "No.未発行")}</b> ・ ${
-            diag ? `${esc(u.type_code)} ${esc(CHARACTERS[u.type_code]?.animal ?? "")}` : "未診断"} ・ ${esc(u.email ?? "")}</p>
+            diag ? `${esc(u.type_code)} ${esc(CHARACTERS[u.type_code]?.animal ?? "")}` : "未診断"}${
+            u.email ? ` ・ ${esc(u.email)}` : ""}</p>
         </div>
       </div>
       <div class="ad-url">
@@ -248,8 +268,39 @@ function rowHtml(u) {
         <span>登った山 <b>${u.climbed}</b></span>
         <span>交換 <b>${u.exchanges}</b></span>
       </div>
+      ${roleControl(u)}
     </div>`;
 }
+
+// 小屋番の付け外し（管理人だけ。管理人の人・自分自身には出さない）
+function roleControl(u) {
+  if (!IS_KANRININ || u.is_me || u.role === "kanrinin") return "";
+  const on = u.role === "koyaban";
+  return `<div class="ad-role">
+    <button class="${on ? "on" : ""}" data-role="${esc(u.public_id)}" data-on="${on ? 1 : 0}">
+      ${on ? "小屋番を外す" : "小屋番にする"}</button></div>`;
+}
+
+$("#list").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-role]");
+  if (!b) return;
+  const u = items.find((x) => x.public_id === b.dataset.role);
+  const turnOn = b.dataset.on !== "1";
+  const who = u?.display_name || "この人";
+  if (!confirm(turnOn ? `${who}さんを小屋番にしますか？\n（ユーザー検索ができるようになります。メールアドレスは見られません）`
+                      : `${who}さんを小屋番から外しますか？`)) return;
+
+  b.disabled = true;
+  const { data, error } = await supabase.rpc("admin_set_koyaban", { p_public_id: b.dataset.role, p_on: turnOn });
+  if (error || !data?.ok) {
+    b.disabled = false;
+    alert("変更できませんでした：" + (error?.message ?? data?.reason ?? ""));
+    return;
+  }
+  // その人の表示だけ描き直す
+  u.role = data.role ?? null;
+  b.closest(".ad-row").outerHTML = rowHtml(u);
+});
 
 // URLのコピー
 $("#list").addEventListener("click", async (e) => {

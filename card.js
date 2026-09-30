@@ -320,6 +320,15 @@ export function renderHeroCard(d, opts = {}) {
     ? `<button class="hero-blk" data-go="${go}">${inner}</button>`
     : `<div class="hero-blk">${inner}</div>`;
 
+  // 自分のカード（opts.own）では、未登録の項目も「（未登録）」として全部出す。
+  // 押すとその項目の登録画面へ行けるので、登録のきっかけになる
+  const own = !!opts.own;
+  const emptyBlk = (href, label) => `
+    <a class="hero-blk hero-empty" href="${href}">
+      <p class="hero-lbl">${label}</p>
+      <span class="hero-none">（未登録）<em>登録する</em></span>
+    </a>`;
+
   return `
   <div class="hero t-${bg}">
     ${patternSVG(bg)}
@@ -341,8 +350,11 @@ export function renderHeroCard(d, opts = {}) {
           <div class="hero-trow">
             <span class="hero-code">${esc(d.type_code)}</span>
             <span class="hero-tn">${esc(opts.animal ?? "")}・${esc(opts.typeName ?? "")}</span>
-          </div>` : `<p class="hero-undiag">未診断</p>`}
-        ${d.comment ? `<p class="hero-cmt">${escMultiline(d.comment)}</p>` : ""}
+          </div>` : own
+            ? `<a class="hero-undiag hero-none" href="/quiz.html">（未診断）<em>診断する</em></a>`
+            : `<p class="hero-undiag">未診断</p>`}
+        ${d.comment ? `<p class="hero-cmt">${escMultiline(d.comment)}</p>`
+          : own ? `<a class="hero-cmt hero-none" href="/setup.html">ひとこと（未登録）<em>登録する</em></a>` : ""}
       </div>
 
       ${rings ? blk("section-meizan", `
@@ -353,13 +365,13 @@ export function renderHeroCard(d, opts = {}) {
         <p class="hero-lbl">${STAR}行ってよかった山</p>
         <div class="mini-tags">
           ${favs.map((m) => `<span class="mini-tag fav">${crown(m.pos)}${esc(m.name)}</span>`).join("")}
-        </div>`) : ""}
+        </div>`) : own ? emptyBlk("/mountains.html#fav", `${STAR}行ってよかった山`) : ""}
 
       ${wish.length ? blk("section-mountains", `
         <p class="hero-lbl">${FLAG}行ってみたい山</p>
         <div class="mini-tags">
           ${wish.map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`).join("")}
-        </div>`) : ""}
+        </div>`) : own ? emptyBlk("/mountains.html#wish", `${FLAG}行ってみたい山`) : ""}
     </div>
     <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>
   </div>`;
@@ -443,7 +455,7 @@ export function renderDetails(d, opts = {}) {
     mountainsSection(d, opts),
     meizanSection(d),
     diagnosisSection(d, opts),
-    snsSection(d),
+    snsSection(d, opts),
   ].filter(Boolean).join("");
 }
 
@@ -451,34 +463,26 @@ export function renderDetails(d, opts = {}) {
 function mountainsSection(d, opts) {
   const fav = sortedFavs(d.favorites);
   const wish = d.wishlist ?? [];
+  if (!fav.length && !wish.length && !opts.own) return "";
 
-  // 自分のカードでは、空でもセクションを出して登録へ誘導する
-  if (!fav.length && !wish.length) {
-    if (!opts.own) return "";
-    return `
-    <section class="det" id="section-mountains">
-      <div class="det-h"><h2>山リスト</h2></div>
-      <p class="det-empty">行ってよかった山・行ってみたい山を<br>それぞれ5座まで載せられます。
-        <a href="/mountains.html#fav">登録する</a></p>
-    </section>`;
-  }
+  // 自分のカードでは、空のほうも「（未登録）」として見出しごと出す
+  const part = (list, title, cls, icon, ov, hash) => list.length
+    ? `<div class="d-card">
+         <p class="d-sub first">${title}</p>
+         <div class="d-tags">${tags(list, cls, icon, ov)}</div>
+       </div>`
+    : opts.own
+      ? `<div class="d-card">
+           <p class="d-sub first">${title}</p>
+           <p class="det-empty">（未登録） <a href="/mountains.html#${hash}">登録する</a></p>
+         </div>`
+      : "";
 
   return `
   <section class="det" id="section-mountains">
     <div class="det-h"><h2>山リスト</h2></div>
-    ${fav.length ? `<div class="d-card">
-      <p class="d-sub first">行ってよかった山</p>
-      <div class="d-tags">${tags(fav, "fav", STAR, opts.overlaps?.favorites)}</div>
-    </div>` : ""}
-    ${wish.length ? `<div class="d-card">
-      <p class="d-sub first">行ってみたい山</p>
-      <div class="d-tags">${tags(wish, "wish", FLAG, opts.overlaps?.wishlist)}</div>
-    </div>` : ""}
-    ${opts.own && (!fav.length || !wish.length) ? `
-      <p class="det-empty">
-        ${!fav.length ? "行ってよかった山" : "行ってみたい山"}がまだ未登録です。
-        <a href="/mountains.html#${!fav.length ? "fav" : "wish"}">登録する</a>
-      </p>` : ""}
+    ${part(fav, "行ってよかった山", "fav", STAR, opts.overlaps?.favorites, "fav")}
+    ${part(wish, "行ってみたい山", "wish", FLAG, opts.overlaps?.wishlist, "wish")}
   </section>`;
 }
 
@@ -556,7 +560,14 @@ const AXIS_DEFS = [
 ];
 
 function diagnosisSection(d, opts) {
-  if (!d.type_code) return "";
+  if (!d.type_code) {
+    if (!opts.own) return "";
+    return `
+    <section class="det" id="section-diagnosis">
+      <div class="det-h"><h2>登山タイプ診断</h2></div>
+      <p class="det-empty">（未診断） <a href="/quiz.html">診断する</a></p>
+    </section>`;
+  }
 
   const rows = AXIS_DEFS.map((ax) => {
     const aPct = d.axes?.[ax.key];
@@ -589,10 +600,17 @@ function diagnosisSection(d, opts) {
 }
 
 // ---------- SNS ----------
-function snsSection(d) {
+function snsSection(d, opts = {}) {
   const entries = Object.entries(d.sns ?? {})
     .filter(([k, v]) => SNS[k] && String(v ?? "").trim());
-  if (!entries.length) return "";
+  if (!entries.length) {
+    if (!opts.own) return "";
+    return `
+    <section class="det" id="section-sns">
+      <div class="det-h"><h2>SNS</h2></div>
+      <p class="det-empty">（未登録） <a href="/setup.html">登録する</a></p>
+    </section>`;
+  }
 
   return `
   <section class="det" id="section-sns">

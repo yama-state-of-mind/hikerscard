@@ -404,12 +404,9 @@ async function redeem(token) {
     return;
   }
 
-  // 相手のカードを取って結果を見せる
-  const { data: card } = await supabase.rpc("get_public_card", {
-    p_public_id: data.partner,
-  });
-
-  showDone(card, data.is_new);
+  // 成功したら、お祝いの画面へ（カメラは止めてから移動する）
+  stopCamera();
+  location.href = `./exchanged.html?p=${encodeURIComponent(data.partner)}&new=${data.is_new ? 1 : 0}`;
 }
 
 function reasonText(reason) {
