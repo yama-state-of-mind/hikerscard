@@ -1,15 +1,86 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/u/:id",    "destination": "/u.html" },
-    { "source": "/x/:token", "destination": "/x.html" }
+    {
+      "source": "/u/:id",
+      "destination": "/u.html"
+    },
+    {
+      "source": "/x/:token",
+      "destination": "/x.html"
+    },
+    {
+      "source": "/koyaban",
+      "destination": "/koyaban.html"
+    }
   ],
   "headers": [
-    { "source": "/",          "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/(.*).html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/(.*).js",   "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/(.*).css",  "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/u/:id",     "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/x/:token",  "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/u/:id",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/x/:token",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/koyaban(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
   ]
 }

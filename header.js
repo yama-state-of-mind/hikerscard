@@ -13,7 +13,7 @@
 // =============================================
 
 import { LOGO_MARK, esc } from "./card.js";
-import { getMyProfile, supabase } from "./supabase.js";
+import { getMyProfile } from "./supabase.js";
 
 const ICON = {
   card: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 9h6M9 13h6"/></svg>`,
@@ -24,7 +24,6 @@ const ICON = {
   redo: `<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`,
   pen:  `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
   ban:  `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>`,
-  admin:`<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>`,
   share:`<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7.5 7.5L12 3l4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>`,
   out:  `<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>`,
 };
@@ -120,21 +119,6 @@ export function mountHeader(onLogout, opts = {}) {
     };
   });
 
-  // 管理者にだけ、メニューに「管理」を足す（管理者でなければ何も起きない）
-  if (loggedIn) addAdminLink(drawer);
-}
-
-async function addAdminLink(drawer) {
-  try {
-    const { data: ok } = await supabase.rpc("is_admin");
-    if (!ok) return;
-    const inner = drawer.querySelector(".drawer-in");
-    const before = inner.querySelector('a[href="/blocks.html"]')?.previousElementSibling ?? null;
-    const a = document.createElement("a");
-    a.href = "/admin.html";
-    a.innerHTML = `${ICON.admin}管理（ユーザー検索）`;
-    inner.insertBefore(a, before);
-  } catch { /* Step 19 の SQL が未実行でも、ヘッダーは壊さない */ }
 }
 
 // =============================================
