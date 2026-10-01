@@ -8,63 +8,160 @@
 // ---------------------------------------------
 // 背景のパターン
 // ---------------------------------------------
+// 背景の模様（幅300×高さ470で描く。patternSVG で拡大縮小して敷く）
+// 色だけのカード（雪・苔・砂・空・墨）は模様なし
+const STARS = [[28,54],[76,32],[122,78],[168,44],[214,92],[262,38],[286,70],[46,132],[104,158],[186,126],
+               [248,164],[280,140],[22,214],[88,246],[152,206],[226,252],[270,228],[60,300],[200,290]];
+const TOPO = `<g stroke="#7FA7BF" stroke-opacity=".28" stroke-width=".8"><line x1="0" y1="0" x2="0" y2="470"/><line x1="75" y1="0" x2="75" y2="470"/><line x1="150" y1="0" x2="150" y2="470"/><line x1="225" y1="0" x2="225" y2="470"/><line x1="300" y1="0" x2="300" y2="470"/><line x1="0" y1="0" x2="300" y2="0"/><line x1="0" y1="75" x2="300" y2="75"/><line x1="0" y1="150" x2="300" y2="150"/><line x1="0" y1="225" x2="300" y2="225"/><line x1="0" y1="300" x2="300" y2="300"/><line x1="0" y1="375" x2="300" y2="375"/><line x1="0" y1="450" x2="300" y2="450"/></g><path d="M234.4 330.0 L232.9 334.3 L230.0 337.9 L226.5 341.0 L221.9 343.0 L216.6 343.1 L212.0 342.8 L207.1 343.8 L200.8 344.7 L195.1 342.9 L192.9 338.4 L193.8 333.7 L194.4 330.0 L194.3 326.4 L195.3 322.7 L198.2 319.5 L201.9 316.7 L206.3 313.7 L212.0 312.4 L217.5 314.4 L220.8 318.4 L223.3 321.4 L227.5 323.2 L232.4 325.8 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M256.0 330.0 L252.1 338.2 L247.2 345.4 L240.0 351.3 L230.2 354.0 L220.8 354.9 L212.0 357.8 L200.8 361.9 L188.0 361.5 L180.0 354.3 L178.6 344.7 L178.3 336.9 L176.0 330.0 L174.8 322.4 L177.9 315.0 L183.5 308.3 L190.2 301.4 L200.1 296.2 L212.0 297.0 L221.5 303.2 L228.0 308.9 L236.6 311.3 L247.9 314.3 L255.6 321.1 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M274.6 330.0 L270.3 341.9 L263.4 352.6 L251.5 360.0 L237.9 364.0 L225.9 369.5 L212.0 378.1 L193.5 382.4 L177.3 375.6 L170.0 362.0 L166.8 349.8 L160.8 340.4 L154.6 330.0 L154.4 318.3 L159.5 307.0 L166.6 295.5 L177.9 285.0 L194.9 281.4 L212.0 286.9 L224.6 294.3 L237.3 296.6 L254.8 297.5 L270.7 304.2 L276.8 316.8 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M291.8 330.0 L288.0 345.5 L277.4 358.7 L261.6 367.7 L247.5 376.7 L233.2 390.2 L212.0 401.5 L187.7 399.0 L171.2 383.7 L162.5 367.6 L152.1 356.3 L138.9 344.9 L131.8 330.0 L133.5 314.0 L138.8 297.9 L148.5 281.7 L167.5 271.4 L191.8 272.8 L212.0 279.9 L229.1 281.6 L251.2 278.4 L275.7 281.6 L290.7 295.5 L293.5 313.4 Z" fill="none" stroke="#A2763F" stroke-opacity="0.55" stroke-width="1.4" stroke-linejoin="round"/><path d="M309.4 330.0 L303.9 348.7 L289.5 364.0 L274.6 377.5 L261.9 395.6 L241.9 414.8 L212.0 420.4 L184.8 407.2 L167.7 388.3 L152.0 375.6 L131.5 365.3 L114.8 349.8 L109.4 330.0 L110.7 309.4 L116.3 288.0 L133.1 270.1 L161.9 264.0 L190.1 268.0 L212.0 268.4 L236.5 260.4 L267.7 256.7 L293.4 268.1 L304.7 289.3 L308.0 310.4 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M326.5 330.0 L317.6 351.5 L304.3 370.5 L294.6 392.8 L279.8 419.2 L249.1 435.3 L212.0 428.8 L183.9 409.7 L161.8 396.0 L134.9 388.6 L107.6 375.8 L91.9 354.5 L86.5 330.0 L85.8 304.3 L96.4 279.3 L124.9 263.8 L159.8 261.3 L187.0 259.1 L212.0 246.4 L246.0 233.5 L281.8 238.1 L304.6 259.6 L315.5 284.6 L323.7 307.3 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M341.5 330.0 L333.2 354.7 L327.9 380.8 L321.2 413.0 L295.6 440.0 L252.3 444.3 L212.0 428.9 L181.9 415.3 L150.0 411.6 L113.3 405.0 L85.1 385.7 L70.1 358.9 L61.5 330.0 L62.7 299.6 L85.4 274.4 L123.2 262.5 L155.6 255.7 L179.8 238.8 L212.0 216.1 L254.4 209.7 L290.0 227.3 L311.3 254.5 L327.6 279.3 L340.6 303.8 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M357.2 330.0 L357.9 359.7 L361.0 395.4 L346.1 431.9 L303.0 449.7 L251.7 442.6 L212.0 430.9 L176.3 431.3 L133.4 433.5 L92.6 420.7 L65.5 394.3 L47.4 363.5 L37.2 330.0 L48.8 296.8 L83.8 273.8 L119.8 260.0 L143.0 239.1 L168.9 207.7 L212.0 187.7 L259.1 196.4 L293.4 222.9 L318.9 248.7 L342.6 272.7 L356.5 300.6 Z" fill="none" stroke="#A2763F" stroke-opacity="0.55" stroke-width="1.4" stroke-linejoin="round"/><path d="M380.9 330.0 L394.4 367.1 L394.5 410.1 L359.1 441.8 L301.2 447.4 L251.0 440.7 L212.0 445.1 L167.1 457.4 L116.7 455.5 L76.0 433.4 L46.7 402.5 L24.4 368.2 L20.9 330.0 L46.7 296.3 L82.7 273.3 L104.6 248.3 L121.2 210.5 L157.8 176.4 L212.0 171.5 L260.3 193.1 L296.7 218.5 L330.5 239.9 L358.5 265.7 L372.1 297.4 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M59.6 120.0 L58.3 123.7 L55.7 126.9 L52.7 129.6 L48.6 131.4 L44.0 131.5 L40.0 131.2 L35.8 132.0 L30.2 132.9 L25.2 131.3 L23.3 127.3 L24.0 123.3 L24.6 120.0 L24.5 116.8 L25.4 113.6 L27.9 110.8 L31.1 108.3 L35.0 105.8 L40.0 104.6 L44.8 106.3 L47.7 109.8 L49.9 112.5 L53.6 114.0 L57.8 116.4 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M78.5 120.0 L75.1 127.1 L70.8 133.5 L64.5 138.6 L56.0 141.0 L47.7 141.8 L40.0 144.3 L30.2 147.9 L19.0 147.6 L12.0 141.3 L10.7 132.8 L10.6 126.0 L8.5 120.0 L7.4 113.4 L10.2 106.9 L15.0 101.0 L21.0 94.9 L29.6 90.4 L40.0 91.1 L48.3 96.5 L54.0 101.5 L61.5 103.6 L71.4 106.2 L78.2 112.2 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M94.8 120.0 L91.0 130.4 L85.0 139.7 L74.5 146.2 L62.6 149.8 L52.2 154.6 L40.0 162.1 L23.8 165.9 L9.7 159.9 L3.2 148.0 L0.5 137.3 L-4.8 129.1 L-10.2 120.0 L-10.4 109.7 L-5.9 99.8 L0.3 89.8 L10.1 80.7 L25.0 77.5 L40.0 82.3 L51.0 88.8 L62.2 90.8 L77.5 91.5 L91.4 97.4 L96.7 108.5 Z" fill="none" stroke="#A2763F" stroke-opacity="0.32" stroke-width="0.8" stroke-linejoin="round"/><path d="M109.8 120.0 L106.5 133.5 L97.2 145.1 L83.4 153.0 L71.1 160.9 L58.6 172.7 L40.0 182.5 L18.7 180.4 L4.3 167.0 L-3.3 152.9 L-12.4 143.0 L-23.9 133.0 L-30.2 120.0 L-28.7 106.0 L-24.0 91.9 L-15.6 77.8 L1.1 68.8 L22.3 69.9 L40.0 76.1 L54.9 77.6 L74.3 74.9 L95.7 77.7 L108.8 89.8 L111.3 105.5 Z" fill="none" stroke="#A2763F" stroke-opacity="0.55" stroke-width="1.4" stroke-linejoin="round"/><path d="M212 318 L220 331 L204 331 Z" fill="none" stroke="#7A4F22" stroke-width="1.4"/><text x="226" y="333" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#7A4F22">2956</text>`;
+
 export const BG = {
-  contour: () => {
-    let p = "";
-    for (let i = 0; i < 12; i++) {
-      const y = 20 + i * 46;
-      p += `<path d="M-20 ${y} Q 80 ${y - 30} 165 ${y} T 350 ${y}"
-               fill="none" stroke="rgba(30,58,49,.055)" stroke-width="1.6"/>`;
-    }
-    return p;
-  },
+  snow: () => "", moss: () => "", sand: () => "", sky: () => "", sumi: () => "",
 
   ridge: () => `
-    <path d="M-10 540 L60 380 L118 442 L190 320 L250 400 L330 540 Z" fill="rgba(30,58,49,.06)"/>
-    <path d="M-10 540 L40 450 L96 500 L160 420 L228 486 L300 430 L340 540 Z" fill="rgba(70,112,143,.06)"/>`,
+    <path d="M-10 470 L40 360 L92 410 L160 300 L220 372 L310 470 Z" fill="#1E3A31" fill-opacity=".09"/>
+    <path d="M-10 470 L30 400 L84 440 L146 372 L208 428 L268 380 L310 470 Z" fill="#46708F" fill-opacity=".10"/>`,
 
-  mist: () => `
-    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F6DCC0" stop-opacity=".55"/>
-      <stop offset=".55" stop-color="#FBF6F1" stop-opacity="0"/>
-    </linearGradient></defs>
-    <rect width="320" height="540" fill="url(#mg)"/>
-    <path d="M-10 300 Q 90 278 170 300 T 340 296" fill="none" stroke="rgba(193,128,74,.14)" stroke-width="2"/>
-    <path d="M-10 336 Q 100 314 180 336 T 340 330" fill="none" stroke="rgba(193,128,74,.1)" stroke-width="2"/>`,
+  morgen: () => `
+    <rect x="-200" y="-1200" width="700" height="1400" fill="#F9E3D3"/>
+    <path d="M-10 470 L70 300 L150 170 L214 268 L250 236 L310 330 L310 470 Z" fill="#F0C7B6"/>
+    <path d="M150 170 L214 268 L196 290 L170 250 L150 300 Z" fill="#E1A99C"/>
+    <path d="M150 170 L162 190 L150 204 L140 192 Z" fill="#FFF6EF"/>
+    <path d="M-10 470 L-10 410 C 60 392, 120 418, 190 400 S 280 392, 310 404 L310 470 Z" fill="#C79C97"/>`,
 
-  forest: () => {
-    let p = "";
-    [14, 52, 96, 140, 186, 232, 276, 308].forEach((x, i) => {
-      const w = 7 + (i % 3) * 3;
-      p += `<rect x="${x}" y="0" width="${w}" height="540" fill="rgba(34,65,44,.045)"/>`;
-      p += `<path d="M${x - 6} ${90 + i * 40} L${x + w / 2} ${56 + i * 40} L${x + w + 6} ${90 + i * 40} Z"
-               fill="rgba(79,138,91,.07)"/>`;
-    });
-    return p;
-  },
+  unkai: () => `
+    <path d="M40 330 L118 214 L164 262 L206 232 L276 330 Z" fill="#4E6472" fill-opacity=".38"/>
+    <path d="M118 214 L128 230 L112 238 Z" fill="#fff" fill-opacity=".9"/>
+    <path d="M-20 318 C 30 296, 70 316, 110 304 S 190 288, 230 306 S 290 296, 330 310 L330 470 L-20 470 Z" fill="#fff" fill-opacity=".92"/>
+    <path d="M-20 360 C 40 342, 90 362, 140 350 S 230 336, 330 354 L330 470 L-20 470 Z" fill="#F4F8FA"/>
+    <path d="M-20 404 C 50 390, 110 408, 170 398 S 260 386, 330 400 L330 470 L-20 470 Z" fill="#fff"/>`,
 
-  night: () => {
-    let p = "";
-    const stars = [[28,54],[76,32],[122,78],[168,44],[214,92],[262,38],[296,70],
-                   [46,132],[104,158],[186,126],[248,164],[300,140],
-                   [22,214],[88,246],[152,206],[226,252],[288,228]];
-    stars.forEach(([x, y], i) => {
-      const r = i % 4 === 0 ? 1.8 : 1.1;
-      p += `<circle cx="${x}" cy="${y}" r="${r}"
-               fill="rgba(255,255,255,${i % 3 === 0 ? .5 : .28})"/>`;
-    });
-    p += `<path d="M-10 540 L52 402 L110 460 L182 356 L244 428 L330 540 Z" fill="rgba(0,0,0,.22)"/>`;
-    return p;
-  },
+  topo: () => TOPO,
+
+  night: () => STARS.map(([x, y], i) =>
+      `<circle cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.8 : 1.1}" fill="rgba(255,255,255,${i % 3 === 0 ? .55 : .3})"/>`).join("") + `
+    <circle cx="246" cy="62" r="14" fill="#F2EAD3" fill-opacity=".9"/><circle cx="252" cy="57" r="13" fill="#1E2A33"/>
+    <path d="M-10 470 L48 352 L102 402 L168 310 L226 372 L310 470 Z" fill="#000" fill-opacity=".26"/>
+    <path d="M-10 470 L30 420 L86 448 L150 400 L214 446 L262 414 L310 470 Z" fill="#000" fill-opacity=".22"/>`,
 };
 
+// =============================================
+// 背景を選ぶ部品（プロフィール更新・カードづくりで共通）
+//
+//   selected … いま選んでいる背景
+//   count    … 交換した枚数（鍵の判定に使う）
+//   opts.plainOnly … いつでも使える5種だけ出す（カードづくりの最初）
+//   opts.keep      … 枚数が足りなくても選べる背景（すでに使っている背景はそのまま選べる）
+// =============================================
+const LOCK_SVG = `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+
+function bgChip(t, selected, locked) {
+  return `
+    <button type="button" class="bg-chip${t.id === selected ? " on" : ""}${locked ? " locked" : ""}"
+            data-id="${t.id}" data-need="${t.need}" aria-pressed="${t.id === selected}"
+            aria-label="${t.name}${locked ? `（交換${t.need}枚で解放）` : ""}">
+      <div class="sw t-${t.id}">
+        <svg viewBox="0 0 300 470" preserveAspectRatio="xMidYMid slice">${BG[t.id]()}</svg>
+        ${locked ? `<span class="bg-lock">${LOCK_SVG}<em>${t.need}枚</em></span>` : ""}
+      </div>
+      <span>${t.name}</span>
+    </button>`;
+}
+
+export function renderBgPicker(selected, count = 0, opts = {}) {
+  const plain = THEMES.filter((t) => t.need === 0);
+  const plainHtml = `
+    <p class="bgp-h">いつでも使える</p>
+    <div class="bgp-grid">${plain.map((t) => bgChip(t, selected, false)).join("")}</div>`;
+  if (opts.plainOnly) {
+    return `<div class="bgp">${plainHtml}
+      <p class="bgp-note">カードを交換すると、山なみ・朝焼け・雲海・地形図・夜空も使えるようになります。</p></div>`;
+  }
+
+  const next = nextUnlock(count);
+  const max = UNLOCK_STEPS[UNLOCK_STEPS.length - 1];
+  const steps = UNLOCK_STEPS.map((n) => `
+    <div class="bgp-step${count >= n ? " open" : ""}">
+      <p class="bgp-step-h">${count >= n ? "解放済み" : `${n}枚交換で解放`}</p>
+      <div class="bgp-grid">${THEMES.filter((t) => t.need === n)
+        .map((t) => bgChip(t, selected, count < n && t.id !== opts.keep)).join("")}</div>
+    </div>`).join("");
+
+  return `
+    <div class="bgp">
+      ${plainHtml}
+      <p class="bgp-h lock">${LOCK_SVG}カードを交換すると使える</p>
+      <div class="bgp-prog">
+        <div class="bgp-bar"><i style="width:${Math.min(100, (count / max) * 100)}%"></i>
+          ${UNLOCK_STEPS.map((n) => `<b class="${count >= n ? "on" : ""}" style="left:${(n / max) * 100}%">${n}</b>`).join("")}
+        </div>
+        <p class="bgp-count">交換 <b>${count}</b>枚${next
+          ? `・あと<b>${next.need - count}</b>枚で ${next.themes.map((t) => t.name).join("・")}`
+          : "・すべて解放しました！"}</p>
+      </div>
+      ${steps}
+    </div>`;
+}
+
+// ---------------------------------------------
+// 「新しい背景が使えるようになりました」のお知らせ
+//
+// どの段階（1・3・5枚）まで知らせたかをブラウザに覚えておき、
+// 新しい段階に届いたときに一度だけ知らせる。
+// ---------------------------------------------
+const SEEN_KEY = "hcBgUnlockSeen";
+
+export function unlockNews(count) {
+  const reached = [...UNLOCK_STEPS].reverse().find((n) => n <= (count ?? 0)) ?? 0;
+  let seen = 0;
+  try { seen = Number(localStorage.getItem(SEEN_KEY)) || 0; } catch { /* 使えない環境 */ }
+  if (reached <= seen) return null;
+  return { reached, themes: THEMES.filter((t) => t.need > seen && t.need <= reached) };
+}
+export function markUnlockSeen(count) {
+  const reached = [...UNLOCK_STEPS].reverse().find((n) => n <= (count ?? 0)) ?? 0;
+  try { localStorage.setItem(SEEN_KEY, String(reached)); } catch { /* 使えない環境 */ }
+}
+
+// お知らせの中に並べる、小さな背景の見本
+export function bgThumbs(themes) {
+  return `<span class="bg-thumbs">${themes.map((t) => `
+    <span class="bg-thumb"><span class="sw t-${t.id}">
+      <svg viewBox="0 0 300 470" preserveAspectRatio="xMidYMid slice">${BG[t.id]()}</svg></span>
+      <em>${t.name}</em></span>`).join("")}</span>`;
+}
+
+// 廃止した背景（保存されていた場合の読み替え）
+const OLD_BG = { contour: "snow", mist: "sand", forest: "moss" };
+export const normalizeBg = (bg) => BG[bg] ? bg : (OLD_BG[bg] ?? DEFAULT_BG);
+
+// カードの背景。need = 使えるようになるのに必要な交換枚数
+//   0 枚：色だけのシンプルなカード（いつでも使える）
+//   1 枚：山なみ ／ 3 枚：朝焼け・雲海 ／ 5 枚：地形図・夜空
+// ※ DB側（protect_profile_fields）にも同じ表があるので、変えるときは両方そろえる
 export const THEMES = [
-  { id: "contour", name: "等高線" },
-  { id: "ridge",   name: "山なみ" },
-  { id: "mist",    name: "朝もや" },
-  { id: "forest",  name: "木立"   },
-  { id: "night",   name: "夜空"   },
+  { id: "snow",   name: "雪",     need: 0 },
+  { id: "moss",   name: "苔",     need: 0 },
+  { id: "sand",   name: "砂",     need: 0 },
+  { id: "sky",    name: "空",     need: 0 },
+  { id: "sumi",   name: "墨",     need: 0 },
+  { id: "ridge",  name: "山なみ", need: 1 },
+  { id: "morgen", name: "朝焼け", need: 3 },
+  { id: "unkai",  name: "雲海",   need: 3 },
+  { id: "topo",   name: "地形図", need: 5 },
+  { id: "night",  name: "夜空",   need: 5 },
 ];
+export const THEME_BY_ID = Object.fromEntries(THEMES.map((t) => [t.id, t]));
+export const UNLOCK_STEPS = [1, 3, 5];                       // 解放の段階（交換枚数）
+export const DARK_THEMES = new Set(["moss", "sumi", "night"]); // 文字を白にするテーマ
+export const DEFAULT_BG = "snow";
+
+// その背景が、交換枚数 count で使えるか
+export const bgUnlocked = (id, count) => (THEME_BY_ID[id]?.need ?? 0) <= (count ?? 0);
+// 次に解放される段階（無ければ null）
+export function nextUnlock(count) {
+  const n = UNLOCK_STEPS.find((x) => x > (count ?? 0));
+  return n ? { need: n, themes: THEMES.filter((t) => t.need === n) } : null;
+}
 
 // ---------------------------------------------
 // 未診断のときのアイコン
@@ -221,9 +318,11 @@ export function snsIcon(key) {
 // body にクラスを付けることで、CSS変数が全体に行き渡る。
 // ---------------------------------------------
 export function applyTheme(bg) {
-  const id = BG[bg] ? bg : "contour";
+  const id = normalizeBg(bg);
   document.body.className = document.body.className
-    .replace(/\bt-\w+\b/g, "").trim() + " t-" + id;
+    .replace(/\bt-\w+\b/g, "").replace(/\btheme-dark\b/g, "").trim() + " t-" + id;
+  // 文字を白にするテーマ（苔・墨・夜空）は、まとめて theme-dark で見た目を切り替える
+  document.body.classList.toggle("theme-dark", DARK_THEMES.has(id));
 
   // スマホの上部バーの色も合わせる
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -241,14 +340,12 @@ export function applyTheme(bg) {
 // 元の模様は薄めなので、同じものを重ねて濃さを上げる
 // （夜空は星が文字に重なって読みにくくなるので重ねない）。
 // ---------------------------------------------
-const PATTERN_STRENGTH = { contour: 2, ridge: 2, forest: 2, mist: 1, night: 1 };
-
+// 景色の背景（山なみ・朝焼け・雲海）は、カードの幅に合わせて下にそろえる（縦長のカードでも山が大きくなりすぎない）。
+// 全面の模様（地形図・夜空）は、カード全体を覆うように敷く
+const BG_FIT = { ridge: "xMidYMax meet", morgen: "xMidYMax meet", unkai: "xMidYMax meet" };
 export function patternSVG(id, cls = "hero-bg") {
-  const key = BG[id] ? id : "contour";
-  const layer = BG[key]();
-  const n = PATTERN_STRENGTH[key] ?? 1;
-  return `<svg class="${cls}" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${
-    Array.from({ length: n }, () => `<g>${layer}</g>`).join("")}</svg>`;
+  const key = normalizeBg(id);
+  return `<svg class="${cls}" viewBox="0 0 300 470" preserveAspectRatio="${BG_FIT[key] ?? "xMidYMid slice"}">${BG[key]()}</svg>`;
 }
 
 // ---------------------------------------------
@@ -307,7 +404,7 @@ function posBadge(pos) {
 // =============================================
 export function renderHeroCard(d, opts = {}) {
   const diagnosed = !!d.type_code;
-  const bg = BG[d.card_bg] ? d.card_bg : "contour";
+  const bg = normalizeBg(d.card_bg);
   const ranks = d.ranks ?? {};
   const linked = opts.linked !== false;   // false ならスクロールさせない
 
@@ -345,7 +442,7 @@ export function renderHeroCard(d, opts = {}) {
     </a>`;
 
   return `
-  <div class="hero t-${bg}">
+  <div class="hero t-${bg}${DARK_THEMES.has(bg) ? " dark" : ""}">
     ${patternSVG(bg)}
     ${diagnosed ? `
       <svg class="hero-paw" viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">

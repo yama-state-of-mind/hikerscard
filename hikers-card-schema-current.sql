@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜25 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜26 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step25 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step26 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -75,8 +75,9 @@ create table public.profiles (
   axis_sg       smallint check (axis_sg between 0 and 100),
   axis_lf       smallint check (axis_lf between 0 and 100),
   axis_ca       smallint check (axis_ca between 0 and 100),
-  card_bg       text not null default 'contour'
-                  check (card_bg in ('contour', 'ridge', 'mist', 'forest', 'night')),
+  card_bg       text not null default 'snow'   -- カードの背景（Step 26）。山なみ・朝焼け・雲海・地形図・夜空は交換で解放
+                  constraint profiles_card_bg_check check (card_bg in (
+                    'snow', 'moss', 'sand', 'sky', 'sumi', 'ridge', 'morgen', 'unkai', 'topo', 'night')),
   sns_yamap     text check (char_length(sns_yamap)     <= 60),
   sns_yamareco  text check (char_length(sns_yamareco)  <= 60),
   sns_instagram text check (char_length(sns_instagram) <= 60),
@@ -234,6 +235,8 @@ create trigger on_auth_user_created
 -- 変更不可列の保護 ＋ updated_at 自動更新 ＋ 条件がそろったらカード番号を発行（Step 20）
 create or replace function public.protect_profile_fields()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  need int;
 begin
   new.updated_at := now();
   new.public_id  := old.public_id;   -- URLは変更不可
@@ -248,6 +251,23 @@ begin
   -- テスト用の印は、管理人（admin_set_tester）が許可の印を立てたときだけ変えられる
   if coalesce(current_setting('hc.tester', true), '') <> '1' then
     new.is_tester := old.is_tester;
+  end if;
+
+  -- カードの背景の鍵：交換した枚数が足りない背景には変えられない
+  --   山なみ 1枚 ／ 朝焼け・雲海 3枚 ／ 地形図・夜空 5枚（card.js の THEMES と同じ表）
+  --   いま使っている背景のまま（変えない）なら、枚数が足りなくてもそのまま使える
+  if new.card_bg is distinct from old.card_bg then
+    need := case new.card_bg
+              when 'ridge'  then 1
+              when 'morgen' then 3
+              when 'unkai'  then 3
+              when 'topo'   then 5
+              when 'night'  then 5
+              else 0 end;
+    if need > 0 and (select count(*) from public.exchanges e
+                      where new.id in (e.user_a, e.user_b)) < need then
+      raise exception 'bg_locked';
+    end if;
   end if;
 
   -- 完成したら、まだ番号の無い人に次の番号を振る
@@ -1232,7 +1252,7 @@ begin
   -- 完成の記録も消す（保護トリガーに許可の印を見せる）。カード番号は残す
   perform set_config('hc.onboarding', '1', true);
   update public.profiles
-     set display_name = '', comment = null, card_bg = 'contour',
+     set display_name = '', comment = null, card_bg = 'snow',
          type_code = null, axis_pe = null, axis_sg = null, axis_lf = null, axis_ca = null,
          onboarded_at = null
    where id = me;

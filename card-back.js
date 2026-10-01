@@ -11,7 +11,7 @@
 // ※ 裏面の情報は、登山相性のスコアには使っていない。
 // =============================================
 
-import { esc, patternSVG, BG, flipToggle, cardNo } from "./card.js";
+import { esc, patternSVG, flipToggle, cardNo, normalizeBg, DARK_THEMES } from "./card.js";
 
 export const SKILL_GROUPS = [
   {
@@ -229,7 +229,7 @@ const LOCK = `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10"
 // opts.own: 自分のカードか（空のときの案内を変える）
 // =============================================
 export function renderBackFace(d, back, opts = {}) {
-  const bg = BG[d.card_bg] ? d.card_bg : "contour";
+  const bg = normalizeBg(d.card_bg);
   const head = `
     <div class="hero-top">
       ${flipToggle(false)}
@@ -272,7 +272,7 @@ export function renderBackFace(d, back, opts = {}) {
   }
 
   return `
-  <div class="hero hero-back t-${bg}">
+  <div class="hero hero-back t-${bg}${DARK_THEMES.has(bg) ? " dark" : ""}">
     ${patternSVG(bg)}
     <div class="hero-in">${head}${body}</div>
     <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>

@@ -260,37 +260,69 @@ h1 {
    テーマ
    body に付けると、ページ全体の色味が変わる
    ============================================= */
-/* 彩度を抑え、文字色1色＋アクセント1色を基本にする。
-   --c-page はページの無地（カードと同系色で少し深い色） */
-.t-contour {
+/* カードの背景ごとの配色。--c-bg がカードの地色、--c-page はページの無地（同系色で少し深い色）
+   ・色だけのカード（いつでも使える）：雪・苔・砂・空・墨
+   ・交換で解放：山なみ（1枚）・朝焼け・雲海（3枚）・地形図・夜空（5枚）
+   苔・墨・夜空は文字を白にする（body.theme-dark / .hero.dark） */
+.t-snow {
+  --c-page:#E4E3DC; --c-bg:#F6F5F1; --c-fg:#1C2421; --c-fg2:#4A524E; --c-mut:#8A928E;
+  --c-acc:#1C2421; --c-div:rgba(28,36,33,.10); --c-soft:#EEEDE8;
+  --c-chip:#1C2421; --c-chipfg:#fff; --c-bar:#1C2421; --c-bar2:#A9AFAB;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(228,227,220,.85);
+}
+.t-moss {
+  --c-page:#2A4033; --c-bg:#3E5B48; --c-fg:#F3F1EA; --c-fg2:#D6DDD3; --c-mut:#AFBCAF;
+  --c-acc:#F3F1EA; --c-div:rgba(255,255,255,.13); --c-soft:rgba(255,255,255,.07);
+  --c-chip:#F3F1EA; --c-chipfg:#2A4033; --c-bar:#F3F1EA; --c-bar2:#6C8574;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(42,64,51,.86);
+}
+.t-sand {
+  --c-page:#DDCEB4; --c-bg:#EBDFC9; --c-fg:#2E261C; --c-fg2:#5E5241; --c-mut:#8D7F69;
+  --c-acc:#2E261C; --c-div:rgba(46,38,28,.12); --c-soft:#E3D5BC;
+  --c-chip:#2E261C; --c-chipfg:#fff; --c-bar:#2E261C; --c-bar2:#B5A68C;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(221,206,180,.85);
+}
+.t-sky {
+  --c-page:#C4D4E0; --c-bg:#D6E2EB; --c-fg:#1A2935; --c-fg2:#465866; --c-mut:#6F8291;
+  --c-acc:#1A2935; --c-div:rgba(26,41,53,.12); --c-soft:#CBD9E4;
+  --c-chip:#1A2935; --c-chipfg:#fff; --c-bar:#1A2935; --c-bar2:#93A6B5;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(196,212,224,.85);
+}
+.t-sumi {
+  --c-page:#141719; --c-bg:#24292C; --c-fg:#ECEDEA; --c-fg2:#C4C8C6; --c-mut:#8F9693;
+  --c-acc:#ECEDEA; --c-div:rgba(255,255,255,.13); --c-soft:rgba(255,255,255,.07);
+  --c-chip:#ECEDEA; --c-chipfg:#141719; --c-bar:#ECEDEA; --c-bar2:#5A6064;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(20,23,25,.86);
+}
+.t-ridge {
   --c-page:#E3E8E5; --c-bg:#FFFFFF; --c-fg:#16211C; --c-fg2:#3E4944; --c-mut:#848E89;
   --c-acc:#16211C; --c-div:rgba(22,33,28,.10); --c-soft:#F2F4F2;
   --c-chip:#16211C; --c-chipfg:#fff; --c-bar:#16211C; --c-bar2:#A3ACA8;
-  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(241,243,241,.82);
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(227,232,229,.85);
 }
-.t-ridge {
-  --c-page:#DCE6E2; --c-bg:#FFFFFF; --c-fg:#17262A; --c-fg2:#3F4F53; --c-mut:#83918F;
-  --c-acc:#2F5566; --c-div:rgba(23,38,42,.10); --c-soft:#F0F4F3;
-  --c-chip:#17262A; --c-chipfg:#fff; --c-bar:#17262A; --c-bar2:#9DB0B4;
-  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(238,243,241,.82);
+.t-morgen {
+  --c-page:#F0D9CB; --c-bg:#FBEDE3; --c-fg:#3A272B; --c-fg2:#634A4E; --c-mut:#8E7276;
+  --c-acc:#3A272B; --c-div:rgba(58,39,43,.11); --c-soft:#F6E3D7;
+  --c-chip:#3A272B; --c-chipfg:#fff; --c-bar:#3A272B; --c-bar2:#C4A6A9;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(240,217,203,.85);
 }
-.t-mist {
-  --c-page:#EFE3D8; --c-bg:#FFFDFB; --c-fg:#2E241E; --c-fg2:#5A4B41; --c-mut:#A08F82;
-  --c-acc:#9A6238; --c-div:rgba(46,36,30,.10); --c-soft:#F6EFE8;
-  --c-chip:#2E241E; --c-chipfg:#fff; --c-bar:#2E241E; --c-bar2:#C9B2A0;
-  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(248,241,234,.82);
+.t-unkai {
+  --c-page:#D2DFE6; --c-bg:#E8F0F4; --c-fg:#17262E; --c-fg2:#3D505B; --c-mut:#6D7F89;
+  --c-acc:#17262E; --c-div:rgba(23,38,46,.11); --c-soft:#DDE7EC;
+  --c-chip:#17262E; --c-chipfg:#fff; --c-bar:#17262E; --c-bar2:#9AAAB3;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(210,223,230,.85);
 }
-.t-forest {
-  --c-page:#DBE6DD; --c-bg:#FFFFFF; --c-fg:#15291C; --c-fg2:#3A4E41; --c-mut:#7E9384;
-  --c-acc:#2F6B40; --c-div:rgba(21,41,28,.10); --c-soft:#EFF4F0;
-  --c-chip:#15291C; --c-chipfg:#fff; --c-bar:#15291C; --c-bar2:#9DB3A3;
-  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(235,241,236,.82);
+.t-topo {
+  --c-page:#E6DEC8; --c-bg:#F5F0E2; --c-fg:#2B241A; --c-fg2:#5A4D3C; --c-mut:#8A7C66;
+  --c-acc:#2B241A; --c-div:rgba(43,36,26,.11); --c-soft:#EDE6D3;
+  --c-chip:#2B241A; --c-chipfg:#fff; --c-bar:#2B241A; --c-bar2:#B4A68D;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(230,222,200,.85);
 }
 .t-night {
-  --c-page:#0C1216; --c-bg:#1D2931; --c-fg:#EEF2F4; --c-fg2:#C2CBD0; --c-mut:#7D8A92;
-  --c-acc:#EEF2F4; --c-div:rgba(255,255,255,.12); --c-soft:rgba(255,255,255,.06);
-  --c-chip:#EEF2F4; --c-chipfg:#0F1519; --c-bar:#EEF2F4; --c-bar2:#56646C;
-  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(20,28,34,.82);
+  --c-page:#0C1216; --c-bg:#1E2A33; --c-fg:#EEF2F4; --c-fg2:#C2CBD0; --c-mut:#7D8A92;
+  --c-acc:#EEF2F4; --c-div:rgba(255,255,255,.13); --c-soft:rgba(255,255,255,.07);
+  --c-chip:#EEF2F4; --c-chipfg:#0C1216; --c-bar:#EEF2F4; --c-bar2:#56646C;
+  --c-favbg:transparent; --c-wishbg:transparent; --c-head:rgba(12,18,22,.86);
 }
 
 /* テーマが付いた body はページごと色が変わる */
@@ -550,9 +582,9 @@ button.hero-blk:hover { background: var(--c-soft); }
   transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--pine); }
 .ov-pop.below .ov-pop-arrow { top: auto; bottom: 100%;
   border-top-color: transparent; border-bottom-color: var(--pine); }
-.t-night .ov-pop, body.t-night .ov-pop { background: #0E1820; }
-body.t-night .ov-pop-arrow { border-top-color: #0E1820; }
-body.t-night .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border-bottom-color: #0E1820; }
+body.theme-dark .ov-pop { background: #0E1820; }
+body.theme-dark .ov-pop-arrow { border-top-color: #0E1820; }
+body.theme-dark .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border-bottom-color: #0E1820; }
 
 /* 背景デザインの選択 */
 .bgs { display: flex; gap: 9px; overflow-x: auto; padding: 4px 0 8px; }
@@ -563,7 +595,7 @@ body.t-night .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border
   position: relative; border: 2.5px solid transparent;
   box-shadow: 0 2px 8px rgba(30,58,49,.12); background: var(--c-bg); }
 .bg-chip.on .sw { border-color: var(--sun); }
-.bg-chip .sw svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bg-chip .sw > svg { position: absolute; inset: 0; width: 100%; height: 100%; }   /* 背景の模様だけを全面に（鍵のアイコンは除く） */
 .bg-chip span { display: block; font-size: 10px; color: var(--stone); margin-top: 5px; }
 .bg-chip.on span { color: var(--pine); font-weight: 700; }
 
@@ -656,7 +688,7 @@ body.t-night .ov-pop.below .ov-pop-arrow { border-top-color: transparent; border
   font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--c-fg, var(--pine)); }
 .share-url button { flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700;
   border: none; background: var(--pine); color: #fff; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
-body.t-night .share-url button { background: var(--sun); color: #20303B; }
+body.theme-dark .share-url button { background: var(--sun); color: #20303B; }
 .share-in .msg { margin-top: 10px; }
 
 /* =============================================
@@ -687,7 +719,7 @@ body.t-night .share-url button { background: var(--sun); color: #20303B; }
   font-size: 10.5px; font-weight: 700; color: var(--c-mut);
   border: 1px solid var(--c-div); border-radius: 999px; padding: 4px 9px; }
 .ob-badge.done { color: #2E6B4A; background: #EAF3EC; border-color: transparent; }
-body.t-night .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14); }
+body.theme-dark .ob-badge.done { color: #9FD9B4; background: rgba(159,217,180,.14); }
 .ob-badge svg { width: 12px; height: 12px; stroke-width: 2.6; }
 
 /* マイカードのバー：ボタンが3つ並ぶので詰める */
@@ -733,7 +765,7 @@ body { font-feature-settings: "palt"; letter-spacing: .02em; -webkit-font-smooth
 }
 .hero.tilt { will-change: transform; }
 .hero.tilt:hover { transition: transform .08s linear; }
-body.t-night .hero::after {
+body.theme-dark .hero::after, .hero.dark::after {
   background: radial-gradient(120% 70% at var(--gx, 30%) var(--gy, 0%), rgba(255,255,255,.08), rgba(255,255,255,0) 55%);
   box-shadow: 0 0 0 1px rgba(255,255,255,.08);
 }
@@ -816,7 +848,7 @@ button.hero-blk:hover { background: none; }
 .ov-dot { background: var(--c-chip); color: var(--c-chipfg); }
 
 /* 夜空は影が見えないので、細い縁でカードを浮かせる */
-body.t-night .hero { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -12px rgba(0,0,0,.6); }
+body.theme-dark .hero, .hero.dark { box-shadow: 0 0 0 1px rgba(255,255,255,.07), 0 20px 50px -12px rgba(0,0,0,.6); }
 
 /* 背景の模様はカードの中だけ。ページにのる文字は、同系色の無地の上で読みやすい濃さに */
 .det-h h2 { color: var(--c-fg2); }
@@ -1100,7 +1132,7 @@ a.hero-empty { display: block; text-decoration: none; color: inherit; }
    幅もカードより一回り狭くする */
 .d-axbox { width: 88%; margin: 18px auto 0; border: none; border-radius: 12px; padding: 14px 12px 16px;
   background: rgba(22, 33, 28, .045); box-shadow: none; }
-body.t-night .d-axbox { background: rgba(255, 255, 255, .045); }
+body.theme-dark .d-axbox { background: rgba(255, 255, 255, .045); }
 .d-axbox .d-sub { text-align: center; }
 .d-axrows { width: 80%; min-width: 236px; max-width: 100%; margin: 0 auto; }   /* 枠を狭めた分、中は8割に */
 
@@ -1108,7 +1140,7 @@ body.t-night .d-axbox { background: rgba(255, 255, 255, .045); }
 .sns-ic.brand { background: none; border-radius: 0; }
 .sns-ic.brand svg { width: 28px; height: 28px; }
 .sns-ic.brand.x { color: #000; }
-body.t-night .sns-ic.brand.x { color: #fff; }
+body.theme-dark .sns-ic.brand.x { color: #fff; }
 .sns-link .sns-ic.brand { background: none; }
 /* アイコンは左端で、上下の真ん中にそろえる */
 .sns-link .sns-ic { top: 50%; transform: translateY(-50%); }
@@ -1129,3 +1161,54 @@ body.t-night .sns-ic.brand.x { color: #fff; }
 .skd-desc { font-size: 12.5px; line-height: 1.8; color: var(--c-fg); margin-top: 4px; }
 .skd-what { font-size: 10.5px; color: var(--c-mut); margin-top: 2px; }
 .skd.none .skd-lv { color: var(--c-mut); font-weight: 500; grid-column: 2; grid-row: 1; }
+
+/* =============================================
+   背景を選ぶ部品（renderBgPicker）
+   ============================================= */
+.bgp-h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;
+  letter-spacing: .06em; color: var(--c-fg2); margin-top: 4px; }
+.bgp-h.lock { margin-top: 20px; }
+.bgp-h svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bgp-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.bgp .bg-chip { width: auto; }
+.bgp .bg-chip .sw { width: 100%; height: auto; aspect-ratio: 300 / 470; }
+.bg-chip.locked .sw > svg { filter: grayscale(.5); opacity: .55; }
+.bg-chip.locked span { color: var(--c-mut); }
+.bg-lock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; background: rgba(28,36,33,.38); color: #fff; }
+.bg-chip .bg-lock svg { position: static; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bg-lock em { font-style: normal; font-size: 10px; font-weight: 700; }
+.bg-chip.shake .sw { animation: bgShake .35s; }
+@keyframes bgShake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+.bgp-prog { margin-top: 12px; }
+.bgp-bar { position: relative; height: 6px; border-radius: 99px; background: var(--c-div); margin: 0 10px 0 4px; }
+.bgp-bar i { position: absolute; left: 0; top: 0; height: 100%; border-radius: 99px; background: var(--sun); }
+.bgp-bar b { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10px; font-weight: 700;
+  background: var(--c-bg); color: var(--c-mut); box-shadow: 0 0 0 1.5px var(--c-div); }
+.bgp-bar b.on { background: var(--sun); color: #fff; box-shadow: none; }
+.bgp-count { font-size: 12px; color: var(--c-fg2); margin-top: 12px; }
+.bgp-count b { font-family: var(--mono); color: var(--c-fg); margin: 0 1px; }
+.bgp-step { margin-top: 14px; }
+.bgp-step-h { font-size: 10.5px; font-weight: 700; color: var(--c-mut); letter-spacing: .06em; }
+.bgp-step.open .bgp-step-h { color: #2E7D52; }
+.bgp-step .bgp-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bgp-note { font-size: 11px; color: var(--c-mut); line-height: 1.8; margin-top: 10px; }
+
+/* 解放のお知らせに並べる、小さな背景の見本 */
+.bg-thumbs { display: flex; gap: 8px; margin-top: 8px; }
+.bg-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.bg-thumb .sw { position: relative; display: block; width: 40px; height: 62px; border-radius: 7px; overflow: hidden;
+  background: var(--c-bg); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.bg-thumb .sw svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bg-thumb em { font-style: normal; font-size: 10px; font-weight: 700; color: var(--c-fg2); }
+
+/* マイページのお知らせの中でも、見本は横に並べる（お知らせの文字の span を1行ずつにする指定を打ち消す） */
+.mp-note-t .bg-thumbs { display: flex; }
+.mp-note-t .bg-thumb { display: flex; }
+.mp-note-t .bg-thumb .sw { display: block; }
+.mp-note-t .bg-thumb em { display: block; color: var(--c-fg2); }
+/* 鍵の重ね（.bg-chip span の名前用の指定を打ち消して、中央に重ねる） */
+.bg-chip.locked .bg-lock { display: flex; margin-top: 0; font-size: 10px; color: #fff; }
+.bg-chip.locked .bg-lock em { color: #fff; }

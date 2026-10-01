@@ -98,8 +98,8 @@
   .st-tile.climbed .mk { display: flex; background: #2E7D52; }
   .st-tile.wish { background: #FCF1DC; box-shadow: 0 0 0 2px var(--sun); }
   .st-tile.wish .mk { display: flex; background: var(--sun); }
-  body.t-night .st-tile.climbed { background: rgba(46,125,82,.25); }
-  body.t-night .st-tile.wish { background: rgba(224,163,59,.2); }
+  body.theme-dark .st-tile.climbed { background: rgba(46,125,82,.25); }
+  body.theme-dark .st-tile.wish { background: rgba(224,163,59,.2); }
   .st-tile.pop { animation: stPop .28s cubic-bezier(.2,1.6,.4,1); }
   @keyframes stPop { 50% { transform: scale(1.06); } }
   .st-more { margin-top: 10px; }
@@ -217,7 +217,8 @@ window.addEventListener("unhandledrejection", (e) =>
 // 完成（complete_onboarding）した時点で、カード番号が発行される。
 // =============================================
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis, resetMyOnboarding, signOut } from "./supabase.js";
-import { BG, THEMES, SILHOUETTE, applyTheme, esc, crown, renderHeroCard } from "./card.js";
+import { BG, THEMES, SILHOUETTE, applyTheme, esc, crown, renderHeroCard,
+         renderBgPicker, normalizeBg, DEFAULT_BG } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const stop = () => new Promise(() => {});
@@ -234,7 +235,7 @@ profile = await applyPendingDiagnosis(profile);
 // すでに完成している人はマイページへ
 if (profile?.onboarded_at) { location.replace("./mypage.html"); await stop(); }
 
-applyTheme(profile?.card_bg || "contour");
+applyTheme(normalizeBg(profile?.card_bg));
 $("#logout").onclick = () => signOut();
 // テスト用アカウントだけ、途中からでも最初からやり直せる
 if (profile?.is_tester) {
@@ -297,7 +298,9 @@ const bind = {};
 // =============================================
 // 1. 名前
 // =============================================
-let bg = BG[profile?.card_bg] ? profile.card_bg : "contour";
+// カードづくりの時点では交換0枚なので、いつでも使える5種から選ぶ
+let bg = normalizeBg(profile?.card_bg);
+if (THEMES.find((t) => t.id === bg)?.need) bg = DEFAULT_BG;
 
 function stepName() {
   return `
@@ -313,18 +316,12 @@ function stepName() {
     </div>
     <div class="field">
       <label>カードの背景</label>
-      <div class="bgs" id="bgs"></div>
+      <div id="bgs"></div>
     </div>
     <button class="btn sun st-next" id="next">次へ</button>`;
 }
 bind[1] = () => {
-  const drawBgs = () => {
-    $("#bgs").innerHTML = THEMES.map((t) => `
-      <button type="button" class="bg-chip ${t.id === bg ? "on" : ""}" data-id="${t.id}">
-        <div class="sw t-${t.id}"><svg viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[t.id]()}</svg></div>
-        <span>${t.name}</span>
-      </button>`).join("");
-  };
+  const drawBgs = () => { $("#bgs").innerHTML = renderBgPicker(bg, 0, { plainOnly: true }); };
   drawBgs();
   $("#bgs").onclick = (e) => {
     const b = e.target.closest(".bg-chip");

@@ -60,6 +60,13 @@
   .xc-btns { margin-top: 22px; animation: xcUp .5s .8s both; }
   @keyframes xcUp { from { opacity: 0; transform: translateY(10px); } }
 
+  /* 新しい背景の解放 */
+  .xc-unlock { display: block; text-decoration: none; color: var(--c-fg); margin-top: 18px; text-align: left;
+    background: var(--c-bg); border: 2px solid var(--sun); border-radius: 18px; padding: 14px 16px;
+    box-shadow: 0 8px 20px -8px rgba(224,163,59,.45); animation: xcUp .5s .9s both; }
+  .xc-unlock-t b { display: block; font-size: 14px; font-weight: 800; }
+  .xc-unlock-t span { display: block; font-size: 11px; color: var(--c-mut); margin-top: 2px; }
+
   @media (prefers-reduced-motion: reduce) {
     .xc *, .xc { animation: none !important; }
     .xc-confetti { display: none; }
@@ -81,7 +88,7 @@
 <script type="module">
 import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme, esc, SILHOUETTE } from "./card.js";
+import { applyTheme, esc, SILHOUETTE, unlockNews, markUnlockSeen, bgThumbs } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -148,6 +155,19 @@ function burstPath(cx, cy, R, r, n) {
     pts.push(`${(cx + Math.cos(a) * rad).toFixed(1)},${(cy + Math.sin(a) * rad).toFixed(1)}`);
   }
   return `M${pts.join("L")}Z`;
+}
+
+// この交換で、新しい背景が使えるようになったか
+const { count: exCount } = await supabase.from("exchanges").select("id", { count: "exact", head: true });
+const news = unlockNews(exCount ?? 0);
+if (news) {
+  markUnlockSeen(exCount ?? 0);
+  $("#main").querySelector(".xc-btns").insertAdjacentHTML("beforebegin", `
+    <a class="xc-unlock" href="/setup.html#bg-group">
+      <span class="xc-unlock-t"><b>新しいカードの背景が使えるようになりました！</b>
+        <span>交換${news.reached}枚の特典です。タップして背景を変える</span></span>
+      ${bgThumbs(news.themes)}
+    </a>`);
 }
 
 $("#loading").hidden = true;

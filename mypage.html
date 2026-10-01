@@ -116,7 +116,7 @@ window.addEventListener("unhandledrejection", (e) =>
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
          applyPendingExchange, resetMyOnboarding, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme, esc, SILHOUETTE, cardNo } from "./card.js";
+import { applyTheme, esc, SILHOUETTE, cardNo, unlockNews, markUnlockSeen, bgThumbs } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const stop = () => new Promise(() => {});   // 移動するときに、ここで処理を止める
@@ -181,6 +181,19 @@ if (profile.card_no == null && !profile.type_code) {
         <span>12の質問・3分ほどで終わります</span></span>
     </a>`);
 }
+// 新しいカードの背景が使えるようになった（QRを見せていた側は、ここで初めて知る）
+const news = unlockNews(exRes.count ?? 0);
+if (news) {
+  markUnlockSeen(exRes.count ?? 0);
+  notes.unshift(`
+    <a class="mp-note unlock" href="/setup.html#bg-group">
+      <span class="mp-note-t"><b>新しいカードの背景が使えるようになりました！</b>
+        <span>交換${news.reached}枚の特典です。タップして背景を変える</span>
+        ${bgThumbs(news.themes)}</span>
+      <button class="mp-note-x" aria-label="閉じる">&times;</button>
+    </a>`);
+}
+
 $("#notes").innerHTML = notes.join("");
 
 // ×で閉じる（リンクには飛ばない）

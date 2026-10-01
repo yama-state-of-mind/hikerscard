@@ -100,8 +100,9 @@
     <!-- 背景デザイン -->
     <div class="group" id="bg-group">
       <h2>カードの背景</h2>
-      <p class="d">カードの雰囲気が変わります。あとから変更できます。</p>
-      <div class="bgs" id="bgs" style="margin-top:10px"></div>
+      <p class="d">カードの雰囲気が変わります。カードを交換すると、使える背景が増えていきます。</p>
+      <div id="bgs" style="margin-top:12px"></div>
+      <div id="bg-msg" class="msg"></div>
     </div>
 
     <!-- 名山の公開設定 -->
@@ -151,7 +152,8 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, getMyProfile, signOut, baseUrl } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { BG, THEMES, SILHOUETTE, SNS, snsIcon, applyTheme } from "./card.js";
+import { BG, THEMES, SILHOUETTE, SNS, snsIcon, applyTheme,
+         renderBgPicker, normalizeBg, bgUnlocked } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -191,8 +193,13 @@ const commentInput = $("#comment");
 nameInput.value = profile.display_name ?? "";
 commentInput.value = profile.comment ?? "";
 
-let bg = profile.card_bg ?? "contour";
+let bg = normalizeBg(profile.card_bg);
+const keepBg = bg;   // いま使っている背景は、交換枚数が足りなくてもそのまま選べる
 applyTheme(bg);
+
+// 交換した枚数（背景の鍵の判定に使う）
+const { count: exCount } = await supabase.from("exchanges").select("id", { count: "exact", head: true });
+const exchanges = exCount ?? 0;
 
 // 名山ランクごとの公開設定
 const vis = {
@@ -233,20 +240,25 @@ $("#url-box").innerHTML = `あなたのカードのURL<br>${baseUrl()}u/<b>${pro
 // 背景の選択
 // ---------------------------------------------
 function drawBgs() {
-  $("#bgs").innerHTML = THEMES.map((t) => `
-    <button type="button" class="bg-chip ${t.id === bg ? "on" : ""}" data-id="${t.id}">
-      <div class="sw t-${t.id}">
-        <svg viewBox="0 0 320 540" preserveAspectRatio="xMidYMid slice">${BG[t.id]()}</svg>
-      </div>
-      <span>${t.name}</span>
-    </button>`).join("");
+  $("#bgs").innerHTML = renderBgPicker(bg, exchanges, { keep: keepBg });
 }
 drawBgs();
 
 $("#bgs").addEventListener("click", (e) => {
   const b = e.target.closest(".bg-chip");
   if (!b) return;
-  bg = b.dataset.id;
+  const id = b.dataset.id;
+  const m = $("#bg-msg");
+  // 鍵がかかっている背景：あと何枚で使えるかを知らせる
+  if (b.classList.contains("locked")) {
+    const need = Number(b.dataset.need);
+    m.className = "msg error";
+    m.textContent = `「${THEMES.find((t) => t.id === id).name}」は、カードをあと${need - exchanges}枚交換すると使えます。`;
+    b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+    return;
+  }
+  m.className = "msg"; m.textContent = "";
+  bg = id;
   applyTheme(bg);     // 選んだ瞬間に画面全体で試せる
   drawBgs();
 });
@@ -339,7 +351,9 @@ $("#save").onclick = async () => {
 
   if (error) {
     msg.className = "msg error";
-    msg.textContent = "保存できませんでした：" + error.message;
+    msg.textContent = String(error.message).includes("bg_locked")
+      ? "選んだ背景は、カードの交換枚数がまだ足りないため使えません。"
+      : "保存できませんでした：" + error.message;
     return;
   }
 
