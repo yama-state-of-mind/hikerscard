@@ -103,6 +103,20 @@
   .st-tile.pop { animation: stPop .28s cubic-bezier(.2,1.6,.4,1); }
   @keyframes stPop { 50% { transform: scale(1.06); } }
   .st-more { margin-top: 10px; }
+  .st-order { font-size: 10.5px; color: var(--c-mut); margin-top: 8px; }
+
+  /* 仕分けのタイル：下に「登った」「登りたい」の2つのボタン */
+  .st-tile.sort { cursor: default; padding-bottom: 8px; display: flex; flex-direction: column; }
+  .st-tile.sort:active { transform: none; }
+  .st-pick { position: relative; display: flex; gap: 4px; margin-top: auto; padding-top: 8px; }
+  .pk { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    font-family: var(--font); font-size: 10px; font-weight: 700; cursor: pointer;
+    border: 1.5px solid var(--c-div); border-radius: 9px; padding: 4px 0 3px;
+    background: var(--c-bg); color: var(--c-mut); -webkit-tap-highlight-color: transparent; transition: background .15s, color .15s; }
+  .pk svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .pk:active { transform: scale(.94); }
+  .pk.c.on { background: #2E7D52; border-color: #2E7D52; color: #fff; }
+  .pk.w.on { background: var(--sun); border-color: var(--sun); color: #fff; }
 
   /* ---------- ベスト3 ---------- */
   .st-podium { display: flex; justify-content: center; align-items: flex-end; gap: 8px; margin-top: 16px; }
@@ -232,7 +246,7 @@ if (profile?.is_tester) {
 // 山のデータと、いま登録されている山
 // ---------------------------------------------
 const [mtRes, clRes, wiRes] = await Promise.all([
-  supabase.from("mountains").select("id, name, kana, elevation, meizan_rank, is_popular, prefs")
+  supabase.from("mountains").select("*")
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains").select("mountain_id, is_favorite, favorite_rank").eq("user_id", user.id),
   supabase.from("wishlist_mountains").select("mountain_id").eq("user_id", user.id),
@@ -410,12 +424,17 @@ const normalize = (s) => (s ?? "")
 function tileHtml(m) {
   const st = climbed.has(m.id) ? "climbed" : wish.has(m.id) ? "wish" : "";
   return `
-    <button class="st-tile ${st}" data-id="${m.id}">
+    <div class="st-tile sort ${st}" data-id="${m.id}">
       ${MT_SVG}
-      <span class="mk">${st === "wish" ? FLAG : CHECK}</span>
       <b>${esc(m.name)}</b>
       <small>${m.elevation ? `${m.elevation}m` : ""}${m.prefs?.length ? `・${esc(m.prefs[0])}` : ""}</small>
-    </button>`;
+      <span class="st-pick">
+        <button class="pk c${st === "climbed" ? " on" : ""}" data-pick="climbed" aria-pressed="${st === "climbed"}"
+                aria-label="${esc(m.name)}：登った">${CHECK}<span>登った</span></button>
+        <button class="pk w${st === "wish" ? " on" : ""}" data-pick="wish" aria-pressed="${st === "wish"}"
+                aria-label="${esc(m.name)}：登りたい">${FLAG}<span>登りたい</span></button>
+      </span>
+    </div>`;
 }
 
 function sortList() {
@@ -424,8 +443,10 @@ function sortList() {
     return MOUNTAINS.filter((m) => normalize(m.name).includes(kw) || normalize(m.kana).includes(kw)).slice(0, 40);
   }
   // 人気の山 ＋ すでに選んだ山（人気の山以外を検索で足した場合も、ここに残す）
-  const picked = MOUNTAINS.filter((m) => (climbed.has(m.id) || wish.has(m.id)) && !m.is_popular);
-  const popular = MOUNTAINS.filter((m) => m.is_popular);
+  // 人気の山は、実際によく登られている順（popular_rank）を上に。順位の無い人気の山はその後に標高順
+  const picked = MOUNTAINS.filter((m) => (climbed.has(m.id) || wish.has(m.id)) && !m.is_popular && m.popular_rank == null);
+  const popular = MOUNTAINS.filter((m) => m.is_popular || m.popular_rank != null)
+    .sort((a, b) => (a.popular_rank ?? 9999) - (b.popular_rank ?? 9999) || (b.elevation ?? 0) - (a.elevation ?? 0));
   const list = [...picked, ...popular];
   return showAll ? list : list.slice(0, 24);
 }
@@ -433,13 +454,9 @@ function sortList() {
 function stepSort() {
   return `
     <h1 class="st-title">山を仕分けしましょう</h1>
-    <p class="st-lead">タップするたびに切り替わります。まだ登ったことがなくても大丈夫。<br>
-      登ってみたい山を<b>1つ以上</b>選んでください。</p>
-    <div class="st-legend">
-      <span><b class="c">${CHECK.replace('viewBox', 'width="11" height="11" stroke="#fff" fill="none" stroke-width="3" viewBox')}</b>1回：登った</span>
-      <span><b class="w">${FLAG.replace('viewBox', 'width="11" height="11" stroke="#fff" fill="none" stroke-width="2.6" viewBox')}</b>2回：登ってみたい</span>
-      <span>3回：元に戻す</span>
-    </div>
+    <p class="st-lead">それぞれの山で「<b>登った</b>」か「<b>登りたい</b>」を押してください。どちらでもない山は、そのままでOK。<br>
+      まだ登ったことがなくても大丈夫。登ってみたい山を<b>1つ以上</b>選んでください。</p>
+    <p class="st-order">よく登られている順に並んでいます（YAMAP「登られた山ランキング2025」より）</p>
     <div class="st-count" id="cnt"></div>
     <div class="st-search">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
@@ -469,7 +486,7 @@ function bindSort() {
     const list = sortList();
     $("#grid").innerHTML = list.length ? list.map(tileHtml).join("")
       : `<p class="st-lead" style="grid-column:1/-1">見つかりませんでした。ひらがなでも探せます。</p>`;
-    $("#more").hidden = !!keyword || showAll || MOUNTAINS.filter((m) => m.is_popular).length <= 24;
+    $("#more").hidden = !!keyword || showAll || MOUNTAINS.filter((m) => m.is_popular || m.popular_rank != null).length <= 24;
     $("#cnt").innerHTML = `
       <span class="c">登った <b>${climbed.size}</b>座</span>
       <span class="w">登ってみたい <b>${wish.size}</b>/${WISH_MAX}</span>`;
@@ -479,20 +496,31 @@ function bindSort() {
   };
   draw();
 
+  // 「登った」「登りたい」のボタン。押した方になり、もう一度押すと外れる（2つは同時に選べない）
   $("#grid").onclick = (e) => {
-    const t = e.target.closest(".st-tile");
-    if (!t) return;
-    const id = Number(t.dataset.id);
-    // 登った → 登ってみたい → 元に戻す
-    if (climbed.has(id)) {
-      climbed.delete(id);
-      favs = favs.filter((x) => x !== id);
-      if (wish.size < WISH_MAX) wish.add(id);
-      else error(`登ってみたい山は${WISH_MAX}座までです。`);
-    } else if (wish.has(id)) {
-      wish.delete(id);
+    const b = e.target.closest("[data-pick]");
+    if (!b) return;
+    const id = Number(b.closest(".st-tile").dataset.id);
+    $("#msg").className = "msg"; $("#msg").textContent = "";
+
+    if (b.dataset.pick === "climbed") {
+      if (climbed.has(id)) {
+        climbed.delete(id);
+        favs = favs.filter((x) => x !== id);
+      } else {
+        climbed.add(id);
+        wish.delete(id);
+      }
     } else {
-      climbed.add(id);
+      if (wish.has(id)) {
+        wish.delete(id);
+      } else if (wish.size >= WISH_MAX) {
+        return error(`登ってみたい山は${WISH_MAX}座までです。どれかを外してください。`);
+      } else {
+        wish.add(id);
+        climbed.delete(id);
+        favs = favs.filter((x) => x !== id);
+      }
     }
     draw();
     document.querySelector(`.st-tile[data-id="${id}"]`)?.classList.add("pop");

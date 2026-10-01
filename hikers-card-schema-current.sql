@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜24 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜25 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step24 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step25 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -55,7 +55,8 @@ create table public.mountains (
                 'kanto', 'tokai', 'west')),
   is_popular  boolean not null default false,
   prefs       text[] not null default '{}',   -- 都道府県（県境の山は複数）
-  pref        text                             -- 旧列。コードからは未使用
+  pref        text,                            -- 旧列。コードからは未使用
+  popular_rank smallint                         -- よく登られている順（1が最上位）。値は hikers-card-step25.sql で付ける
 );
 create index mountains_kana_idx    on public.mountains (kana);
 create index mountains_rank_idx    on public.mountains (meizan_rank);
