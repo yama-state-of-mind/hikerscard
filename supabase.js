@@ -162,6 +162,23 @@ export async function applyPendingExchange() {
 }
 
 // ---------------------------------------------
+// テスト用アカウントだけ：カードづくりを最初からやり直す
+//
+// 名前・診断・登録した山・完成の記録が消える（カード番号・交換相手・登山スキルは残る）。
+// ブラウザに残っている途中の状態（未保存の診断・登録のしかた）も消す。
+// テスト用でない人が呼んでも、DB側で拒否される。
+// ---------------------------------------------
+export async function resetMyOnboarding() {
+  if (!confirm("カードづくりを最初からやり直しますか？\n\n名前・診断・登録した山が消えます。\n（カード番号・交換相手・登山スキルは残ります）")) return false;
+  const { error } = await supabase.rpc("reset_my_onboarding");
+  if (error) { alert("やり直せませんでした：" + error.message); return false; }
+  localStorage.removeItem("pendingDiagnosis");
+  sessionStorage.removeItem("hcRegMode");
+  location.href = "/start.html";
+  return true;
+}
+
+// ---------------------------------------------
 // ログアウト
 // ---------------------------------------------
 export async function signOut() {

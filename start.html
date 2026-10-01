@@ -162,7 +162,10 @@
 <div class="wrap">
   <div class="st-top">
     <p class="st-brand">ハイカーズ<span>カード</span></p>
-    <button class="st-out" id="logout">ログアウト</button>
+    <span>
+      <button class="st-out" id="reset" hidden>最初からやり直す（テスト用）</button>
+      <button class="st-out" id="logout">ログアウト</button>
+    </span>
   </div>
   <div class="st-prog" id="prog" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
@@ -199,7 +202,7 @@ window.addEventListener("unhandledrejection", (e) =>
 // 途中でやめても、次に開いたときはDBの状態から続きのステップを判断して再開する。
 // 完成（complete_onboarding）した時点で、カード番号が発行される。
 // =============================================
-import { supabase, getUser, getMyProfile, applyPendingDiagnosis, signOut } from "./supabase.js";
+import { supabase, getUser, getMyProfile, applyPendingDiagnosis, resetMyOnboarding, signOut } from "./supabase.js";
 import { BG, THEMES, SILHOUETTE, applyTheme, esc, crown, renderHeroCard } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
@@ -219,6 +222,11 @@ if (profile?.onboarded_at) { location.replace("./mypage.html"); await stop(); }
 
 applyTheme(profile?.card_bg || "contour");
 $("#logout").onclick = () => signOut();
+// テスト用アカウントだけ、途中からでも最初からやり直せる
+if (profile?.is_tester) {
+  $("#reset").hidden = false;
+  $("#reset").onclick = () => resetMyOnboarding();
+}
 
 // ---------------------------------------------
 // 山のデータと、いま登録されている山

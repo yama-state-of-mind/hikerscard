@@ -71,6 +71,13 @@
   .mp-item.out .mp-ic { background: none; }
   .mp-item.out .mp-t b { font-size: 13.5px; color: var(--c-mut); font-weight: 600; }
   .mp-item.out .mp-ic svg { stroke: var(--c-mut); }
+
+  /* テスト用アカウントだけに出る枠 */
+  .mp-test { margin-top: 26px; border: 1.5px dashed var(--c-div); border-radius: 16px; padding: 14px 16px; }
+  .mp-test-h { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--c-fg2); }
+  .mp-test-d { font-size: 11.5px; color: var(--c-mut); line-height: 1.8; margin-top: 4px; }
+  .mp-test-btn { margin-top: 10px; width: 100%; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer;
+    border: 1.5px solid var(--c-fg2); border-radius: 999px; padding: 10px; background: none; color: var(--c-fg); }
 </style>
 </head>
 <body>
@@ -85,6 +92,7 @@
     <div class="mp-me" id="me"></div>
     <div class="mp-notes" id="notes"></div>
     <nav class="mp-menu" id="menu"></nav>
+    <div class="mp-test" id="test" hidden></div>
   </div>
 </div>
 
@@ -106,7 +114,7 @@ window.addEventListener("unhandledrejection", (e) =>
 
 <script type="module">
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis,
-         applyPendingExchange, signOut } from "./supabase.js";
+         applyPendingExchange, resetMyOnboarding, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
 import { applyTheme, esc, SILHOUETTE, cardNo } from "./card.js";
 
@@ -217,6 +225,17 @@ $("#menu").innerHTML = [
 ].join("");
 
 $("#logout").onclick = () => signOut();
+
+// テスト用アカウントだけ：カードづくりのやり直し
+if (profile.is_tester) {
+  $("#test").hidden = false;
+  $("#test").innerHTML = `
+    <p class="mp-test-h">テスト用アカウント</p>
+    <p class="mp-test-d">カードづくり（初期登録）の画面を確認するためのアカウントです。<br>
+      やり直しても、カード番号は同じものが使われます。</p>
+    <button class="mp-test-btn" id="reset">カードづくりを最初からやり直す</button>`;
+  $("#reset").onclick = () => resetMyOnboarding();
+}
 
 $("#loading").hidden = true;
 $("#main").hidden = false;

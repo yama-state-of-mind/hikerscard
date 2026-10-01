@@ -56,6 +56,8 @@
   .ad-tag { font-size: 9.5px; font-weight: 700; border-radius: 999px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px; }
   .ad-tag.kanrinin { background: var(--c-chip); color: var(--c-chipfg); }
   .ad-tag.koyaban { background: var(--sun); color: #fff; }
+  .ad-tag.tester { background: none; color: var(--c-fg2); border: 1px dashed var(--c-fg2); }
+  .ad-role { gap: 6px; }
   .ad-role { margin-top: 10px; display: flex; justify-content: flex-end; }
   .ad-role button { font-family: var(--font); font-size: 11.5px; font-weight: 700; cursor: pointer;
     border-radius: 999px; padding: 6px 14px; border: 1.5px solid var(--c-div); background: none; color: var(--c-fg); }
@@ -251,6 +253,7 @@ function rowHtml(u) {
         <div class="ad-who">
           <p class="ad-name${named ? "" : " unset"}">${named ? esc(u.display_name) : "（表示名が未設定）"}${
             u.role ? `<span class="ad-tag ${u.role}">${ROLE_NAME[u.role]}</span>` : ""}${
+            u.is_tester ? `<span class="ad-tag tester">テスト用</span>` : ""}${
             u.reports_open ? `<span class="ad-tag rep">通報 ${u.reports_open}</span>` : ""}</p>
           <p class="ad-sub"><b>${cardNo(u.card_no, "No.未発行")}</b> ・ ${
             diag ? `${esc(u.type_code)} ${esc(CHARACTERS[u.type_code]?.animal ?? "")}` : "未診断"}${
@@ -272,33 +275,50 @@ function rowHtml(u) {
     </div>`;
 }
 
-// 小屋番の付け外し（管理人だけ。管理人の人・自分自身には出さない）
+// 管理人だけが使えるボタン
+//   ・小屋番の付け外し（管理人の人・自分自身には出さない）
+//   ・テスト用の付け外し（だれにでも。自分の別アカウントをテスト用にする想定）
 function roleControl(u) {
-  if (!IS_KANRININ || u.is_me || u.role === "kanrinin") return "";
-  const on = u.role === "koyaban";
-  return `<div class="ad-role">
-    <button class="${on ? "on" : ""}" data-role="${esc(u.public_id)}" data-on="${on ? 1 : 0}">
-      ${on ? "小屋番を外す" : "小屋番にする"}</button></div>`;
+  if (!IS_KANRININ) return "";
+  const btns = [];
+  if (!u.is_me && u.role !== "kanrinin") {
+    const on = u.role === "koyaban";
+    btns.push(`<button class="${on ? "on" : ""}" data-role="${esc(u.public_id)}" data-on="${on ? 1 : 0}">
+      ${on ? "小屋番を外す" : "小屋番にする"}</button>`);
+  }
+  btns.push(`<button class="${u.is_tester ? "on" : ""}" data-tester="${esc(u.public_id)}" data-on="${u.is_tester ? 1 : 0}">
+    ${u.is_tester ? "テスト用を外す" : "テスト用にする"}</button>`);
+  return `<div class="ad-role">${btns.join("")}</div>`;
 }
 
 $("#list").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-role]");
+  const b = e.target.closest("[data-role], [data-tester]");
   if (!b) return;
-  const u = items.find((x) => x.public_id === b.dataset.role);
+  const isTester = !!b.dataset.tester;
+  const pid = isTester ? b.dataset.tester : b.dataset.role;
+  const u = items.find((x) => x.public_id === pid);
   const turnOn = b.dataset.on !== "1";
   const who = u?.display_name || "この人";
-  if (!confirm(turnOn ? `${who}さんを小屋番にしますか？\n（ユーザー検索ができるようになります。メールアドレスは見られません）`
-                      : `${who}さんを小屋番から外しますか？`)) return;
+
+  const ask = isTester
+    ? (turnOn ? `${who}さんをテスト用にしますか？\n（マイページに「カードづくりを最初からやり直す」ボタンが出ます。一般の利用者には付けないでください）`
+              : `${who}さんのテスト用を外しますか？`)
+    : (turnOn ? `${who}さんを小屋番にしますか？\n（ユーザー検索ができるようになります。メールアドレスは見られません）`
+              : `${who}さんを小屋番から外しますか？`);
+  if (!confirm(ask)) return;
 
   b.disabled = true;
-  const { data, error } = await supabase.rpc("admin_set_koyaban", { p_public_id: b.dataset.role, p_on: turnOn });
+  const { data, error } = isTester
+    ? await supabase.rpc("admin_set_tester", { p_public_id: pid, p_on: turnOn })
+    : await supabase.rpc("admin_set_koyaban", { p_public_id: pid, p_on: turnOn });
   if (error || !data?.ok) {
     b.disabled = false;
     alert("変更できませんでした：" + (error?.message ?? data?.reason ?? ""));
     return;
   }
   // その人の表示だけ描き直す
-  u.role = data.role ?? null;
+  if (isTester) u.is_tester = !!data.is_tester;
+  else u.role = data.role ?? null;
   b.closest(".ad-row").outerHTML = rowHtml(u);
 });
 

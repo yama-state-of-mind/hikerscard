@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜23 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜24 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step23 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step24 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -85,6 +85,7 @@ create table public.profiles (
   vis_rank_300  boolean not null default true,
   vis_rank_other boolean not null default true,
   onboarded_at  timestamptz,   -- カードづくりを完成させた日時（complete_onboarding からだけ設定）
+  is_tester     boolean not null default false,   -- テスト用アカウント（admin_set_tester からだけ設定。Step 24）
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -241,6 +242,11 @@ begin
   -- 完成の日時は、complete_onboarding が許可の印を立てたときだけ変えられる
   if coalesce(current_setting('hc.onboarding', true), '') <> '1' then
     new.onboarded_at := old.onboarded_at;
+  end if;
+
+  -- テスト用の印は、管理人（admin_set_tester）が許可の印を立てたときだけ変えられる
+  if coalesce(current_setting('hc.tester', true), '') <> '1' then
+    new.is_tester := old.is_tester;
   end if;
 
   -- 完成したら、まだ番号の無い人に次の番号を振る
@@ -1022,7 +1028,8 @@ begin
       (select count(*) from public.exchanges e where p.id in (e.user_a, e.user_b)) as exchanges,
       (select count(*) from public.reports rp where rp.reported_id = p.id and rp.status = 'open') as reports_open,
       (select a.role from public.admins a where a.user_id = p.id) as role,
-      p.id = auth.uid() as is_me
+      p.id = auth.uid() as is_me,
+      p.is_tester
     from public.profiles p join auth.users u on u.id = p.id
     where public.admin_user_matches(p.display_name, p.public_id, case when see_email then u.email end, p.type_code, p.card_no, q, t)
     order by
@@ -1178,5 +1185,58 @@ begin
 
   select * into prof from public.profiles where id = me;
   return jsonb_build_object('ok', true, 'card_no', prof.card_no);
+end;
+$$;
+
+
+-- =============================================================
+-- テスト用アカウント（Step 24）
+-- =============================================================
+
+create or replace function public.admin_set_tester(p_public_id text, p_on boolean)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  target uuid;
+begin
+  if public.my_admin_role() is distinct from 'kanrinin' then
+    raise exception 'forbidden';
+  end if;
+
+  select id into target from public.profiles where public_id = p_public_id;
+  if target is null then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
+
+  perform set_config('hc.tester', '1', true);
+  update public.profiles set is_tester = coalesce(p_on, false) where id = target;
+  perform set_config('hc.tester', '', true);
+
+  return jsonb_build_object('ok', true, 'is_tester', coalesce(p_on, false));
+end;
+$$;
+
+create or replace function public.reset_my_onboarding()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'not authenticated'; end if;
+
+  -- テスト用でなければ使えない（一般の利用者は絶対にやり直せない）
+  if not coalesce((select is_tester from public.profiles where id = me), false) then
+    raise exception 'forbidden';
+  end if;
+
+  delete from public.climbed_mountains where user_id = me;
+  delete from public.wishlist_mountains where user_id = me;
+
+  -- 完成の記録も消す（保護トリガーに許可の印を見せる）。カード番号は残す
+  perform set_config('hc.onboarding', '1', true);
+  update public.profiles
+     set display_name = '', comment = null, card_bg = 'contour',
+         type_code = null, axis_pe = null, axis_sg = null, axis_lf = null, axis_ca = null,
+         onboarded_at = null
+   where id = me;
+  perform set_config('hc.onboarding', '', true);
+
+  return jsonb_build_object('ok', true);
 end;
 $$;
