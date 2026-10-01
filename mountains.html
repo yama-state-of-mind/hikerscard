@@ -39,10 +39,17 @@
 
 
 /* 達成率 */
+/* 種別ごとの登録数（スマホで場所を取らないよう、リングではなく1行の小さな表示） */
 .count-row {
-  display: flex; align-items: flex-start; gap: 16px; margin-top: 12px;
-  overflow-x: auto; padding-bottom: 2px;
+  display: flex; flex-wrap: nowrap; gap: 5px; margin-top: 10px; overflow-x: auto;   /* 1行に収める */
 }
+.count-row::-webkit-scrollbar { display: none; }
+.cnt-pill { display: inline-flex; align-items: center; gap: 5px; flex: none; white-space: nowrap;
+  font-size: 11px; font-weight: 600;
+  color: var(--c-fg2, var(--stone)); background: var(--c-bg, var(--paper)); border-radius: 999px;
+  padding: 3px 9px 3px 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.cnt-pill i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.cnt-pill b { font-family: var(--mono); font-size: 13px; color: var(--c-fg, var(--pine)); }
 .count-row::-webkit-scrollbar { display: none; }
 .ring-item { text-align: center; flex: none; }
 .ring-label { font-size: 10px; font-weight: 700; margin-top: 4px; line-height: 1.3; }
@@ -118,10 +125,12 @@
   text-align: center; font-size: 12.5px; color: var(--stone);
   padding: 36px 20px; line-height: 2;
 }
-.more-note {
-  text-align: center; font-size: 11.5px; color: var(--stone);
-  padding: 14px 20px 4px; line-height: 1.9;
-}
+.more-wrap { text-align: center; padding: 16px 0 4px; }
+.more-btn { font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer;
+  color: var(--c-fg, var(--pine)); background: var(--c-bg, var(--paper));
+  border: 1.5px solid var(--c-div, var(--line)); border-radius: 999px; padding: 10px 26px; }
+.more-btn:active { transform: scale(.97); }
+.more-note { font-size: 11px; color: var(--c-mut, var(--stone)); margin-top: 8px; }
 
 /* ---------- 検索とフィルタ ---------- */
 .tool-row { display: flex; gap: 8px; margin-top: 11px; }
@@ -309,6 +318,12 @@
 body.t-night .mt-item.on, body.t-night .mt-item.fav.on { background: rgba(224,163,59,.14); }
 body.t-night .mt-item.wish.on { background: rgba(127,181,212,.14); }
 
+/* カードづくり中の案内 */
+.ob-note { margin-top: 10px; background: #FCF1DC; border-left: 4px solid var(--sun); border-radius: 12px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.8; color: var(--c-fg, var(--pine)); }
+body.t-night .ob-note { background: rgba(224,163,59,.16); }
+.ob-note b { font-weight: 800; }
+
 /* 保存前の変更を知らせるトースト */
 .toast {
   position: fixed; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom, 0px)); z-index: 120;
@@ -330,6 +345,7 @@ body.t-night .mt-item.wish.on { background: rgba(127,181,212,.14); }
 
   <div id="main" hidden>
     <div class="page-h"><h1>山の登録</h1></div>
+    <div class="ob-note" id="ob-note" hidden></div>
 
     <div class="head-bar">
       <div class="head-in">
@@ -435,6 +451,10 @@ const [profile, mtRes, climbedRes, wishRes] = await Promise.all([
 ]);
 
 mountHeader(signOut, { shareId: profile?.public_id });
+
+// カードづくりの途中（じっくり登録を選んだ人）は、保存したらカードづくりに戻る
+const ONBOARDING = !profile?.onboarded_at;
+const AFTER_SAVE = ONBOARDING ? "./start.html" : "./card.html";
 if (profile?.card_bg) applyTheme(profile.card_bg);
 
 // どれか1つでも失敗したら止める。
@@ -469,6 +489,12 @@ let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "clim
 
 $("#loading").hidden = true;
 $("#main").hidden = false;
+
+if (ONBOARDING) {
+  $("#ob-note").hidden = false;
+  $("#ob-note").innerHTML = `<b>カードづくり中</b>：3つのタブで、<b>登ってみたい山を1つ以上</b>、
+    登った山がある人は<b>登ってよかった山も1つ以上</b>選んで「保存する」を押してください。カードづくりに戻ります。`;
+}
 
 // ---------------------------------------------
 // 一覧の並び順（北から南）
@@ -538,6 +564,12 @@ FILTERS.forEach((f) => (active[f.id] = new Set()));
 
 let onlySelected = false;
 let keyword = "";
+
+// 絞り込みが無いときに一度に出す件数。「さらに表示」で増やす。
+// 条件（タブ・検索・フィルタ）が変わったら最初の件数に戻す
+const PAGE = 80;
+let pageLimit = PAGE;
+let lastSig = "";
 
 // ---------------------------------------------
 // タブごとの「選べる山」と「選択中か」
@@ -819,14 +851,18 @@ function render() {
   }
 
   // 絞り込みが効いていないときは件数を抑える（スクロール負荷を下げる）
-  const limited = !kw && !onlySelected && !activeCount() && list.length > 80;
-  const shown = limited ? list.slice(0, 80) : list;
+  const sig = [tab, kw, onlySelected, ...FILTERS.map((f) => [...active[f.id]].sort().join("."))].join("|");
+  if (sig !== lastSig) { pageLimit = PAGE; lastSig = sig; }
+  const limited = !kw && !onlySelected && !activeCount() && list.length > pageLimit;
+  const shown = limited ? list.slice(0, pageLimit) : list;
 
   $("#list").innerHTML = shown.length
     ? renderList(shown, grouped) +
       (limited
-        ? `<p class="more-note">ほか ${list.length - shown.length}座。<br>
-             フィルタや検索で絞り込めます。</p>`
+        ? `<div class="more-wrap">
+             <button class="more-btn" data-more="1">さらに表示（残り${list.length - shown.length}座）</button>
+             <p class="more-note">フィルタや検索で絞り込めます。</p>
+           </div>`
         : "")
     : `<p class="mt-empty">${onlySelected
         ? "選択中の山はありません。"
@@ -889,6 +925,13 @@ function normalize(s) {
 // 選択の切り替え
 // ---------------------------------------------
 $("#list").addEventListener("click", (e) => {
+  if (e.target.closest("[data-more]")) {
+    pageLimit += PAGE;
+    const y = scrollY;
+    render();
+    window.scrollTo(0, y);   // 押した位置のまま、続きが下に足される
+    return;
+  }
   const go = e.target.closest("[data-goto]");
   if (go) { setTab(go.dataset.goto); return; }
 
@@ -959,24 +1002,8 @@ function updateCount() {
     const picked = active.rank.size ? RING_DEFS.filter((c) => active.rank.has(c.id)) : RING_DEFS;
     row.innerHTML = picked.map((c) => {
       const inThis = (m) => c.rank === null ? m.meizan_rank === null : m.meizan_rank === c.rank;
-      const done  = MOUNTAINS.filter((m) => inThis(m) && climbed.has(m.id)).length;
-      const total = c.total ?? MOUNTAINS.filter(inThis).length;
-      const R = 22, C = 2 * Math.PI * R;
-      return `
-        <div class="ring-item">
-          <div class="ring">
-            <svg viewBox="0 0 52 52">
-              <circle cx="26" cy="26" r="${R}" fill="none" stroke="var(--c-soft, #E7EEE9)" stroke-width="5"/>
-              <circle cx="26" cy="26" r="${R}" fill="none" stroke="${c.color}" stroke-width="5"
-                      stroke-linecap="round" stroke-dasharray="${C}"
-                      stroke-dashoffset="${total ? C * (1 - done / total) : C}"
-                      transform="rotate(-90 26 26)"/>
-            </svg>
-            <div class="ring-num"><b>${done}</b><span>/${total}</span></div>
-          </div>
-          <p class="ring-label">${c.label}</p>
-          <p class="ring-rest">${total && done >= total ? "完登" : total ? `あと${total - done}` : ""}</p>
-        </div>`;
+      const done = MOUNTAINS.filter((m) => inThis(m) && climbed.has(m.id)).length;
+      return `<span class="cnt-pill"><i style="background:${c.color}"></i>${c.label}<b>${done}</b></span>`;
     }).join("");
   }
 
@@ -1014,7 +1041,7 @@ $("#save").onclick = async () => {
   msg.className = "msg";
   msg.textContent = "";
 
-  if (!changeCount()) { location.href = "./card.html"; return; }
+  if (!changeCount()) { location.href = AFTER_SAVE; return; }
 
   const btn = $("#save");
   btn.disabled = true;
@@ -1040,7 +1067,7 @@ $("#save").onclick = async () => {
     return;
   }
 
-  location.href = "./card.html";
+  location.href = AFTER_SAVE;
 };
 
 // 保存せずにページを離れようとしたら確認する

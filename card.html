@@ -98,7 +98,7 @@ if (!profile) {
   $("#loading").innerHTML = `<p class="msg error">プロフィールを読み込めませんでした。</p>`;
   throw new Error("no profile");
 }
-if (!profile.display_name) location.replace("./setup.html");
+if (!profile.onboarded_at) { location.replace("./start.html"); await new Promise(() => {}); }   // カードづくりがまだ
 
 // シェアボタンが自分のURLをすぐ出せるよう、公開IDを渡しておく
 mountHeader(signOut, { shareId: profile.public_id });

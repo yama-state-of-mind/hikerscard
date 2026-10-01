@@ -56,8 +56,8 @@ export async function getMyProfile() {
 // ログイン状態に応じた行き先を判定する
 //
 //   未ログイン           → "login"
-//   ログイン済み・名前なし → "setup"
-//   ログイン済み・名前あり → "home"
+//   ログイン済み・カードづくりがまだ → "start"
+//   ログイン済み・カード完成 → "home"
 // ---------------------------------------------
 export async function resolveDestination() {
   const user = await getUser();
@@ -70,16 +70,17 @@ export async function resolveDestination() {
   if (!profile) {
     await new Promise((r) => setTimeout(r, 800));
     const retry = await getMyProfile();
-    if (!retry) return { to: "setup", user, profile: null };
+    if (!retry) return { to: "start", user, profile: null };
     return {
-      to: retry.display_name ? "home" : "setup",
+      to: retry.onboarded_at ? "home" : "start",
       user,
       profile: retry,
     };
   }
 
+  // カードづくりを終えていなければ、カードづくりへ
   return {
-    to: profile.display_name ? "home" : "setup",
+    to: profile.onboarded_at ? "home" : "start",
     user,
     profile,
   };

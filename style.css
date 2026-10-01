@@ -1095,10 +1095,14 @@ a.hero-empty { display: block; text-decoration: none; color: inherit; }
 #af-cta .af-cta { margin: 2px 0 16px; }
 
 /* 4軸のスコア：四角い枠で囲み、バーは横幅の7割ほどにして左右に余白 */
-.d-axbox { margin-top: 18px; border: 1px solid var(--c-div); border-radius: 16px; padding: 14px 12px 16px;
-  background: var(--c-bg); }
+/* ヒーローカード（白地・影・角丸）と見分けがつくよう、
+   白地・枠線・影は使わず、ページの地色に少しだけ色を重ねた控えめな面にする。
+   幅もカードより一回り狭くする */
+.d-axbox { width: 88%; margin: 18px auto 0; border: none; border-radius: 12px; padding: 14px 12px 16px;
+  background: rgba(22, 33, 28, .045); box-shadow: none; }
+body.t-night .d-axbox { background: rgba(255, 255, 255, .045); }
 .d-axbox .d-sub { text-align: center; }
-.d-axrows { width: 70%; min-width: 250px; max-width: 100%; margin: 0 auto; }
+.d-axrows { width: 80%; min-width: 236px; max-width: 100%; margin: 0 auto; }   /* 枠を狭めた分、中は8割に */
 
 /* SNS：公式のアイコン（形・色を変えない） */
 .sns-ic.brand { background: none; border-radius: 0; }

@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜21 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜23 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step21 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step23 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -66,7 +66,7 @@ create index mountains_popular_idx on public.mountains (is_popular) where is_pop
 create table public.profiles (
   id            uuid primary key references auth.users(id) on delete cascade,
   public_id     text not null unique,
-  card_no       integer,   -- 表示名と診断がそろった時点で発行（Step 20）。protect_profile_fields を参照
+  card_no       integer,   -- カードづくり完成（onboarded_at）の時点で発行（Step 23）。protect_profile_fields を参照
   display_name  text not null default '' check (char_length(display_name) <= 20),
   comment       text check (char_length(comment) <= 120),
   type_code     text check (type_code ~ '^[A-Z]{4}$'),
@@ -84,6 +84,7 @@ create table public.profiles (
   vis_rank_200  boolean not null default true,
   vis_rank_300  boolean not null default true,
   vis_rank_other boolean not null default true,
+  onboarded_at  timestamptz,   -- カードづくりを完成させた日時（complete_onboarding からだけ設定）
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -237,9 +238,13 @@ begin
   new.card_no    := old.card_no;     -- カード番号も変更不可
   new.created_at := old.created_at;
 
-  if new.card_no is null
-     and coalesce(btrim(new.display_name), '') <> ''
-     and new.type_code is not null then
+  -- 完成の日時は、complete_onboarding が許可の印を立てたときだけ変えられる
+  if coalesce(current_setting('hc.onboarding', true), '') <> '1' then
+    new.onboarded_at := old.onboarded_at;
+  end if;
+
+  -- 完成したら、まだ番号の無い人に次の番号を振る
+  if new.card_no is null and new.onboarded_at is not null then
     new.card_no := nextval('public.profiles_card_no_seq');
   end if;
 
@@ -384,7 +389,7 @@ declare
 begin
   select * into prof from public.profiles where public_id = p_public_id;
   if not found then return null; end if;
-  if prof.display_name = '' then return null; end if;
+  if prof.onboarded_at is null then return null; end if;   -- 完成前のカードは公開しない
 
   -- 相手にブロックされていたら「存在しない」ことにする
   if viewer is not null and exists (
@@ -601,7 +606,7 @@ begin
   if me is null then raise exception 'not authenticated'; end if;
 
   -- 表示名が未設定のうちは交換できない
-  if (select display_name from public.profiles where id = me) = '' then
+  if (select onboarded_at from public.profiles where id = me) is null then   -- カードが完成していなければ交換できない
     raise exception 'profile not ready';
   end if;
 
@@ -649,7 +654,7 @@ begin
   end if;
 
   -- 表示名が未設定なら交換できない
-  if (select display_name from public.profiles where id = me) = '' then
+  if (select onboarded_at from public.profiles where id = me) is null then   -- カードが完成していなければ交換できない
     return jsonb_build_object('ok', false, 'reason', 'profile_not_ready');
   end if;
 
@@ -882,7 +887,7 @@ declare
   back   public.card_backs%rowtype;
 begin
   select * into prof from public.profiles where public_id = p_public_id;
-  if not found or prof.display_name = '' then return null; end if;
+  if not found or prof.onboarded_at is null then return null; end if;   -- 完成前のカードは公開しない
 
   if viewer is distinct from prof.id then
     if viewer is null then
@@ -1120,5 +1125,58 @@ begin
    where user_id = me and seen_at is null;
 
   return result;
+end;
+$$;
+
+
+-- =============================================================
+-- カードづくり（Step 23）
+-- =============================================================
+
+create or replace function public.complete_onboarding()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  me    uuid := auth.uid();
+  prof  public.profiles%rowtype;
+  n_climbed int;
+  n_fav     int;
+  n_wish    int;
+begin
+  if me is null then raise exception 'not authenticated'; end if;
+
+  select * into prof from public.profiles where id = me;
+  if not found then raise exception 'no profile'; end if;
+
+  -- すでに完成していれば、そのまま番号を返す
+  if prof.onboarded_at is not null then
+    return jsonb_build_object('ok', true, 'card_no', prof.card_no, 'already', true);
+  end if;
+
+  if coalesce(btrim(prof.display_name), '') = '' then
+    return jsonb_build_object('ok', false, 'reason', 'no_name');
+  end if;
+  if prof.type_code is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_type');
+  end if;
+
+  select count(*), count(*) filter (where is_favorite)
+    into n_climbed, n_fav
+    from public.climbed_mountains where user_id = me;
+  select count(*) into n_wish from public.wishlist_mountains where user_id = me;
+
+  if n_wish < 1 then
+    return jsonb_build_object('ok', false, 'reason', 'no_wish');
+  end if;
+  if n_climbed > 0 and n_fav < 1 then
+    return jsonb_build_object('ok', false, 'reason', 'no_fav');
+  end if;
+
+  -- 完成の日時を記録（保護トリガーに許可の印を見せる）。トリガーが番号を振る
+  perform set_config('hc.onboarding', '1', true);
+  update public.profiles set onboarded_at = now() where id = me;
+  perform set_config('hc.onboarding', '', true);
+
+  select * into prof from public.profiles where id = me;
+  return jsonb_build_object('ok', true, 'card_no', prof.card_no);
 end;
 $$;

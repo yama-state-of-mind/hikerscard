@@ -117,7 +117,7 @@ const user = await getUser();
 if (!user) { location.replace("./login.html"); await stop(); }
 
 let profile = await getMyProfile();
-if (!profile?.display_name) { location.replace("./setup.html"); await stop(); }
+if (!profile?.onboarded_at) { location.replace("./start.html"); await stop(); }   // カードづくりがまだ
 
 // 未ログインのまま受けた診断・交換があれば、ここで反映する
 profile = await applyPendingDiagnosis(profile);

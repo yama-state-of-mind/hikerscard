@@ -105,10 +105,11 @@ if (!token) {
   } else {
     const profile = await getMyProfile();
 
-    if (!profile?.display_name) {
-      // プロフィール未設定。設定後に交換できるようトークンを預かる
+    if (!profile?.onboarded_at) {
+      // カードがまだ完成していない。完成後に交換できるようトークンを預かる
+      // （マイページを開いたときに交換される）
       localStorage.setItem("pendingExchangeToken", token);
-      location.replace("/setup.html");
+      location.replace("/start.html");
     } else {
       await redeem(token);
     }
