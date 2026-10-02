@@ -1216,10 +1216,10 @@ body.theme-dark .sns-ic.brand.x { color: #fff; }
 /* =============================================
    Step 27：海外の国旗・場所の種類
    ============================================= */
-.flags { display: inline-flex; gap: 2px; margin-right: 5px; vertical-align: -1px; flex: none; }
+.flags { display: inline-flex; gap: 2px; margin-left: 5px; vertical-align: -1px; flex: none; }
 .flag { width: 16px; height: 12px; border-radius: 2px; display: block; object-fit: cover;
   box-shadow: 0 0 0 .5px rgba(0,0,0,.18); }
-.mini-tag .flags, .d-tag .flags { margin-right: 4px; }
+.mini-tag .flags, .d-tag .flags { margin-left: 4px; }
 /* 名山以外の2行目以降は、区切り線を詰める */
 .mz-row.mz-more { border-top: none; margin-top: 0; padding-top: 6px; }
 

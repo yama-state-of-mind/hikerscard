@@ -331,7 +331,7 @@ body.theme-dark .mt-item.wish.on { background: rgba(127,181,212,.14); }
 .kind-badge { display: inline-block; font-size: 9.5px; font-weight: 700; margin-left: 6px; vertical-align: 2px;
   padding: 1px 6px; border-radius: 6px; color: var(--c-fg2, var(--stone)); border: 1px solid var(--c-div, var(--line)); }
 .kind-badge.ridge { color: #fff; background: #7C6A58; border-color: transparent; }
-.mt-name .flags { margin-right: 6px; vertical-align: 0; }
+.mt-name .flags { margin-left: 6px; vertical-align: 0; }
 
 /* カードづくり中の案内 */
 .ob-note { margin-top: 10px; background: #FCF1DC; border-left: 4px solid var(--sun); border-radius: 12px;
@@ -855,7 +855,7 @@ function drawPanel() {
       return `
         <div class="slot" data-i="${i}">
           ${posBadge(i + 1)}
-          <span class="slot-name">${flags(m.countries)}${esc(label(m))}<small>${esc(m.kana)}${m.elevation ? `・${m.elevation}m` : ""}</small></span>
+          <span class="slot-name">${esc(label(m))}${flags(m.countries)}<small>${esc(m.kana)}${m.elevation ? `・${m.elevation}m` : ""}</small></span>
           <button class="slot-btn" data-mv="-1" aria-label="${esc(label(m))}の順位を上げる" ${i === 0 ? "disabled" : ""}>${IC.up}</button>
           <button class="slot-btn" data-mv="1"  aria-label="${esc(label(m))}の順位を下げる" ${i === fav.length - 1 ? "disabled" : ""}>${IC.down}</button>
           <button class="slot-btn x" data-rm="1" aria-label="${esc(label(m))}を外す">${IC.x}</button>
@@ -873,7 +873,7 @@ function drawPanel() {
   const chips = [...wish].map((id) => byId.get(id)).filter(Boolean)
     .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0))
     .map((m) => `<button class="wish-chip" data-rm-wish="${m.id}" aria-label="${esc(label(m))}を外す">
-        ${flags(m.countries)}${esc(label(m))}<i>×</i></button>`).join("");
+        ${esc(label(m))}${flags(m.countries)}<i>×</i></button>`).join("");
   $("#panel").innerHTML = `
     <p class="lead">まだ登っていない山から、5座まで選べます。
       <span class="cap-n ${wish.size >= MAX ? "full" : ""}">${wish.size} / ${MAX}</span></p>
@@ -1017,7 +1017,7 @@ function itemHtml(m) {
     <div class="mt-item ${tab}${on ? " on" : ""}${full ? " dim" : ""}" data-id="${m.id}">
       ${mark}
       <div class="mt-body">
-        <p class="mt-name">${flags(m.countries)}${esc(label(m))}${badge}</p>
+        <p class="mt-name">${esc(label(m))}${flags(m.countries)}${badge}</p>
         <p class="mt-meta">${esc(m.kana)}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.prefs?.length ? ` ・ ${esc(m.prefs.join("・"))}` : ""}</p>
       </div>
     </div>`;

@@ -1,3 +1,4 @@
+import { FLAG_SVG } from "./flags-data.js";
 // =============================================
 // カードの描画
 //
@@ -376,8 +377,8 @@ export function cardNo(n, empty = "") {
 // ---------------------------------------------
 // 国旗と、山の名前の表示
 //
-// 海外の山は、国名の代わりに国旗を山名の左に付ける（/flags/xx.svg）。
-// 国旗の画像は flag-icons（MIT License）から必要な国だけを同梱している。
+// 海外の山は、国名の代わりに国旗を山名の後ろに付ける。
+// 国旗の画像は flags-data.js に埋め込んである（読み込みを広告ブロック拡張などに止められないように）。
 // 国名は読み上げ・マウスを乗せたときの説明に使う。
 // 絵文字の国旗は Windows で表示されないため使わない。
 // ---------------------------------------------
@@ -392,13 +393,13 @@ export const COUNTRIES = {
 };
 export function flags(cc) {
   if (!cc?.length) return "";
-  return `<span class="flags">${cc.slice(0, 3).map((c) =>
-    `<img class="flag" src="/flags/${encodeURIComponent(c)}.svg" alt="${esc(COUNTRIES[c] ?? c)}"
-          title="${esc(COUNTRIES[c] ?? c)}" width="16" height="12" loading="lazy">`).join("")}</span>`;
+  return `<span class="flags">${cc.slice(0, 3).filter((c) => FLAG_SVG[c]).map((c) =>
+    `<img class="flag" src="${FLAG_SVG[c]}" alt="${esc(COUNTRIES[c] ?? c)}"
+          title="${esc(COUNTRIES[c] ?? c)}" width="16" height="12">`).join("")}</span>`;
 }
-// 山の名前（表示名があればそちら）＋国旗。どの画面でもこれで出す
+// 山の名前（表示名があればそちら）＋国旗（名前の後ろ）。どの画面でもこれで出す
 export function mtLabel(m) {
-  return `${flags(m.cc ?? m.countries)}${esc(m.label ?? m.display_name ?? m.name)}`;
+  return `${esc(m.label ?? m.display_name ?? m.name)}${flags(m.cc ?? m.countries)}`;
 }
 // 名山以外の場所の分け方（踏破状況の行・件数と同じ分け方）
 export function placeCat(m) {
