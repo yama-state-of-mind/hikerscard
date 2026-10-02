@@ -596,8 +596,8 @@ body.theme-dark .ov-pop.below .ov-pop-arrow { border-top-color: transparent; bor
   box-shadow: 0 2px 8px rgba(30,58,49,.12); background: var(--c-bg); }
 .bg-chip.on .sw { border-color: var(--sun); }
 .bg-chip .sw > svg { position: absolute; inset: 0; width: 100%; height: 100%; }   /* 背景の模様だけを全面に（鍵のアイコンは除く） */
-.bg-chip span { display: block; font-size: 10px; color: var(--stone); margin-top: 5px; }
-.bg-chip.on span { color: var(--pine); font-weight: 700; }
+.bg-chip span { display: block; font-size: 10px; color: var(--c-mut, var(--stone)); margin-top: 5px; }
+.bg-chip.on span { color: var(--c-fg, var(--pine)); font-weight: 700; }   /* 暗いテーマでも読めるように */
 
 /* 空のときの案内 */
 .hc-empty { text-align: center; background: var(--c-bg, var(--paper));

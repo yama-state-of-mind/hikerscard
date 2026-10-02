@@ -52,6 +52,7 @@ export const BG = {
 //   count    … 交換した枚数（鍵の判定に使う）
 //   opts.plainOnly … いつでも使える5種だけ出す（カードづくりの最初）
 //   opts.keep      … 枚数が足りなくても選べる背景（すでに使っている背景はそのまま選べる）
+//   opts.staff     … 管理人・小屋番。制限なくすべて選べる（DB側の is_staff と同じ考え方）
 // =============================================
 const LOCK_SVG = `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
 
@@ -76,6 +77,18 @@ export function renderBgPicker(selected, count = 0, opts = {}) {
   if (opts.plainOnly) {
     return `<div class="bgp">${plainHtml}
       <p class="bgp-note">カードを交換すると、山なみ・朝焼け・雲海・地形図・夜空も使えるようになります。</p></div>`;
+  }
+
+  // 管理人・小屋番は、すべての背景を使える
+  if (opts.staff) {
+    const all = THEMES.filter((t) => t.need > 0);
+    return `
+    <div class="bgp">
+      ${plainHtml}
+      <p class="bgp-h lock">${LOCK_SVG}カードを交換すると使える</p>
+      <p class="bgp-count">管理人・小屋番は、すべての背景を使えます。</p>
+      <div class="bgp-grid">${all.map((t) => bgChip(t, selected, false)).join("")}</div>
+    </div>`;
   }
 
   const next = nextUnlock(count);

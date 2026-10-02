@@ -232,6 +232,9 @@ applyTheme(bg);
 const { count: exCount } = await supabase.from("exchanges").select("id", { count: "exact", head: true });
 const exchanges = exCount ?? 0;
 
+// 管理人・小屋番は、制限のある機能をすべて使える（背景もすべて選べる）
+const { data: isStaff } = await supabase.rpc("is_admin");
+
 // 名山ランクごとの公開設定
 const vis = {
   home: profile.vis_home !== false,
@@ -290,7 +293,7 @@ $("#url-copy").onclick = async () => {
 // 背景の選択
 // ---------------------------------------------
 function drawBgs() {
-  $("#bgs").innerHTML = renderBgPicker(bg, exchanges, { keep: keepBg });
+  $("#bgs").innerHTML = renderBgPicker(bg, exchanges, { keep: keepBg, staff: !!isStaff });
 }
 drawBgs();
 
