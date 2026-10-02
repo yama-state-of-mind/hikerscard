@@ -325,6 +325,7 @@ body.theme-dark .mt-item.wish.on { background: rgba(127,181,212,.14); }
   border-radius: 999px; padding: 9px 20px; }
 .extra-hint p { font-size: 10.5px; color: var(--c-mut, var(--stone)); margin-top: 6px; }
 .f-note { font-size: 10.5px; color: var(--c-mut, var(--stone)); margin: -4px 0 8px; }
+.f-group.off .f-opts { opacity: .35; pointer-events: none; }
 
 /* 名山以外の種類の印 */
 .kind-badge { display: inline-block; font-size: 9.5px; font-weight: 700; margin-left: 6px; vertical-align: 2px;
@@ -544,9 +545,9 @@ const areaRank = (a) => {
 // ふだんの一覧は「国内の山頂」が中心。
 //   ・名山／エリア／人気の山／標高 … 絞り込み
 //   ・エリアの「海外」を選ぶと、海外の山・トレッキングが入る（選ばなければ出ない）
-//   ・山頂以外も表示（add: true）… 岩稜・難所／景勝地・コースを一覧の後ろに「足す」スイッチ。
-//     ほかの絞り込みは受けない
-//   ・検索は常に全体から探す（オフにしている種類・海外も見つかる）
+//   ・山頂以外（kinds: true）… 岩稜・難所／景勝地・コースを選ぶと、その種類「だけ」を表示する。
+//     そのあいだ、名山・人気の山・標高は使えない（エリアは使える）
+//   ・検索は、山頂以外を選んでいなければ全体から探す（岩稜・景勝地・海外も見つかる）
 const FILTERS = [
   {
     id: "rank", title: "名山",
@@ -590,8 +591,8 @@ const FILTERS = [
     },
   },
   {
-    id: "extra", title: "山頂以外も表示", add: true,
-    note: "チェックした種類を、一覧の後ろに足します",
+    id: "extra", title: "山頂以外", kinds: true,
+    note: "選ぶと、その種類だけを表示します（エリアと組み合わせられます）",
     opts: [
       { v: "ridge",  label: "岩稜・難所",                         chip: "岩稜・難所" },
       { v: "scenic", label: "景勝地・コース（踏破には数えません）", chip: "景勝地・コース" },
@@ -629,7 +630,7 @@ function isSel(id) {
 
 function passFilters(m, state = active) {
   for (const f of FILTERS) {
-    if (f.add) continue;           // 「山頂以外も表示」は絞り込みではない
+    if (f.kinds) continue;         // 「山頂以外」は visible() で別に扱う
     const set = state[f.id];
     if (!set || !set.size) continue;
     if (![...set].some((v) => f.match(m, v))) return false;
@@ -638,9 +639,21 @@ function passFilters(m, state = active) {
 }
 // 一覧に出すか
 //   kw（検索中）なら、オフにしている種類・海外も対象にする
+// 山頂以外を選んでいるあいだは使わない区分
+const PEAK_ONLY = new Set(["rank", "popular", "band"]);
+
 function visible(m, state = active, kw = "") {
   const c = cat(m);
-  if (c === "ridge" || c === "scenic") return !!kw || state.extra.has(c);   // オプション：ほかの絞り込みは受けない
+  const isExtra = c === "ridge" || c === "scenic";
+
+  // 「山頂以外」を選んでいる：その種類だけ。エリアの絞り込みだけ効かせる
+  if (state.extra.size) {
+    if (!isExtra || !state.extra.has(c)) return false;
+    const reg = FILTERS.find((f) => f.id === "region");
+    return !state.region.size || [...state.region].some((v) => reg.match(m, v));
+  }
+
+  if (isExtra) return !!kw;                                                   // ふだんは検索したときだけ
   if (c === "overseas" && !kw && !state.region.has("overseas")) return false;  // 海外はエリアで選んだときだけ
   return passFilters(m, state);
 }
@@ -696,8 +709,9 @@ $("#sheet").onclick = (e) => { if (e.target === $("#sheet")) closeSheet(); };
 function drawSheet() {
   const base = baseList();
   $("#sheet-body").innerHTML = FILTERS.map((f) => `
-    <div class="f-group">
-      <p class="f-title">${f.title}</p>${f.note ? `<p class="f-note">${f.note}</p>` : ""}
+    <div class="f-group${draft.extra.size && PEAK_ONLY.has(f.id) ? " off" : ""}">
+      <p class="f-title">${f.title}</p>${f.note ? `<p class="f-note">${f.note}</p>` : ""}${
+        draft.extra.size && PEAK_ONLY.has(f.id) ? `<p class="f-note">山頂以外を選んでいるあいだは使えません</p>` : ""}
       <div class="f-opts">
         ${f.opts.map((o) => {
           const on = draft[f.id].has(o.v);
@@ -706,9 +720,12 @@ function drawSheet() {
           //   「山頂以外も表示」は、その種類の数
           const n = base.filter((m) => {
             if (!f.match(m, o.v)) return false;
-            if (f.add) return true;
+            if (f.kinds) return true;
             const c = cat(m);
-            if (c === "ridge" || c === "scenic") return false;
+            const isExtra = c === "ridge" || c === "scenic";
+            // 山頂以外を選んでいるときのエリアは、その種類の数
+            if (draft.extra.size) return f.id === "region" && isExtra && draft.extra.has(c);
+            if (isExtra) return false;
             if (c === "overseas") return (f.id === "region" && o.v === "overseas") || draft.region.has("overseas");
             return true;
           }).length;
@@ -730,7 +747,7 @@ function drawSheet() {
 
 $("#sheet-body").addEventListener("click", (e) => {
   const b = e.target.closest(".f-opt");
-  if (!b) return;
+  if (!b || b.closest(".f-group.off")) return;
   const set = draft[b.dataset.f];
   if (set.has(b.dataset.v)) set.delete(b.dataset.v);
   else set.add(b.dataset.v);
@@ -741,6 +758,7 @@ $("#f-reset").onclick = () => { FILTERS.forEach((f) => draft[f.id].clear()); dra
 
 $("#f-apply").onclick = () => {
   FILTERS.forEach((f) => (active[f.id] = new Set(draft[f.id])));
+  if (active.extra.size) PEAK_ONLY.forEach((id) => active[id].clear());
   onlySelected = false;
   closeSheet();
   drawChips();
@@ -762,7 +780,7 @@ function drawChips() {
     [...active[f.id]].forEach((v) => {
       const o = f.opts.find((x) => x.v === v);
       chips.push(`<button class="chip on" data-f="${f.id}" data-v="${v}">
-        ${f.add ? "＋" : ""}${o?.chip ?? o?.label ?? v} <span class="x">×</span></button>`);
+        ${o?.chip ?? o?.label ?? v} <span class="x">×</span></button>`);
     });
   });
 
@@ -931,11 +949,11 @@ function render() {
         ? "選択中の山はありません。"
         : "見つかりませんでした。<br>ひらがな・カタカナでも探せます（例：やり）"}</p>`;
 
-  // 山頂以外がオフのときは、一番下に「登録できます」の案内（押すとオンにする）
+  // ふだんの一覧の一番下に、岩稜・景勝地の入口（押すとそれらだけの表示に切り替える）
   if (!kw && !onlySelected && !active.extra.size && !limited) {
     $("#list").insertAdjacentHTML("beforeend", `
       <div class="extra-hint">
-        <button class="extra-btn" data-extra="1">＋ 岩稜・難所や景勝地も表示する</button>
+        <button class="extra-btn" data-extra="1">岩稜・難所・景勝地を見る</button>
         <p>大キレット・ジャンダルム・上高地・涸沢カールなども登録できます</p>
       </div>`);
   }
@@ -1006,11 +1024,13 @@ function normalize(s) {
 // 選択の切り替え
 // ---------------------------------------------
 $("#list").addEventListener("click", (e) => {
-  // 「岩稜・難所や景勝地も表示する」
+  // 「岩稜・難所・景勝地を見る」：それらだけの表示に切り替える
   if (e.target.closest("[data-extra]")) {
     active.extra = new Set(["ridge", "scenic"]);
+    PEAK_ONLY.forEach((id) => active[id].clear());
     drawChips();
     render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
   if (e.target.closest("[data-more]")) {
