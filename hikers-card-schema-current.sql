@@ -1,9 +1,9 @@
 -- =============================================================
--- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜26 適用後）
+-- ハイカーズカード 現行スキーマ（2026-09-28 本番DBから復元 ＋ Step 17〜27 適用後）
 --
 -- 本番の Supabase から書き出した定義をもとに、1本にまとめたもの。
 -- これまでの差分SQL（phase15 / report-block / mountains-* / affinity /
--- fix-favorite など）と step17〜step26 をすべて適用した後の状態に相当する。
+-- fix-favorite など）と step17〜step27 をすべて適用した後の状態に相当する。
 --
 -- 用途：
 --   ・今後の開発の「正」となる参照資料
@@ -56,7 +56,13 @@ create table public.mountains (
   is_popular  boolean not null default false,
   prefs       text[] not null default '{}',   -- 都道府県（県境の山は複数）
   pref        text,                            -- 旧列。コードからは未使用
-  popular_rank smallint                         -- よく登られている順（1が最上位）。値は hikers-card-step25.sql で付ける
+  popular_rank smallint,                        -- よく登られている順（1が最上位）。値は hikers-card-step25.sql で付ける
+  -- Step 27：場所のマスタとして広げた列（値は hikers-card-step27.sql で追加）
+  kind         text not null default 'peak'
+                 check (kind in ('peak', 'ridge', 'scenic', 'course')),   -- 山頂／岩稜・難所／景勝地／コース
+  countries    text[] not null default '{}',     -- 海外のときだけ国の2文字コード（国旗の表示に使う）
+  parent_id    smallint references public.mountains(id) on delete set null,   -- 所属する山（ジャンダルム → 穂高岳）
+  display_name text                              -- 画面に出す名前（管理用の name と違うときだけ）
 );
 create index mountains_kana_idx    on public.mountains (kana);
 create index mountains_rank_idx    on public.mountains (meizan_rank);
@@ -342,10 +348,17 @@ create trigger after_block_insert
 create or replace function public.meizan_counts(p_user uuid)
 returns jsonb language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    '100',   count(*) filter (where m.meizan_rank = 100),
-    '200',   count(*) filter (where m.meizan_rank = 200),
-    '300',   count(*) filter (where m.meizan_rank = 300),
-    'other', count(*) filter (where m.meizan_rank is null)
+    '100',      count(*) filter (where m.meizan_rank = 100),
+    '200',      count(*) filter (where m.meizan_rank = 200),
+    '300',      count(*) filter (where m.meizan_rank = 300),
+    -- 名山以外の国内の山頂
+    'other',    count(*) filter (where m.meizan_rank is null and m.kind = 'peak' and cardinality(m.countries) = 0),
+    -- 岩稜・難所
+    'ridge',    count(*) filter (where m.kind = 'ridge'),
+    -- 海外（山頂・トレッキング）
+    'overseas', count(*) filter (where cardinality(m.countries) > 0),
+    -- 国内の景勝地・コース（山頂の踏破には数えない）
+    'scenic',   count(*) filter (where m.kind in ('scenic', 'course') and cardinality(m.countries) = 0)
   )
   from public.climbed_mountains c
   join public.mountains m on m.id = c.mountain_id
@@ -380,21 +393,21 @@ begin
     'ranks', cnt,
     'climbed',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
           order by m.elevation desc nulls last)
         from public.climbed_mountains c
         join public.mountains m on m.id = c.mountain_id
        where c.user_id = me), '[]'::jsonb),
     'favorites',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank, 'pos', c.favorite_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries, 'pos', c.favorite_rank)
           order by c.favorite_rank nulls last, m.elevation desc nulls last)
         from public.climbed_mountains c
         join public.mountains m on m.id = c.mountain_id
        where c.user_id = me and c.is_favorite), '[]'::jsonb),
     'wishlist',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
           order by m.elevation desc nulls last)
         from public.wishlist_mountains w
         join public.mountains m on m.id = w.mountain_id
@@ -443,7 +456,11 @@ begin
   if prof.vis_rank_100   then ranks := ranks || jsonb_build_object('100',   cnt->'100');   end if;
   if prof.vis_rank_200   then ranks := ranks || jsonb_build_object('200',   cnt->'200');   end if;
   if prof.vis_rank_300   then ranks := ranks || jsonb_build_object('300',   cnt->'300');   end if;
-  if prof.vis_rank_other then ranks := ranks || jsonb_build_object('other', cnt->'other'); end if;
+  -- 名山以外（その他の山・岩稜・海外・景勝地）は「その他」の公開設定にまとめて従う
+  if prof.vis_rank_other then
+    ranks := ranks || jsonb_build_object('other', cnt->'other', 'ridge', cnt->'ridge',
+                                         'overseas', cnt->'overseas', 'scenic', cnt->'scenic');
+  end if;
 
   result := jsonb_build_object(
     'public_id',    prof.public_id,
@@ -459,21 +476,21 @@ begin
     'ranks', ranks,
     'climbed',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
           order by m.elevation desc nulls last)
         from public.climbed_mountains c
         join public.mountains m on m.id = c.mountain_id
        where c.user_id = prof.id), '[]'::jsonb),
     'favorites',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank, 'pos', c.favorite_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries, 'pos', c.favorite_rank)
           order by c.favorite_rank nulls last, m.elevation desc nulls last)
         from public.climbed_mountains c
         join public.mountains m on m.id = c.mountain_id
        where c.user_id = prof.id and c.is_favorite), '[]'::jsonb),
     'wishlist',
       coalesce((select jsonb_agg(jsonb_build_object(
-          'name', m.name, 'rank', m.meizan_rank)
+          'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
           order by m.elevation desc nulls last)
         from public.wishlist_mountains w
         join public.mountains m on m.id = w.mountain_id
@@ -520,26 +537,29 @@ begin
           ('100',   case when p.vis_rank_100   then public.meizan_counts(p.id)->'100'   end),
           ('200',   case when p.vis_rank_200   then public.meizan_counts(p.id)->'200'   end),
           ('300',   case when p.vis_rank_300   then public.meizan_counts(p.id)->'300'   end),
-          ('other', case when p.vis_rank_other then public.meizan_counts(p.id)->'other' end)
+          ('other',    case when p.vis_rank_other then public.meizan_counts(p.id)->'other' end),
+          ('ridge',    case when p.vis_rank_other then public.meizan_counts(p.id)->'ridge' end),
+          ('overseas', case when p.vis_rank_other then public.meizan_counts(p.id)->'overseas' end),
+          ('scenic',   case when p.vis_rank_other then public.meizan_counts(p.id)->'scenic' end)
         ) as t(k, v)
         where v is not null),
       'climbed',
         coalesce((select jsonb_agg(jsonb_build_object(
-            'name', m.name, 'rank', m.meizan_rank)
+            'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
             order by m.elevation desc nulls last)
           from public.climbed_mountains c
           join public.mountains m on m.id = c.mountain_id
          where c.user_id = p.id), '[]'::jsonb),
       'favorites',
         coalesce((select jsonb_agg(jsonb_build_object(
-            'name', m.name, 'rank', m.meizan_rank, 'pos', c.favorite_rank)
+            'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries, 'pos', c.favorite_rank)
             order by c.favorite_rank nulls last, m.elevation desc nulls last)
           from public.climbed_mountains c
           join public.mountains m on m.id = c.mountain_id
          where c.user_id = p.id and c.is_favorite), '[]'::jsonb),
       'wishlist',
         coalesce((select jsonb_agg(jsonb_build_object(
-            'name', m.name, 'rank', m.meizan_rank)
+            'name', m.name, 'rank', m.meizan_rank, 'label', coalesce(m.display_name, m.name), 'kind', m.kind, 'cc', m.countries)
             order by m.elevation desc nulls last)
           from public.wishlist_mountains w
           join public.mountains m on m.id = w.mountain_id

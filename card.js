@@ -375,6 +375,38 @@ export function cardNo(n, empty = "") {
   return n === null || n === undefined ? empty : `No.${String(n).padStart(4, "0")}`;
 }
 
+// ---------------------------------------------
+// 国旗と、山の名前の表示
+//
+// 海外の山は、国名の代わりに国旗を山名の左に付ける（/flags/xx.svg）。
+// 国旗の画像は flag-icons（MIT License）から必要な国だけを同梱している。
+// 国名は読み上げ・マウスを乗せたときの説明に使う。
+// 絵文字の国旗は Windows で表示されないため使わない。
+// ---------------------------------------------
+export const COUNTRIES = {
+  tw: "台湾", my: "マレーシア", kr: "韓国", cn: "中国", id: "インドネシア", np: "ネパール",
+  fr: "フランス", it: "イタリア", ch: "スイス", tz: "タンザニア", us: "アメリカ",
+  ar: "アルゼンチン", pe: "ペルー", cl: "チリ", au: "オーストラリア", nz: "ニュージーランド",
+};
+export function flags(cc) {
+  if (!cc?.length) return "";
+  return `<span class="flags">${cc.slice(0, 3).map((c) =>
+    `<img class="flag" src="/flags/${encodeURIComponent(c)}.svg" alt="${esc(COUNTRIES[c] ?? c)}"
+          title="${esc(COUNTRIES[c] ?? c)}" width="16" height="12" loading="lazy">`).join("")}</span>`;
+}
+// 山の名前（表示名があればそちら）＋国旗。どの画面でもこれで出す
+export function mtLabel(m) {
+  return `${flags(m.cc ?? m.countries)}${esc(m.label ?? m.display_name ?? m.name)}`;
+}
+// 名山以外の場所の分け方（踏破状況の行・件数と同じ分け方）
+export function placeCat(m) {
+  if (m.rank) return String(m.rank);
+  if ((m.cc ?? m.countries)?.length) return "overseas";
+  if (m.kind === "ridge") return "ridge";
+  if (m.kind === "scenic" || m.kind === "course") return "scenic";
+  return "other";
+}
+
 // 1〜3位の冠（金・銀・銅）。4位以下は何も付けない
 export function crown(pos) {
   if (!pos || pos > 3) return "";
@@ -423,6 +455,10 @@ export function renderHeroCard(d, opts = {}) {
       <div class="mini-ring">
         <div class="mr mr-other"><div class="mn"><b>${Number(ranks.other)}</b><span>座</span></div></div>
         <p>その他</p><em>&nbsp;</em>
+      </div>` : "") + (Number(ranks.overseas) > 0 ? `
+      <div class="mini-ring">
+        <div class="mr mr-other"><div class="mn"><b>${Number(ranks.overseas)}</b><span>か所</span></div></div>
+        <p>海外</p><em>&nbsp;</em>
       </div>` : "");
 
   const favs = sortedFavs(d.favorites);
@@ -476,13 +512,13 @@ export function renderHeroCard(d, opts = {}) {
       ${favs.length ? blk("section-mountains", `
         <p class="hero-lbl">${STAR}登ってよかった山</p>
         <div class="mini-tags">
-          ${favs.map((m) => `<span class="mini-tag fav">${crown(m.pos)}${esc(m.name)}</span>`).join("")}
+          ${favs.map((m) => `<span class="mini-tag fav">${crown(m.pos)}${mtLabel(m)}</span>`).join("")}
         </div>`) : own ? emptyBlk("/mountains.html#fav", `${STAR}登ってよかった山`) : ""}
 
       ${wish.length ? blk("section-mountains", `
         <p class="hero-lbl">${FLAG}登ってみたい山</p>
         <div class="mini-tags">
-          ${wish.map((m) => `<span class="mini-tag wish">${esc(m.name)}</span>`).join("")}
+          ${wish.map((m) => `<span class="mini-tag wish">${mtLabel(m)}</span>`).join("")}
         </div>`) : own ? emptyBlk("/mountains.html#wish", `${FLAG}登ってみたい山`) : ""}
     </div>
     <span class="hero-brand hero-brand-foot">#ハイカーズカード</span>
@@ -604,26 +640,37 @@ function tags(list, cls, icon, overlaps) {
   return list.map((m) => {
     const lead = cls === "fav" ? crown(m.pos) : icon;
     const who = overlaps?.[m.name];
-    if (!who?.length) return `<span class="d-tag ${cls}">${lead}${esc(m.name)}</span>`;
+    if (!who?.length) return `<span class="d-tag ${cls}">${lead}${mtLabel(m)}</span>`;
     const links = who.slice(0, 4)
       .map((p) => `<a href="/u/${encodeURIComponent(p.public_id)}">${esc(p.name)}さん</a>`)
       .join("、");
     const rest = who.length > 4 ? ` ほか${who.length - 4}人` : "";
     return `<span class="d-tag ${cls} has-ov" tabindex="0">
-      ${lead}${esc(m.name)}<span class="ov-dot">${who.length}</span>
+      ${lead}${mtLabel(m)}<span class="ov-dot">${who.length}</span>
       <template class="ov-src">${links}${rest}${verb}</template>
     </span>`;
   }).join("");
 }
 
 // ---------- 踏破状況 ----------
+// 名山以外の行（踏破状況）。scenic は山頂の踏破には数えない
+const EXTRA_ROWS = [
+  { key: "other",    title: "その他の山", sub: "名山リスト外の山",     unit: "座" },
+  { key: "ridge",    title: "岩稜・難所", sub: "キレット・鎖場など",   unit: "か所" },
+  { key: "overseas", title: "海外",       sub: "海外の山・トレッキング", unit: "か所" },
+  { key: "scenic",   title: "景勝地・コース", sub: "山頂の踏破には数えません", unit: "か所" },
+];
+
 function meizanSection(d) {
   const ranks = d.ranks ?? {};
   const list = d.climbed ?? [];
   const shown = RANKS.filter((r) => ranks[r.key] !== undefined && ranks[r.key] !== null);
-  const showOther = ranks.other !== undefined && ranks.other !== null;
-  const others = showOther ? list.filter((m) => !m.rank) : [];
-  if (!shown.length && !others.length) return "";
+  // 名山以外は「その他」の公開設定にまとめて従う（ranks.other が無ければ出さない）
+  const showExtra = ranks.other !== undefined && ranks.other !== null;
+  const extras = showExtra
+    ? EXTRA_ROWS.map((r) => ({ ...r, items: list.filter((m) => placeCat(m) === r.key) })).filter((r) => r.items.length)
+    : [];
+  if (!shown.length && !extras.length) return "";
 
   const total = shown.reduce((n, r) => n + Number(ranks[r.key]), 0);
   const caret = `<svg class="mz-car" viewBox="0 0 24 24" fill="none"
@@ -632,7 +679,7 @@ function meizanSection(d) {
   const favPos = new Map(sortedFavs(d.favorites).map((m) => [m.name, m.pos]));
   const tagList = (arr) => `
       <div class="mz-in"><div class="d-tags">
-        ${arr.map((m) => `<span class="d-tag">${crown(favPos.get(m.name))}${esc(m.name)}</span>`).join("")}
+        ${arr.map((m) => `<span class="d-tag">${crown(favPos.get(m.name))}${mtLabel(m)}</span>`).join("")}
       </div></div>`;
 
   const blocks = shown.map((r) => {
@@ -649,18 +696,20 @@ function meizanSection(d) {
       ${inRank.length ? `<div class="mz-list" id="mzl-${r.key}">${tagList(inRank)}</div>` : ""}`;
   }).join("");
 
+  const extraBlocks = extras.map((r, k) => `
+      <button class="mz-row mz-other${k === 0 && !shown.length ? " solo" : ""}${k > 0 ? " mz-more" : ""}" data-mz="${r.key}">
+        <div class="mz-r mz-r-other"><div class="mn"><b>${r.items.length}</b><span>${r.unit}</span></div></div>
+        <p class="mz-t">${r.title}<em>${r.sub}</em></p>
+        ${caret}
+      </button>
+      <div class="mz-list" id="mzl-${r.key}">${tagList(r.items)}</div>`).join("");
+
   return `
   <section class="det" id="section-meizan">
     <div class="det-h"><h2>踏破状況</h2>${shown.length ? `<span class="det-n">${total} / ${shown.length * 100}</span>` : ""}</div>
     <div class="d-card">
       ${blocks}
-      ${others.length ? `
-        <button class="mz-row mz-other${shown.length ? "" : " solo"}" data-mz="other">
-          <div class="mz-r mz-r-other"><div class="mn"><b>${others.length}</b><span>座</span></div></div>
-          <p class="mz-t">その他<em>名山リスト外の山</em></p>
-          ${caret}
-        </button>
-        <div class="mz-list" id="mzl-other">${tagList(others)}</div>` : ""}
+      ${extraBlocks}
     </div>
   </section>`;
 }

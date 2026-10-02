@@ -318,6 +318,12 @@
 body.theme-dark .mt-item.on, body.theme-dark .mt-item.fav.on { background: rgba(224,163,59,.14); }
 body.theme-dark .mt-item.wish.on { background: rgba(127,181,212,.14); }
 
+/* 名山以外の種類の印 */
+.kind-badge { display: inline-block; font-size: 9.5px; font-weight: 700; margin-left: 6px; vertical-align: 2px;
+  padding: 1px 6px; border-radius: 6px; color: var(--c-fg2, var(--stone)); border: 1px solid var(--c-div, var(--line)); }
+.kind-badge.ridge { color: #fff; background: #7C6A58; border-color: transparent; }
+.mt-name .flags { margin-right: 6px; vertical-align: 0; }
+
 /* カードづくり中の案内 */
 .ob-note { margin-top: 10px; background: #FCF1DC; border-left: 4px solid var(--sun); border-radius: 12px;
   padding: 10px 12px; font-size: 12px; line-height: 1.8; color: var(--c-fg, var(--pine)); }
@@ -426,7 +432,7 @@ window.addEventListener("unhandledrejection", (e) =>
 <script type="module">
 import { supabase, getUser, getMyProfile, signOut } from "./supabase.js";
 import { mountHeader } from "./header.js";
-import { applyTheme, esc } from "./card.js";
+import { applyTheme, esc, flags } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const MAX = 5;
@@ -440,7 +446,7 @@ if (!user) { location.replace("./login.html"); throw new Error("redirect"); }
 const [profile, mtRes, climbedRes, wishRes] = await Promise.all([
   getMyProfile(),
   supabase.from("mountains")
-          .select("id, name, kana, elevation, area, prefs, region, meizan_rank, is_popular")
+          .select("*")   // 種類・国・表示名などもすべて
           .order("elevation", { ascending: false }),
   supabase.from("climbed_mountains")
           .select("mountain_id, is_favorite, favorite_rank")
@@ -503,7 +509,19 @@ const AREA_ORDER = [
   "北海道", "東北", "上信越", "北関東", "関東", "奥秩父",
   "北アルプス", "八ヶ岳周辺", "中央アルプス", "南アルプス",
   "富士山", "伊豆", "北陸", "中部", "近畿", "中国", "四国", "九州",
+  // 海外（国内の後ろに並べる）
+  "アジア", "ヨーロッパ", "アフリカ", "北米", "南米", "オセアニア",
 ];
+
+// 場所の分け方（踏破状況の件数と同じ）
+//   100 / 200 / 300 … 名山 ／ other … 名山以外の国内の山頂 ／ ridge … 岩稜・難所
+//   overseas … 海外（山頂・トレッキング） ／ scenic … 国内の景勝地・コース（踏破には数えない）
+const cat = (m) => m.meizan_rank ? String(m.meizan_rank)
+  : m.countries?.length ? "overseas"
+  : m.kind === "ridge" ? "ridge"
+  : (m.kind === "scenic" || m.kind === "course") ? "scenic"
+  : "other";
+const label = (m) => m.display_name ?? m.name;
 const areaRank = (a) => {
   const i = AREA_ORDER.indexOf(a);
   return i === -1 ? 999 : i;
@@ -522,9 +540,19 @@ const FILTERS = [
       { v: "100",   label: "百名山" },
       { v: "200",   label: "二百名山" },
       { v: "300",   label: "三百名山" },
-      { v: "other", label: "その他" },
+      { v: "other", label: "その他の山" },
     ],
-    match: (m, v) => v === "other" ? m.meizan_rank === null : String(m.meizan_rank) === v,
+    match: (m, v) => cat(m) === v,
+  },
+  {
+    id: "kind", title: "種類",
+    opts: [
+      { v: "peak",     label: "国内の山頂" },
+      { v: "ridge",    label: "岩稜・難所" },
+      { v: "scenic",   label: "景勝地・コース（踏破には数えない）" },
+      { v: "overseas", label: "海外" },
+    ],
+    match: (m, v) => v === "peak" ? ["100", "200", "300", "other"].includes(cat(m)) : cat(m) === v,
   },
   {
     id: "region", title: "エリア",
@@ -765,10 +793,10 @@ function drawPanel() {
       return `
         <div class="slot" data-i="${i}">
           ${posBadge(i + 1)}
-          <span class="slot-name">${esc(m.name)}<small>${esc(m.kana)}${m.elevation ? `・${m.elevation}m` : ""}</small></span>
-          <button class="slot-btn" data-mv="-1" aria-label="${esc(m.name)}の順位を上げる" ${i === 0 ? "disabled" : ""}>${IC.up}</button>
-          <button class="slot-btn" data-mv="1"  aria-label="${esc(m.name)}の順位を下げる" ${i === fav.length - 1 ? "disabled" : ""}>${IC.down}</button>
-          <button class="slot-btn x" data-rm="1" aria-label="${esc(m.name)}を外す">${IC.x}</button>
+          <span class="slot-name">${flags(m.countries)}${esc(label(m))}<small>${esc(m.kana)}${m.elevation ? `・${m.elevation}m` : ""}</small></span>
+          <button class="slot-btn" data-mv="-1" aria-label="${esc(label(m))}の順位を上げる" ${i === 0 ? "disabled" : ""}>${IC.up}</button>
+          <button class="slot-btn" data-mv="1"  aria-label="${esc(label(m))}の順位を下げる" ${i === fav.length - 1 ? "disabled" : ""}>${IC.down}</button>
+          <button class="slot-btn x" data-rm="1" aria-label="${esc(label(m))}を外す">${IC.x}</button>
         </div>`;
     }).join("");
 
@@ -782,8 +810,8 @@ function drawPanel() {
   // 登ってみたい山
   const chips = [...wish].map((id) => byId.get(id)).filter(Boolean)
     .sort((a, b) => (b.elevation ?? 0) - (a.elevation ?? 0))
-    .map((m) => `<button class="wish-chip" data-rm-wish="${m.id}" aria-label="${esc(m.name)}を外す">
-        ${esc(m.name)}<i>×</i></button>`).join("");
+    .map((m) => `<button class="wish-chip" data-rm-wish="${m.id}" aria-label="${esc(label(m))}を外す">
+        ${flags(m.countries)}${esc(label(m))}<i>×</i></button>`).join("");
   $("#panel").innerHTML = `
     <p class="lead">まだ登っていない山から、5座まで選べます。
       <span class="cap-n ${wish.size >= MAX ? "full" : ""}">${wish.size} / ${MAX}</span></p>
@@ -840,7 +868,7 @@ function render() {
     if (!passFilters(m)) return false;
     if (onlySelected && !isSel(m.id)) return false;
     if (!kw) return true;
-    return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw);
+    return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw) || normalize(m.display_name).includes(kw);
   });
 
   const grouped = active.region.size !== 1;
@@ -899,15 +927,19 @@ function itemHtml(m) {
   else if (tab === "fav") mark = `<div class="mt-mark">${on ? posBadge(fav.indexOf(m.id) + 1) : STAR}</div>`;
   else mark = `<div class="mt-mark">${FLAGI}</div>`;
 
+  const c = cat(m);
   const badge = m.meizan_rank
     ? `<span class="rank-badge rank-${m.meizan_rank}">${
         m.meizan_rank === 100 ? "百" : m.meizan_rank === 200 ? "二百" : "三百"}</span>`
+    : c === "ridge" ? `<span class="kind-badge ridge">岩稜・難所</span>`
+    : c === "scenic" ? `<span class="kind-badge">${m.kind === "course" ? "コース" : "景勝地"}</span>`
+    : c === "overseas" && m.kind === "course" ? `<span class="kind-badge">トレッキング</span>`
     : "";
   return `
     <div class="mt-item ${tab}${on ? " on" : ""}${full ? " dim" : ""}" data-id="${m.id}">
       ${mark}
       <div class="mt-body">
-        <p class="mt-name">${esc(m.name)}${badge}</p>
+        <p class="mt-name">${flags(m.countries)}${esc(label(m))}${badge}</p>
         <p class="mt-meta">${esc(m.kana)}${m.elevation ? ` ・ <span class="el">${m.elevation}m</span>` : ""}${m.prefs?.length ? ` ・ ${esc(m.prefs.join("・"))}` : ""}</p>
       </div>
     </div>`;
@@ -991,7 +1023,11 @@ const RING_DEFS = [
   { id: "100", label: "百名山",   rank: 100,  total: 100, color: "#E0A33B" },
   { id: "200", label: "二百名山", rank: 200,  total: 100, color: "#8CA9BD" },
   { id: "300", label: "三百名山", rank: 300,  total: 100, color: "#B9C6BD" },
-  { id: "other", label: "その他", rank: null, total: null, color: "#9CB0A3" },
+  { id: "other", label: "その他の山", rank: null, total: null, color: "#9CB0A3" },
+  // 以下は登録があるときだけ出す
+  { id: "ridge",    label: "岩稜・難所",     color: "#7C6A58", optional: true },
+  { id: "overseas", label: "海外",           color: "#4F7FA8", optional: true },
+  { id: "scenic",   label: "景勝地・コース", color: "#B9A27A", optional: true },
 ];
 
 function updateCount() {
@@ -1001,8 +1037,8 @@ function updateCount() {
   if (tab === "climbed") {
     const picked = active.rank.size ? RING_DEFS.filter((c) => active.rank.has(c.id)) : RING_DEFS;
     row.innerHTML = picked.map((c) => {
-      const inThis = (m) => c.rank === null ? m.meizan_rank === null : m.meizan_rank === c.rank;
-      const done = MOUNTAINS.filter((m) => inThis(m) && climbed.has(m.id)).length;
+      const done = MOUNTAINS.filter((m) => cat(m) === c.id && climbed.has(m.id)).length;
+      if (c.optional && !done) return "";
       return `<span class="cnt-pill"><i style="background:${c.color}"></i>${c.label}<b>${done}</b></span>`;
     }).join("");
   }

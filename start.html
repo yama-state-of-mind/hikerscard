@@ -218,7 +218,7 @@ window.addEventListener("unhandledrejection", (e) =>
 // =============================================
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis, resetMyOnboarding, signOut } from "./supabase.js";
 import { BG, THEMES, SILHOUETTE, applyTheme, esc, crown, renderHeroCard,
-         renderBgPicker, normalizeBg, DEFAULT_BG } from "./card.js";
+         renderBgPicker, normalizeBg, DEFAULT_BG, flags } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const stop = () => new Promise(() => {});
@@ -423,13 +423,13 @@ function tileHtml(m) {
   return `
     <div class="st-tile sort ${st}" data-id="${m.id}">
       ${MT_SVG}
-      <b>${esc(m.name)}</b>
+      <b>${flags(m.countries)}${esc(m.display_name ?? m.name)}</b>
       <small>${m.elevation ? `${m.elevation}m` : ""}${m.prefs?.length ? `・${esc(m.prefs[0])}` : ""}</small>
       <span class="st-pick">
         <button class="pk c${st === "climbed" ? " on" : ""}" data-pick="climbed" aria-pressed="${st === "climbed"}"
-                aria-label="${esc(m.name)}：登った">${CHECK}<span>登った</span></button>
+                aria-label="${esc(m.display_name ?? m.name)}：登った">${CHECK}<span>登った</span></button>
         <button class="pk w${st === "wish" ? " on" : ""}" data-pick="wish" aria-pressed="${st === "wish"}"
-                aria-label="${esc(m.name)}：登りたい">${FLAG}<span>登りたい</span></button>
+                aria-label="${esc(m.display_name ?? m.name)}：登りたい">${FLAG}<span>登りたい</span></button>
       </span>
     </div>`;
 }
@@ -437,7 +437,8 @@ function tileHtml(m) {
 function sortList() {
   if (keyword) {
     const kw = normalize(keyword);
-    return MOUNTAINS.filter((m) => normalize(m.name).includes(kw) || normalize(m.kana).includes(kw)).slice(0, 40);
+    return MOUNTAINS.filter((m) => normalize(m.name).includes(kw) || normalize(m.kana).includes(kw)
+      || normalize(m.display_name).includes(kw)).slice(0, 40);
   }
   // 人気の山 ＋ すでに選んだ山（人気の山以外を検索で足した場合も、ここに残す）
   // 人気の山は、実際によく登られている順（popular_rank）を上に。順位の無い人気の山はその後に標高順
@@ -560,7 +561,7 @@ bind[4] = () => {
     const pod = (p) => {
       const m = byId.get(favs[p - 1]);
       return `<div class="st-pod p${p}">
-        <p class="nm${m ? "" : " empty"}">${m ? esc(m.name) : `${p}位`}</p>
+        <p class="nm${m ? "" : " empty"}">${m ? esc(m.display_name ?? m.name) : `${p}位`}</p>
         <div class="bar">${crown(p)}</div></div>`;
     };
     // 表彰台の並び：2位・1位・3位
@@ -569,7 +570,7 @@ bind[4] = () => {
       const r = favs.indexOf(m.id) + 1;
       return `<button class="st-tile ${r ? "ranked" : ""}" data-id="${m.id}">
         ${MT_SVG}${r ? `<span class="rk">${crown(r)}</span>` : ""}
-        <b>${esc(m.name)}</b><small>${m.elevation ? `${m.elevation}m` : ""}</small></button>`;
+        <b>${flags(m.countries)}${esc(m.display_name ?? m.name)}</b><small>${m.elevation ? `${m.elevation}m` : ""}</small></button>`;
     }).join("");
     $("#next").textContent = favs.length ? "次へ" : "1つ以上選んでください";
     $("#next").disabled = !favs.length;

@@ -116,10 +116,10 @@ if (justExchanged) {
 // 登った山・好きな山・登ってみたい山
 const [climbedRes, wishRes, cntRes, colRes, backRes] = await Promise.all([
   supabase.from("climbed_mountains")
-          .select("is_favorite, favorite_rank, mountains(name, meizan_rank, elevation)")
+          .select("is_favorite, favorite_rank, mountains(name, display_name, kind, countries, meizan_rank, elevation)")
           .eq("user_id", user.id),
   supabase.from("wishlist_mountains")
-          .select("mountains(name, meizan_rank, elevation)")
+          .select("mountains(name, display_name, kind, countries, meizan_rank, elevation)")
           .eq("user_id", user.id),
   supabase.rpc("meizan_counts", { p_user: user.id }),
   supabase.rpc("get_my_collection"),
@@ -138,7 +138,9 @@ if (wishRes.error) {
 }
 
 const byElev = (a, b) => (b.elevation ?? 0) - (a.elevation ?? 0);
-const toTag = (m) => ({ name: m.name, rank: m.meizan_rank });
+// 表示名・種類・国（国旗）も渡す（カードの山の表示と、踏破状況の行分けに使う）
+const toTag = (m) => ({ name: m.name, rank: m.meizan_rank, label: m.display_name ?? m.name,
+                        kind: m.kind, cc: m.countries ?? [] });
 
 const climbedRows = (climbedRes.data ?? []).filter((r) => r.mountains);
 const climbed = climbedRows.map((r) => r.mountains).sort(byElev).map(toTag);
@@ -157,7 +159,13 @@ const ranks = {};
 if (profile.vis_rank_100) ranks["100"] = counts["100"];
 if (profile.vis_rank_200) ranks["200"] = counts["200"];
 if (profile.vis_rank_300) ranks["300"] = counts["300"];
-if (profile.vis_rank_other !== false) ranks.other = counts.other;
+// 名山以外（その他の山・岩稜・海外・景勝地）は「その他」の公開設定にまとめて従う
+if (profile.vis_rank_other !== false) {
+  ranks.other = counts.other;
+  ranks.ridge = counts.ridge ?? 0;
+  ranks.overseas = counts.overseas ?? 0;
+  ranks.scenic = counts.scenic ?? 0;
+}
 
 // カードに渡す形に整える
 const cardData = {

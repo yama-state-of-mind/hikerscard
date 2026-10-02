@@ -28,7 +28,7 @@
 //   同じふたりなら毎回同じ文、別のふたりなら違う文になる。
 // =============================================
 
-import { esc, SILHOUETTE } from "./card.js";
+import { esc, SILHOUETTE, mtLabel } from "./card.js";
 
 // ---------------------------------------------
 // 4軸の定義
@@ -104,7 +104,12 @@ export function computeAffinity(me, other) {
   const raw = axisRaw * 0.8 + mtRaw * 0.2;
   const score = Math.round(50 + 50 * Math.pow(Math.max(0, Math.min(1, raw)), 1.5));
 
+  // 文章に出すときは表示名を使う（雪山（台湾） → 雪山）
+  const labels = new Map([me, other].flatMap((d) =>
+    [...(d.climbed ?? []), ...(d.favorites ?? []), ...(d.wishlist ?? [])]).map((m) => [m.name, m.label ?? m.name]));
+
   const af = {
+    labels,
     score, label: scoreLabel(score), reference: !bothDiag,
     axes, bothDiag,
     mt: { sameWish, sameFav, canAsk, canTell },
@@ -230,7 +235,8 @@ function buildComment(af, me, other) {
   const rnd = seededRandom(me.public_id ?? "me", other.public_id ?? "other");
   const P = `${other.display_name}さん`;
   const fill = (s, v) => s.replace(/\{(\w)\}/g, (_, k) => v[k] ?? "");
-  const mtNames = (arr) => arr.length > 2 ? `${arr.slice(0, 2).join("・")}など` : arr.join("・");
+  const lab = (n) => af.labels?.get(n) ?? n;
+  const mtNames = (arr) => arr.length > 2 ? `${arr.slice(0, 2).map(lab).join("・")}など` : arr.map(lab).join("・");
   const paras = [];
 
   // 1. はじまり
@@ -295,11 +301,14 @@ const IC = {
   fav:  `<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.4 6.5 20.4l1.1-6.3L3 9.7l6.3-.9z"/></svg>`,
 };
 
+// 山の名前 → 山の情報（国旗・表示名を出すため）。シートを開くたびに作り直す
+let PLACE = new Map();
+
 function mountainGroups(af, P) {
   const g = (list, icon, title, note, cls) => list.length ? `
     <div class="afs-mg ${cls}">
       <div class="afs-mg-h"><span class="afs-mg-ic">${IC[icon]}</span><p>${title}</p></div>
-      <div class="afs-tags">${list.map((n) => `<span>${esc(n)}</span>`).join("")}</div>
+      <div class="afs-tags">${list.map((n) => `<span>${PLACE.get(n) ? mtLabel(PLACE.get(n)) : esc(n)}</span>`).join("")}</div>
       <p class="afs-mg-note">${note}</p>
     </div>` : "";
 
@@ -488,6 +497,8 @@ export function openAffinitySheet(ctx) {
   }
 
   const af = computeAffinity(ctx.me, ctx.other);
+  PLACE = new Map([ctx.me, ctx.other].flatMap((d) =>
+    [...(d.climbed ?? []), ...(d.favorites ?? []), ...(d.wishlist ?? [])]).map((m) => [m.name, m]));
   const sheet = openSheet(sheetBody(af, ctx), "登山相性");
   animateScore(sheet);
 }
