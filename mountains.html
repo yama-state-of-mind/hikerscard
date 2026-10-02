@@ -318,6 +318,14 @@
 body.theme-dark .mt-item.on, body.theme-dark .mt-item.fav.on { background: rgba(224,163,59,.14); }
 body.theme-dark .mt-item.wish.on { background: rgba(127,181,212,.14); }
 
+/* 「山頂以外も表示」の案内（一覧の一番下） */
+.extra-hint { text-align: center; padding: 18px 0 6px; }
+.extra-btn { font-family: var(--font); font-size: 12.5px; font-weight: 700; cursor: pointer;
+  color: var(--c-fg2, var(--stone)); background: none; border: 1.5px dashed var(--c-div, var(--line));
+  border-radius: 999px; padding: 9px 20px; }
+.extra-hint p { font-size: 10.5px; color: var(--c-mut, var(--stone)); margin-top: 6px; }
+.f-note { font-size: 10.5px; color: var(--c-mut, var(--stone)); margin: -4px 0 8px; }
+
 /* 名山以外の種類の印 */
 .kind-badge { display: inline-block; font-size: 9.5px; font-weight: 700; margin-left: 6px; vertical-align: 2px;
   padding: 1px 6px; border-radius: 6px; color: var(--c-fg2, var(--stone)); border: 1px solid var(--c-div, var(--line)); }
@@ -533,6 +541,12 @@ const areaRank = (a) => {
 // 同じ区分の中で複数選ぶとOR、区分をまたぐとAND。
 // 何も選ばれていない区分は「絞り込まない」扱い。
 // ---------------------------------------------
+// ふだんの一覧は「国内の山頂」が中心。
+//   ・名山／エリア／人気の山／標高 … 絞り込み
+//   ・エリアの「海外」を選ぶと、海外の山・トレッキングが入る（選ばなければ出ない）
+//   ・山頂以外も表示（add: true）… 岩稜・難所／景勝地・コースを一覧の後ろに「足す」スイッチ。
+//     ほかの絞り込みは受けない
+//   ・検索は常に全体から探す（オフにしている種類・海外も見つかる）
 const FILTERS = [
   {
     id: "rank", title: "名山",
@@ -540,19 +554,9 @@ const FILTERS = [
       { v: "100",   label: "百名山" },
       { v: "200",   label: "二百名山" },
       { v: "300",   label: "三百名山" },
-      { v: "other", label: "その他の山" },
+      { v: "other", label: "名山以外" },
     ],
-    match: (m, v) => cat(m) === v,
-  },
-  {
-    id: "kind", title: "種類",
-    opts: [
-      { v: "peak",     label: "国内の山頂" },
-      { v: "ridge",    label: "岩稜・難所" },
-      { v: "scenic",   label: "景勝地・コース（踏破には数えない）" },
-      { v: "overseas", label: "海外" },
-    ],
-    match: (m, v) => v === "peak" ? ["100", "200", "300", "other"].includes(cat(m)) : cat(m) === v,
+    match: (m, v) => v === "other" ? (!m.meizan_rank && m.kind === "peak") : String(m.meizan_rank) === v,
   },
   {
     id: "region", title: "エリア",
@@ -564,8 +568,9 @@ const FILTERS = [
       { v: "kanto",       label: "関東・上信越・日光" },
       { v: "tokai",       label: "東海・近畿・北陸" },
       { v: "west",        label: "中国・四国・九州・沖縄" },
+      { v: "overseas",    label: "海外" },
     ],
-    match: (m, v) => m.region === v,
+    match: (m, v) => v === "overseas" ? m.countries?.length > 0 : (!m.countries?.length && m.region === v),
   },
   {
     id: "popular", title: "人気の山",
@@ -583,6 +588,15 @@ const FILTERS = [
       const e = m.elevation ?? 0;
       return v === "low" ? e < 1500 : v === "mid" ? e >= 1500 && e < 2500 : e >= 2500;
     },
+  },
+  {
+    id: "extra", title: "山頂以外も表示", add: true,
+    note: "チェックした種類を、一覧の後ろに足します",
+    opts: [
+      { v: "ridge",  label: "岩稜・難所",                         chip: "岩稜・難所" },
+      { v: "scenic", label: "景勝地・コース（踏破には数えません）", chip: "景勝地・コース" },
+    ],
+    match: (m, v) => cat(m) === v,
   },
 ];
 
@@ -615,13 +629,22 @@ function isSel(id) {
 
 function passFilters(m, state = active) {
   for (const f of FILTERS) {
+    if (f.add) continue;           // 「山頂以外も表示」は絞り込みではない
     const set = state[f.id];
     if (!set || !set.size) continue;
     if (![...set].some((v) => f.match(m, v))) return false;
   }
   return true;
 }
-const countWith = (state) => baseList().filter((m) => passFilters(m, state)).length;
+// 一覧に出すか
+//   kw（検索中）なら、オフにしている種類・海外も対象にする
+function visible(m, state = active, kw = "") {
+  const c = cat(m);
+  if (c === "ridge" || c === "scenic") return !!kw || state.extra.has(c);   // オプション：ほかの絞り込みは受けない
+  if (c === "overseas" && !kw && !state.region.has("overseas")) return false;  // 海外はエリアで選んだときだけ
+  return passFilters(m, state);
+}
+const countWith = (state) => baseList().filter((m) => visible(m, state)).length;
 const activeCount = () => FILTERS.reduce((n, f) => n + active[f.id].size, 0);
 
 // ---------------------------------------------
@@ -674,11 +697,21 @@ function drawSheet() {
   const base = baseList();
   $("#sheet-body").innerHTML = FILTERS.map((f) => `
     <div class="f-group">
-      <p class="f-title">${f.title}</p>
+      <p class="f-title">${f.title}</p>${f.note ? `<p class="f-note">${f.note}</p>` : ""}
       <div class="f-opts">
         ${f.opts.map((o) => {
           const on = draft[f.id].has(o.v);
-          const n = base.filter((m) => f.match(m, o.v)).length;
+          // 一覧と同じ考え方で数える：
+          //   絞り込みの選択肢は、国内の山頂（海外は「海外」を選んでいるときだけ）が対象
+          //   「山頂以外も表示」は、その種類の数
+          const n = base.filter((m) => {
+            if (!f.match(m, o.v)) return false;
+            if (f.add) return true;
+            const c = cat(m);
+            if (c === "ridge" || c === "scenic") return false;
+            if (c === "overseas") return (f.id === "region" && o.v === "overseas") || draft.region.has("overseas");
+            return true;
+          }).length;
           return `
             <button class="f-opt ${on ? "on" : ""}" data-f="${f.id}" data-v="${o.v}">
               <span class="f-box">
@@ -729,7 +762,7 @@ function drawChips() {
     [...active[f.id]].forEach((v) => {
       const o = f.opts.find((x) => x.v === v);
       chips.push(`<button class="chip on" data-f="${f.id}" data-v="${v}">
-        ${o?.label ?? v} <span class="x">×</span></button>`);
+        ${f.add ? "＋" : ""}${o?.chip ?? o?.label ?? v} <span class="x">×</span></button>`);
     });
   });
 
@@ -865,17 +898,19 @@ function render() {
   }
 
   const list = base.filter((m) => {
-    if (!passFilters(m)) return false;
-    if (onlySelected && !isSel(m.id)) return false;
+    // 「選択中」は、種類や絞り込みに関係なく登録済みをすべて出す（外せなくならないように）
+    if (onlySelected) return isSel(m.id);
+    if (!visible(m, active, kw)) return false;
     if (!kw) return true;
     return normalize(m.name).includes(kw) || normalize(m.kana).includes(kw) || normalize(m.display_name).includes(kw);
   });
 
   const grouped = active.region.size !== 1;
   if (grouped) {
+    // 国内の山頂はエリアごと。岩稜・景勝地・海外は、その後ろにまとめる
     list.sort((a, b) =>
-      areaRank(a.area) - areaRank(b.area) ||
-      (b.elevation ?? 0) - (a.elevation ?? 0));
+      groupRank(a) - groupRank(b) ||
+      (b.elevation ?? -1) - (a.elevation ?? -1));
   }
 
   // 絞り込みが効いていないときは件数を抑える（スクロール負荷を下げる）
@@ -896,18 +931,32 @@ function render() {
         ? "選択中の山はありません。"
         : "見つかりませんでした。<br>ひらがな・カタカナでも探せます（例：やり）"}</p>`;
 
+  // 山頂以外がオフのときは、一番下に「登録できます」の案内（押すとオンにする）
+  if (!kw && !onlySelected && !active.extra.size && !limited) {
+    $("#list").insertAdjacentHTML("beforeend", `
+      <div class="extra-hint">
+        <button class="extra-btn" data-extra="1">＋ 岩稜・難所や景勝地も表示する</button>
+        <p>大キレット・ジャンダルム・上高地・涸沢カールなども登録できます</p>
+      </div>`);
+  }
+
   updateCount();
 }
+
+// 見出しのまとまり：国内の山頂はエリア、それ以外は種類
+const groupName = (m) => ({ ridge: "岩稜・難所", scenic: "景勝地・コース", overseas: "海外" })[cat(m)] ?? (m.area ?? "その他");
+const groupRank = (m) => ({ ridge: 1000, scenic: 1001, overseas: 1002 })[cat(m)] ?? areaRank(m.area);
 
 function renderList(list, grouped) {
   if (!grouped) return list.map(itemHtml).join("");
   let html = "";
-  let lastArea;
+  let last;
   for (const m of list) {
-    if (m.area !== lastArea) {
-      lastArea = m.area;
-      const n = list.filter((x) => x.area === lastArea).length;
-      html += `<p class="area-head">${esc(lastArea ?? "その他")}<span>${n}</span></p>`;
+    const g = groupName(m);
+    if (g !== last) {
+      last = g;
+      const n = list.filter((x) => groupName(x) === g).length;
+      html += `<p class="area-head">${esc(g)}<span>${n}</span></p>`;
     }
     html += itemHtml(m);
   }
@@ -957,6 +1006,13 @@ function normalize(s) {
 // 選択の切り替え
 // ---------------------------------------------
 $("#list").addEventListener("click", (e) => {
+  // 「岩稜・難所や景勝地も表示する」
+  if (e.target.closest("[data-extra]")) {
+    active.extra = new Set(["ridge", "scenic"]);
+    drawChips();
+    render();
+    return;
+  }
   if (e.target.closest("[data-more]")) {
     pageLimit += PAGE;
     const y = scrollY;
