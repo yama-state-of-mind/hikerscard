@@ -319,6 +319,10 @@ export function renderBackDetails(back, opts = {}) {
           </div>` : "";
       }
       const lv = Number(skills[it.key]);
+      // 全段階を並べ、選んだ段階を強調する（全体の中でどこにいるかが分かるように）
+      const ladder = [0, 1, 2, 3, 4, 5].map((n) => `
+            <li class="${n === lv ? "cur" : n < lv ? "done" : ""}">
+              <b>${n}</b><span>${esc(levelName(it, n))}</span></li>`).join("");
       return `
         <div class="skd">
           <div class="skd-h">
@@ -327,6 +331,7 @@ export function renderBackDetails(back, opts = {}) {
             <span class="skd-lv">${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</span>
           </div>
           <p class="skd-desc">${esc(levelDesc(it, lv))}</p>
+          <ol class="skd-ladder" aria-label="${esc(it.name)}の段階">${ladder}</ol>
           <p class="skd-what">${esc(it.desc)}</p>
         </div>`;
     }).join("");

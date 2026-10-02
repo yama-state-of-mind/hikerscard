@@ -121,31 +121,32 @@ export function computeAffinity(me, other) {
 // =============================================
 // コメント
 // =============================================
+// 書き出し（キャッチコピー）。短く、ひと息で読める長さにする
 const OPENING = {
   90: [
-    "{P}とあなたは、山の好みも歩き方も驚くほど近いふたり。初めて一緒に登る日から、長年の相棒のように歩けそうです。",
-    "登山スタイルがここまで重なる相手には、なかなか出会えません。{P}とは、きっと話が尽きない関係になります。",
-    "山に求めるものがよく似たふたりです。{P}となら、同じ景色を同じ温度で楽しめるはず。",
+    "驚くほど近い、まるで長年の相棒。",
+    "ここまで重なる相手は、なかなかいません。",
+    "同じ景色を、同じ温度で楽しめるふたり。",
   ],
   80: [
-    "{P}とは、根っこの部分がよく似ています。ちょっとした違いも、一緒に登るうちに心地よいアクセントになりそう。",
-    "息の合う山行が想像しやすいふたりです。まずは近場の山から、一緒に歩いてみてはいかがでしょう。",
-    "{P}とあなたは、共通点と違いのバランスがちょうどいい組み合わせ。お互いの登り方から学べることが多そうです。",
+    "根っこがよく似た、息の合うふたり。",
+    "一緒に歩く姿が目に浮かぶふたり。",
+    "共通点と違いが、ちょうどいいバランス。",
   ],
   70: [
-    "似ているところと違うところが、ほどよく混ざったふたり。違いがあるからこそ、ひとりでは選ばない山に出会えそうです。",
-    "{P}とあなたは、お互いを補いあえる関係。役割分担を意識すると、山行がぐっと楽しくなります。",
-    "スタイルは少しずつ違っても、山が好きな気持ちは同じ。話してみると、意外な共通点が見つかるかもしれません。",
+    "似ているようで少し違う。だから面白い。",
+    "お互いを補いあえる、頼もしい組み合わせ。",
+    "スタイルは違っても、山が好きな気持ちは同じ。",
   ],
   60: [
-    "{P}とあなたは、山との付き合い方がけっこう違うふたり。そのぶん、相手の話から新しい楽しみ方を知れるはずです。",
-    "違いの多い組み合わせは、実は発見の宝庫。{P}の登り方を知ると、あなたの山の世界も広がりそうです。",
-    "登り方は対照的でも、それは相性が悪いということではありません。お互いの得意を持ち寄れば、心強いペアになれます。",
+    "違いが多いぶん、発見も多いふたり。",
+    "相手の登り方が、新しい楽しみ方を教えてくれる。",
+    "対照的でも、得意を持ち寄れば心強いペア。",
   ],
   0: [
-    "{P}とあなたは、ほぼ正反対のスタイル。だからこそ、ひとりでは見えない景色を教えあえる関係です。",
-    "ここまで違うと、話を聞くだけでも新鮮なはず。{P}の「当たり前」が、あなたの次の山行のヒントになるかもしれません。",
-    "対照的なふたりです。一緒に登るなら、事前に「どんな一日にしたいか」を話しておくと、お互いに楽しめます。",
+    "ほぼ正反対。だから教えあえることがたくさん。",
+    "話を聞くだけで新鮮な、対照的なふたり。",
+    "正反対のふたり。まずは「どんな一日にしたいか」から。",
   ],
 };
 
@@ -237,11 +238,11 @@ function buildComment(af, me, other) {
   const fill = (s, v) => s.replace(/\{(\w)\}/g, (_, k) => v[k] ?? "");
   const lab = (n) => af.labels?.get(n) ?? n;
   const mtNames = (arr) => arr.length > 2 ? `${arr.slice(0, 2).map(lab).join("・")}など` : arr.map(lab).join("・");
-  const paras = [];
+  const out = { catch: "", style: [], mountains: [] };
 
   // 1. はじまり
   const band = af.score >= 90 ? 90 : af.score >= 80 ? 80 : af.score >= 70 ? 70 : af.score >= 60 ? 60 : 0;
-  paras.push(fill(pick(rnd, OPENING[band]), { P }));
+  out.catch = fill(pick(rnd, OPENING[band]), { P });
 
   // 2. 4軸
   if (af.bothDiag) {
@@ -271,9 +272,9 @@ function buildComment(af, me, other) {
         }));
       }
     }
-    if (axisText.length) paras.push(axisText.join(""));
+    out.style = axisText;
   } else {
-    paras.push("ふたりとも登山タイプ診断を受けると、4軸の近さから、似ているところや補いあえるところも分かるようになります。");
+    out.style = ["ふたりとも登山タイプ診断を受けると、4軸の近さから、似ているところや補いあえるところも分かるようになります。"];
   }
 
   // 3. 山（多すぎると長くなるので3つまで）
@@ -283,12 +284,12 @@ function buildComment(af, me, other) {
   if (canAsk.length)   mt.push(fill(pick(rnd, MOUNTAIN.canAsk),   { M: mtNames(canAsk), P }));
   if (canTell.length)  mt.push(fill(pick(rnd, MOUNTAIN.canTell),  { M: mtNames(canTell), P, X: canAsk.length ? "逆に、" : "" }));
   if (sameFav.length)  mt.push(fill(pick(rnd, MOUNTAIN.sameFav),  { M: mtNames(sameFav), P }));
-  paras.push(mt.length ? mt.slice(0, 3).join("") : pick(rnd, MOUNTAIN.none));
+  out.mountains = mt.length ? mt.slice(0, 3) : [pick(rnd, MOUNTAIN.none)];
 
   // 4. むすび
-  paras.push(pick(rnd, CLOSING));
+  out.mountains.push(pick(rnd, CLOSING));
 
-  return paras;
+  return out;
 }
 
 // =============================================
@@ -385,7 +386,13 @@ function sheetBody(af, ctx) {
 
     <section class="afs-sec">
       <h3>ふたりへのコメント</h3>
-      <div class="afs-comment">${af.comment.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
+      <div class="afs-comment">
+        <p class="afs-catch">${esc(af.comment.catch)}</p>
+        <p class="afs-ch">登り方の相性</p>
+        ${af.comment.style.map((p) => `<p>${esc(p)}</p>`).join("")}
+        <p class="afs-ch">山の話題</p>
+        ${af.comment.mountains.map((p) => `<p>${esc(p)}</p>`).join("")}
+      </div>
     </section>`;
 }
 

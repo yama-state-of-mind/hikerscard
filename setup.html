@@ -63,6 +63,32 @@
   }
   .tog.on { background: var(--sun); }
   .tog.on::after { transform: translateX(18px); }
+  /* ホーム */
+  .home-select { width: 100%; font-family: var(--font); font-size: 15px; color: var(--c-fg, var(--pine));
+    background: var(--c-bg, #fff); border: 1.5px solid var(--c-div, var(--line)); border-radius: 12px; padding: 12px; }
+  /* カードに表示する項目（チェック＝公開） */
+  .vis-chk { display: flex; align-items: center; gap: 10px; padding: 11px 2px; cursor: pointer;
+    border-bottom: 1px solid var(--c-div, var(--line)); }
+  .vis-chk:last-child { border-bottom: none; }
+  .vis-chk input { width: 20px; height: 20px; accent-color: var(--c-fg, var(--pine)); flex: none; margin: 0; }
+  .vis-chk .t { flex: 1; font-size: 13.5px; }
+  .vis-chk .st { font-size: 11px; font-weight: 700; color: var(--c-mut, var(--stone)); }
+  .vis-chk input:checked ~ .st { color: #2E7D52; }
+  /* カードのURL */
+  .url-t { font-size: 11.5px; color: var(--c-mut, var(--stone)); }
+  .url-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .url-v { flex: 1; min-width: 0; font-family: var(--mono); font-size: 12px; word-break: break-all; }
+  .url-copy { flex: none; font-family: var(--font); font-size: 11.5px; font-weight: 700; cursor: pointer;
+    border: none; border-radius: 999px; padding: 7px 14px; background: var(--c-chip, var(--pine)); color: var(--c-chipfg, #fff); }
+  /* SNS：URLの決まった部分＋IDの入力欄 */
+  .sns-url { flex: 1; min-width: 0; }
+  .sns-name { display: block; font-size: 11px; font-weight: 700; color: var(--c-fg2, var(--stone)); margin-bottom: 4px; }
+  .sns-box { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; background: var(--c-bg, #fff);
+    border: 1.5px solid var(--c-div, var(--line)); border-radius: 10px; padding: 6px 10px; cursor: text; }
+  .sns-box:focus-within { border-color: var(--c-fg, var(--pine)); }
+  .sns-pre { font-family: var(--mono); font-size: 11px; color: var(--c-mut, var(--stone)); white-space: nowrap; }
+  .sns-box input { flex: 1; min-width: 7em; border: none !important; outline: none; background: none !important;
+    padding: 4px 0 !important; font-size: 14px; box-shadow: none !important; }
 </style>
 </head>
 <body>
@@ -96,6 +122,11 @@
                 placeholder="例：週末は近郊の低山めぐり。&#10;いつか槍ヶ岳に登りたい。"></textarea>
       <p class="count"><span id="comment-count">0</span> / 120</p>
     </div>
+    <div class="field">
+      <label for="home">ホーム</label>
+      <select id="home" class="home-select"></select>
+      <p class="count" style="text-align:left">ふだん山に出かける拠点の都道府県です（未登録でもOK）。</p>
+    </div>
 
     <!-- 背景デザイン -->
     <div class="group" id="bg-group">
@@ -107,9 +138,9 @@
 
     <!-- 名山の公開設定 -->
     <div class="group" id="vis-group">
-      <h2>カードに載せる踏破状況</h2>
-      <p class="d">オフにしたものはカードに表示されません。<br>
-        登録した山そのものは消えません。</p>
+      <h2>カードに表示する項目</h2>
+      <p class="d">チェックを外したものは、ほかの人が見るカードに表示されません。<br>
+        登録した内容そのものは消えません（自分のカードには表示されます）。</p>
       <div id="vis"></div>
     </div>
 
@@ -153,7 +184,7 @@ window.addEventListener("unhandledrejection", (e) =>
 import { supabase, getUser, getMyProfile, signOut, baseUrl } from "./supabase.js";
 import { mountHeader } from "./header.js";
 import { BG, THEMES, SILHOUETTE, SNS, snsIcon, applyTheme,
-         renderBgPicker, normalizeBg, bgUnlocked } from "./card.js";
+         renderBgPicker, normalizeBg, bgUnlocked, PREFECTURES } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 
@@ -203,6 +234,7 @@ const exchanges = exCount ?? 0;
 
 // 名山ランクごとの公開設定
 const vis = {
+  home: profile.vis_home !== false,
   100: profile.vis_rank_100 !== false,
   200: profile.vis_rank_200 !== false,
   300: profile.vis_rank_300 !== false,
@@ -210,31 +242,49 @@ const vis = {
 };
 
 const RANK_LABELS = [
+  { key: "home", label: "ホーム（都道府県）" },
   { key: 100, label: "日本百名山" },
   { key: 200, label: "日本二百名山" },
   { key: 300, label: "日本三百名山" },
   { key: "other", label: "名山以外（その他の山・岩稜・海外・景勝地）" },
 ];
 
+// チェックあり＝公開（カードに表示）、なし＝非公開
 function drawVis() {
   $("#vis").innerHTML = RANK_LABELS.map((r) => `
-    <div class="vis-row">
+    <label class="vis-chk">
+      <input type="checkbox" data-rank="${r.key}" ${vis[r.key] ? "checked" : ""}>
       <span class="t">${r.label}</span>
-      <button type="button" class="tog ${vis[r.key] ? "on" : ""}" data-rank="${r.key}"
-        aria-label="${r.label}を${vis[r.key] ? "非表示" : "表示"}にする"></button>
-    </div>`).join("");
+      <span class="st">${vis[r.key] ? "公開" : "非公開"}</span>
+    </label>`).join("");
 }
 drawVis();
 
-$("#vis").addEventListener("click", (e) => {
-  const b = e.target.closest(".tog");
-  if (!b) return;
-  const k = b.dataset.rank;
-  vis[k] = !vis[k];
+$("#vis").addEventListener("change", (e) => {
+  const c = e.target.closest("[data-rank]");
+  if (!c) return;
+  vis[c.dataset.rank] = c.checked;
   drawVis();
 });
 
-$("#url-box").innerHTML = `あなたのカードのURL<br>${baseUrl()}u/<b>${profile.public_id}</b>`;
+// ホーム
+$("#home").innerHTML = `<option value="">未登録</option>` +
+  PREFECTURES.map((p) => `<option${p === profile.home_pref ? " selected" : ""}>${p}</option>`).join("");
+
+// カードのURL（コピーできる）
+const cardUrl = `${baseUrl()}u/${profile.public_id}`;
+$("#url-box").innerHTML = `
+  <p class="url-t">あなたのカードのURL</p>
+  <div class="url-row">
+    <span class="url-v">${baseUrl()}u/<b>${profile.public_id}</b></span>
+    <button type="button" class="url-copy" id="url-copy">コピー</button>
+  </div>`;
+$("#url-copy").onclick = async () => {
+  const b = $("#url-copy");
+  try { await navigator.clipboard.writeText(cardUrl); b.textContent = "コピーしました"; }
+  catch { prompt("このURLをコピーしてください", cardUrl); }
+  setTimeout(() => { b.textContent = "コピー"; }, 1500);
+};
 
 // ---------------------------------------------
 // 背景の選択
@@ -274,14 +324,29 @@ const HINT = {
   x: "@なしのユーザー名",
 };
 
+// URLのうち変わらない部分（前と後ろ）を見せて、IDの部分だけ入れてもらう
+const MARK = "\u0000";
+const urlParts = (k) => {
+  const [pre, post] = SNS[k].url(MARK).replace(/^https?:\/\/(www\.)?/, "").split(MARK);
+  return { pre, post };
+};
+
 $("#sns").innerHTML = SNS_KEYS.map((k) => {
   const s = SNS[k];
   const v = profile["sns_" + k] ?? "";
+  const { pre, post } = urlParts(k);
   return `
     <div class="sns-row">
       ${snsIcon(k)}
-      <input type="text" id="sns-${k}" maxlength="60"
-             placeholder="${HINT[k]}" value="${escAttr(v)}" autocomplete="off">
+      <div class="sns-url">
+        <span class="sns-name">${s.label}</span>
+        <label class="sns-box" for="sns-${k}">
+          <span class="sns-pre">${escAttr(pre)}</span>
+          <input type="text" id="sns-${k}" maxlength="60"
+                 placeholder="${HINT[k]}" value="${escAttr(v)}" autocomplete="off" aria-label="${s.label}の${HINT[k]}">
+          ${post ? `<span class="sns-pre">${escAttr(post)}</span>` : ""}
+        </label>
+      </div>
     </div>`;
 }).join("");
 
@@ -337,6 +402,8 @@ $("#save").onclick = async () => {
     vis_rank_200: vis[200],
     vis_rank_300: vis[300],
     vis_rank_other: vis.other,
+    vis_home: vis.home,
+    home_pref: $("#home").value || null,
   };
   SNS_KEYS.forEach((k) => {
     // @や空白を取り除いて保存する

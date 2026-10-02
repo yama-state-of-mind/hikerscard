@@ -46,7 +46,7 @@
   margin-top: 0; height: var(--deck-h);
   display: flex; flex-direction: column;
 }
-.deck-item .hero-in { flex: 1; min-height: 0; overflow: hidden; }
+.deck-item .hero-in { flex: 1; min-height: 0; overflow: hidden; zoom: var(--deck-zoom, 1); }
 
 /* 長いカードは、下の方をふわっと消して省略する（模様は消さず、中身だけ） */
 .deck-item .hero.clipped .hero-in {
@@ -299,6 +299,12 @@ function sizeDeck() {
   const avail = innerHeight - top - 50 - BELOW_DECK;
   const h = Math.round(Math.max(360, Math.min(560, avail)));
   deck.style.setProperty("--deck-h", h + "px");
+
+  // 幅はカードらしい縦長（幅：高さ ≒ 5：8）にする。正方形に近いとカードに見えないため。
+  // 中身は、幅に合わせて小さめに縮める（元の幅 330px を基準）
+  const w = Math.round(Math.min(330, h * 0.62, deck.parentElement.clientWidth));
+  deck.style.maxWidth = w + "px";
+  deck.style.setProperty("--deck-zoom", (w / 330).toFixed(3));
 
   // はみ出しているカードにだけ「省略」の印を付ける
   requestAnimationFrame(() => {

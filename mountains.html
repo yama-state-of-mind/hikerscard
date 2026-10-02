@@ -639,6 +639,17 @@ function passFilters(m, state = active) {
 }
 // 一覧に出すか
 //   kw（検索中）なら、オフにしている種類・海外も対象にする
+// ホームを登録している人には「ホームの山」（その都道府県にかかる山）を出す
+if (profile?.home_pref) {
+  const home = profile.home_pref;
+  FILTERS.splice(FILTERS.findIndex((f) => f.id === "region") + 1, 0, {
+    id: "home", title: "ホーム",
+    opts: [{ v: "1", label: `ホームの山（${home}）`, chip: `ホーム：${home}` }],
+    match: (m) => (m.prefs ?? []).some((p) => p.startsWith(home.replace(/[都道府県]$/, ""))),
+  });
+  active.home = new Set();
+}
+
 // 山頂以外を選んでいるあいだは使わない区分
 const PEAK_ONLY = new Set(["rank", "popular", "band"]);
 

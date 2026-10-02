@@ -38,6 +38,9 @@
   @keyframes stIn { from { opacity: 0; transform: translateX(14px); } }
 
   .st-next { margin-top: 22px; }
+  .st-select { width: 100%; font-family: var(--font); font-size: 15px; color: var(--c-fg);
+    background: var(--c-bg); border: 1.5px solid var(--c-div); border-radius: 12px; padding: 12px; }
+  .st-hint { font-size: 11px; color: var(--c-mut); margin-top: 6px; }
 
   /* 山の登録のしかたを選ぶ */
   .st-choices { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
@@ -218,7 +221,7 @@ window.addEventListener("unhandledrejection", (e) =>
 // =============================================
 import { supabase, getUser, getMyProfile, applyPendingDiagnosis, resetMyOnboarding, signOut } from "./supabase.js";
 import { BG, THEMES, SILHOUETTE, applyTheme, esc, crown, renderHeroCard,
-         renderBgPicker, normalizeBg, DEFAULT_BG, flags } from "./card.js";
+         renderBgPicker, normalizeBg, DEFAULT_BG, flags, PREFECTURES } from "./card.js";
 
 const $ = (s) => document.querySelector(s);
 const stop = () => new Promise(() => {});
@@ -315,6 +318,14 @@ function stepName() {
       <textarea id="cm" maxlength="120" rows="2" placeholder="例：週末は近郊の低山めぐり。">${esc(profile?.comment ?? "")}</textarea>
     </div>
     <div class="field">
+      <label for="home">ホーム（なくてもOK）</label>
+      <select id="home" class="st-select">
+        <option value="">選ばない</option>
+        ${PREFECTURES.map((p) => `<option${p === profile?.home_pref ? " selected" : ""}>${p}</option>`).join("")}
+      </select>
+      <p class="st-hint">ふだん山に出かける拠点の都道府県です。カードに表示されます。</p>
+    </div>
+    <div class="field">
       <label>カードの背景</label>
       <div id="bgs"></div>
     </div>
@@ -333,11 +344,12 @@ bind[1] = () => {
     if (!name) return error("表示名を入れてください。");
     const btn = $("#next"); btn.disabled = true;
     const { error: err } = await supabase.from("profiles")
-      .update({ display_name: name, comment: $("#cm").value.trim() || null, card_bg: bg })
+      .update({ display_name: name, comment: $("#cm").value.trim() || null, card_bg: bg,
+                home_pref: $("#home").value || null })
       .eq("id", user.id);
     btn.disabled = false;
     if (err) return error("保存できませんでした：" + err.message);
-    profile = { ...profile, display_name: name, card_bg: bg };
+    profile = { ...profile, display_name: name, card_bg: bg, home_pref: $("#home").value || null };
     show(profile.type_code ? 3 : 2);
   };
 };

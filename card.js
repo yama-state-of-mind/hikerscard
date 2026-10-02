@@ -79,12 +79,10 @@ export function renderBgPicker(selected, count = 0, opts = {}) {
 
   const next = nextUnlock(count);
   const max = UNLOCK_STEPS[UNLOCK_STEPS.length - 1];
-  const steps = UNLOCK_STEPS.map((n) => `
-    <div class="bgp-step${count >= n ? " open" : ""}">
-      <p class="bgp-step-h">${count >= n ? "解放済み" : `${n}枚交換で解放`}</p>
-      <div class="bgp-grid">${THEMES.filter((t) => t.need === n)
-        .map((t) => bgChip(t, selected, count < n && t.id !== opts.keep)).join("")}</div>
-    </div>`).join("");
+  // 交換で使える5種は、1列に並べる（鍵には必要な枚数を表示）
+  const rare = THEMES.filter((t) => t.need > 0);
+  const steps = `<div class="bgp-grid">${rare
+    .map((t) => bgChip(t, selected, count < t.need && t.id !== opts.keep)).join("")}</div>`;
 
   return `
     <div class="bgp">
@@ -383,6 +381,10 @@ export function cardNo(n, empty = "") {
 // 国名は読み上げ・マウスを乗せたときの説明に使う。
 // 絵文字の国旗は Windows で表示されないため使わない。
 // ---------------------------------------------
+// ホーム（拠点）に選べる都道府県
+export const PREFECTURES = ["北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"];
+const PIN = `<svg class="ic-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>`;
+
 export const COUNTRIES = {
   tw: "台湾", my: "マレーシア", kr: "韓国", cn: "中国", id: "インドネシア", np: "ネパール",
   fr: "フランス", it: "イタリア", ch: "スイス", tz: "タンザニア", us: "アメリカ",
@@ -501,6 +503,8 @@ export function renderHeroCard(d, opts = {}) {
           </div>` : own
             ? `<a class="hero-undiag hero-none" href="/quiz.html">（未診断）<em>診断する</em></a>`
             : `<p class="hero-undiag">未診断</p>`}
+        ${d.home ? `<p class="hero-home">${PIN}${esc(d.home)}</p>`
+          : own ? `<a class="hero-home hero-none" href="/setup.html">${PIN}ホーム（未登録）<em>登録する</em></a>` : ""}
         ${d.comment ? `<p class="hero-cmt">${escMultiline(d.comment)}</p>`
           : own ? `<a class="hero-cmt hero-none" href="/setup.html">ひとこと（未登録）<em>登録する</em></a>` : ""}
       </div>

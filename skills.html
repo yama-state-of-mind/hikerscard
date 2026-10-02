@@ -25,6 +25,14 @@
   .sk-intro b { color: var(--c-fg); }
 
   .ske-group { margin-top: 26px; }
+  .ske-gh { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .ske-gh h2 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--c-fg2); padding-left: 2px; }
+  .ske-gvis { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .ske-gvis input { width: 20px; height: 20px; margin: 0; accent-color: var(--c-fg); }
+  .ske-off-note { font-size: 11px; color: var(--c-mut); margin: -4px 0 10px; }
+  /* 非表示の分類は、中の項目を薄くして見えづらくする（編集はできる） */
+  .ske-group.off .ske { opacity: .45; filter: grayscale(.6); }
+  .ske-group.off .ske:focus-within, .ske-group.off .ske:hover { opacity: .8; }
   .ske-group > h2 { font-size: 11px; font-weight: 600; letter-spacing: .16em; color: var(--c-fg2);
     margin-bottom: 10px; padding-left: 2px; }
 
@@ -176,7 +184,17 @@ const state = {};
 for (const [k, v] of Object.entries(row?.skills ?? {})) {
   if (SKILL_BY_KEY[k]) state[k] = { level: Number(v.level), visible: v.visible !== false };
 }
-const original = JSON.stringify(state);
+// 表示・非表示は分類（基本・応用・スポーツ）ごと。
+// すでに登録がある分類はその設定を引き継ぎ、無ければ 基本＝表示、応用・スポーツ＝非表示 から始める
+const groupOf = (key) => SKILL_BY_KEY[key].group.id;
+const groupVis = {};
+for (const g of SKILL_GROUPS) {
+  const regs = g.items.map((it) => state[it.key]).filter(Boolean);
+  groupVis[g.id] = regs.length ? regs.some((x) => x.visible) : g.id === "base";
+  regs.forEach((x) => { x.visible = groupVis[g.id]; });   // 分類の中でそろえる
+}
+const snapshot = () => JSON.stringify({ state, groupVis });
+const original = snapshot();
 
 // 目安の一覧（0 = 未経験 も含めて、スライダーと同じ 0〜5 の6段）
 const guideRows = (it) => [
@@ -191,10 +209,6 @@ function itemHtml(it) {
     <div class="ske${s ? "" : " unset"}" data-key="${it.key}">
       <div class="ske-h">
         <p class="ske-name">${esc(it.name)}<span>${esc(it.desc)}</span></p>
-        <label class="ske-chk${s ? "" : " disabled"}">
-          <input type="checkbox" data-vis ${s && s.visible !== false ? "checked" : ""} ${s ? "" : "disabled"}>
-          裏面に表示
-        </label>
       </div>
 
       <div class="ske-slider">
@@ -243,24 +257,26 @@ function sync(key) {
     ? `<b>${lv === 0 ? "未経験" : `Lv.${lv} ${esc(levelName(it, lv))}`}</b>${esc(levelDesc(it, lv))}`
     : "未設定（裏面には載りません）。バーをドラッグして選んでください";
 
-  const chk = el.querySelector("[data-vis]");
-  chk.disabled = !s;
-  chk.checked = s ? s.visible : false;   // 未設定のうちはチェックなし（登録すると表示オンになる）
-  el.querySelector(".ske-chk").classList.toggle("disabled", !s);
-
   el.querySelector("[data-clear]").hidden = !s;
   updateNote();
 }
 
 function setLevel(key, lv) {
-  state[key] = { level: lv, visible: state[key]?.visible ?? true };
+  state[key] = { level: lv, visible: groupVis[groupOf(key)] };
   sync(key);
 }
 
 function draw() {
   $("#groups").innerHTML = SKILL_GROUPS.map((g) => `
-    <div class="ske-group">
-      <h2>${g.title}</h2>
+    <div class="ske-group${groupVis[g.id] ? "" : " off"}" data-group="${g.id}">
+      <div class="ske-gh">
+        <h2>${g.title}</h2>
+        <label class="ske-gvis">
+          <input type="checkbox" data-gvis="${g.id}" ${groupVis[g.id] ? "checked" : ""}>
+          <span>カードに表示する</span>
+        </label>
+      </div>
+      ${groupVis[g.id] ? "" : `<p class="ske-off-note">非表示：この分類はカードの裏面に載りません</p>`}
       ${g.items.map(itemHtml).join("")}
     </div>`).join("");
   SKILL_GROUPS.forEach((g) => g.items.forEach((it) => sync(it.key)));
@@ -269,7 +285,7 @@ function draw() {
 function updateNote() {
   const set = Object.values(state);
   const shown = set.filter((s) => s.visible).length;
-  const changed = JSON.stringify(state) !== original;
+  const changed = snapshot() !== original;
   $("#save-note").textContent = set.length
     ? `${set.length}項目を登録中・うち${shown}項目を裏面に表示${changed ? "（未保存の変更あり）" : ""}`
     : "まだ何も登録されていません";
@@ -290,12 +306,16 @@ $("#groups").addEventListener("pointerdown", (e) => {
   if (!state[key]) setLevel(key, Number(range.value));
 });
 
-// 表示・非表示
+// 表示・非表示（分類ごと）
 $("#groups").addEventListener("change", (e) => {
-  const chk = e.target.closest("[data-vis]");
+  const chk = e.target.closest("[data-gvis]");
   if (!chk) return;
-  const key = chk.closest(".ske").dataset.key;
-  if (state[key]) { state[key].visible = chk.checked; sync(key); }
+  const gid = chk.dataset.gvis;
+  groupVis[gid] = chk.checked;
+  Object.keys(state).forEach((k) => { if (groupOf(k) === gid) state[k].visible = chk.checked; });
+  const y = scrollY;
+  draw();
+  window.scrollTo(0, y);
 });
 
 // 目盛り・目安の行を押しても選べる。「未設定にもどす」
@@ -337,7 +357,7 @@ $("#save").onclick = async () => {
 };
 
 addEventListener("beforeunload", (e) => {
-  if (!saving && JSON.stringify(state) !== original) { e.preventDefault(); e.returnValue = ""; }
+  if (!saving && snapshot() !== original) { e.preventDefault(); e.returnValue = ""; }
 });
 
 draw();

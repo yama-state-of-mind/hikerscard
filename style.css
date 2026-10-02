@@ -1222,3 +1222,27 @@ body.theme-dark .sns-ic.brand.x { color: #fff; }
 .mini-tag .flags, .d-tag .flags { margin-right: 4px; }
 /* 名山以外の2行目以降は、区切り線を詰める */
 .mz-row.mz-more { border-top: none; margin-top: 0; padding-top: 6px; }
+
+/* =============================================
+   Step 32：ホーム
+   ============================================= */
+.hero-home { display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-size: 11.5px; font-weight: 600; color: var(--c-fg2); margin-top: 8px; text-decoration: none; }
+.ic-pin { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+a.hero-home.hero-none { color: var(--c-mut); }
+
+/* 裏面の詳しい説明：全段階の一覧（選んだ段階を強調） */
+.skd-ladder { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; margin-top: 8px; }
+.skd-ladder li { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  padding: 5px 2px 4px; border-radius: 8px; background: var(--c-soft); color: var(--c-mut); min-width: 0; }
+.skd-ladder li b { font-family: var(--mono); font-size: 11px; }
+.skd-ladder li span { font-size: 9px; line-height: 1.25; word-break: break-all; }
+.skd-ladder li.done { color: var(--c-fg2); }
+.skd-ladder li.cur { background: var(--c-fg); color: var(--c-bg); }
+
+/* 登山相性のコメント：キャッチコピー＋2つのセクション */
+.afs-comment .afs-catch { font-size: 15px; font-weight: 800; color: var(--c-fg); line-height: 1.6; }
+.afs-comment .afs-ch { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--c-mut);
+  margin-top: 16px !important; padding-top: 12px; border-top: 1px solid var(--c-div); }
+.afs-comment .afs-ch + p { margin-top: 6px; }
+.afs-comment p:first-child { color: var(--c-fg); }
